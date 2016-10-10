@@ -96,46 +96,6 @@
         </link>
       </model>
 
-      <model name='oz440'>
-        <pose frame=''>-0.031265 -7e-06 0.209478 0 -7e-06 -5.3e-05</pose>
-        <scale>1 1 1</scale>
-        <link name='actuator_part1_link'>
-          <pose frame=''>-0.538536 2e-05 0.380975 0 -7e-06 -5.3e-05</pose>
-          <velocity>-4.5e-05 7e-06 -0.005587 -1e-06 -0.001925 -4e-06</velocity>
-          <acceleration>-3.3e-05 0 -0.000141 0 -6.5e-05 0</acceleration>
-          <wrench>-6.6e-05 0 -0.000282 0 -0 0</wrench>
-        </link>
-        <link name='back_left_wheel'>
-          <pose frame=''>-0.248756 0.164935 0.145977 0 -0.145755 -5.3e-05</pose>
-          <velocity>0.000407 5e-06 -0.00503 -3.3e-05 -0.002295 -2e-06</velocity>
-          <acceleration>-2.1e-05 0 -1.4e-05 9.8e-05 -0.000157 0</acceleration>
-          <wrench>-6.2e-05 0 -4.3e-05 0 -0 0</wrench>
-        </link>
-        <link name='back_right_wheel'>
-          <pose frame=''>-0.248773 -0.164925 0.145977 0 -0.143962 -5.3e-05</pose>
-          <velocity>0.000407 5e-06 -0.00503 -3.3e-05 -0.002232 -2e-06</velocity>
-          <acceleration>-2.1e-05 0 -1.4e-05 8.1e-05 -0.000157 0</acceleration>
-          <wrench>-6.2e-05 0 -4.3e-05 0 -0 0</wrench>
-        </link>
-        <link name='footprint'>
-          <pose frame=''>-0.031265 -7e-06 0.209478 0 -7e-06 -5.3e-05</pose>
-          <velocity>0.000285 6e-06 -0.004611 -1e-06 -0.001926 1e-06</velocity>
-          <acceleration>-3.5e-05 0 0 0 -6.5e-05 0</acceleration>
-          <wrench>-0.003781 -4e-06 -4e-06 0 -0 0</wrench>
-        </link>
-        <link name='front_left_wheel'>
-          <pose frame=''>0.186244 0.164912 0.14598 0 -0.150613 -5.3e-05</pose>
-          <velocity>0.000407 5e-06 -0.004191 -3.5e-05 -0.001591 -2e-06</velocity>
-          <acceleration>-2.1e-05 0 1.4e-05 -8.9e-05 -0.000128 0</acceleration>
-          <wrench>-6.2e-05 0 4.2e-05 0 -0 0</wrench>
-        </link>
-        <link name='front_right_wheel'>
-          <pose frame=''>0.186227 -0.164948 0.14598 0 -0.150422 -5.3e-05</pose>
-          <velocity>0.000407 5e-06 -0.004192 -3.6e-05 -0.001585 -2e-06</velocity>
-          <acceleration>-2.1e-05 0 1.4e-05 -9.1e-05 -0.000128 0</acceleration>
-          <wrench>-6.2e-05 0 4.2e-05 0 -0 0</wrench>
-        </link>
-      </model>
       <model name='piquet_rouge'>
         <pose frame=''>1.68708 -0.094016 0.499987 -6e-06 7e-06 -0.001095</pose>
         <scale>1 1 1</scale>
