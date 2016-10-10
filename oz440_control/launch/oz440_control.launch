@@ -4,7 +4,7 @@
   <rosparam file="$(find oz440_control)/config/oz440_control.yaml" command="load"/>
 
   <!-- load the controllers -->
-  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/oz440" args="joint_state_controller diff_vel_controller" />
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" ns="/oz440" args="joint_state_controller front_right_wheel_velocity_controller back_left_wheel_velocity_controller back_right_wheel_velocity_controller front_left_wheel_velocity_controller" />
 
   <!-- convert joint states to TF transforms for rviz, etc -->
 
