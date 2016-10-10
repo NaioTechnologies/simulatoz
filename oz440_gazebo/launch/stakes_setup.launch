@@ -1,0 +1,29 @@
+<launch>
+	<param name="stake_red_description" command="$(find xacro)/xacro.py '$(find stake_description)/urdf/stake_red.xacro'" />
+
+	<param name="stake_green_description" command="$(find xacro)/xacro.py '$(find stake_description)/urdf/stake_green.xacro'" />
+  
+	<node name="spawn_stake_red1" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_red_description -b -urdf -x 1 -y 0.80 -z 0 -model stake_red1" />
+
+	<node name="spawn_stake_red2" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_red_description -b -urdf -x 1 -y -0.80 -z 0 -model stake_red2" />
+
+	<node name="spawn_stake_green1" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.30 -y 0.80 -z 0 -model stake_green1" />
+
+	<node name="spawn_stake_green2" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.30 -y -0.80 -z 0 -model stake_green2" />
+
+	<node name="spawn_stake_green3" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.60 -y 0.80 -z 0 -model stake_green3" />
+
+	<node name="spawn_stake_green4" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.60 -y -0.80 -z 0 -model stake_green4" />
+
+	<node name="spawn_stake_green5" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.90 -y 0.80 -z 0 -model stake_green5" />
+
+	<node name="spawn_stake_green6" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 1.90 -y -0.80 -z 0 -model stake_green6" />
+
+	<node name="spawn_stake_green7" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 2.20 -y 0.80 -z 0 -model stake_green7" />
+
+	<node name="spawn_stake_green8" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_green_description -b -urdf -x 2.20 -y -0.80 -z 0 -model stake_green8" />
+
+	<node name="spawn_stake_red3" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_red_description -b -urdf -x 2.50 -y 0.80 -z 0 -model stake_red3" />
+
+	<node name="spawn_stake_red4" pkg="gazebo_ros" type="spawn_model" output="screen" args="-param stake_red_description -b -urdf -x 2.50 -y -0.80 -z 0 -model stake_red4" />
+</launch>

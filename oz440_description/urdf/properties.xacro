@@ -1,0 +1,83 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- Fichier contenant les differents parametres pouvant etre modifies -->
+<robot name="oz440" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+	<xacro:property name="PI" value="3.1415926535897931"/>
+
+	<!-- Proprietes de la partie basse du robot -->
+	<xacro:property name="chassis_bottom_height" value="0.243"/>
+	<xacro:property name="chassis_bottom_width" value="0.17340"/>
+	<xacro:property name="chassis_bottom_length" value="0.67454"/>
+	<xacro:property name="chassis_bottom_mass" value="30"/>
+
+	<!-- Proprietes de la partie haute du robot -->
+	<xacro:property name="chassis_top_height" value="0.220"/>
+	<xacro:property name="chassis_top_width" value="0.41389"/>
+	<xacro:property name="chassis_top_length" value="0.67454"/>
+	<xacro:property name="chassis_top_mass" value="70"/>
+
+	<!-- Proprietes des roues -->
+	<xacro:property name="wheel_diameter" value="0.292"/>
+	<xacro:property name="wheel_width" value="0.08786"/>
+	<xacro:property name="wheel_transmission_height" value="0.058"/>
+	<xacro:property name="wheel_chassis_bottom_spacing" value="0.03430"/>
+	<xacro:property name="wheels_spacing" value="0.435"/>
+	<xacro:property name="wheel_mass" value="3"/>
+
+	<!-- Proprietes du porte outils -->
+	<xacro:property name="actuator_base_Mass" value="1"/>
+	<xacro:property name="actuator_base_Length" value="0.04"/>
+	<xacro:property name="actuator_base_Width" value="0.2"/>
+	<xacro:property name="actuator_base_Height" value="0.4"/>
+	<xacro:property name="actuator_base_chassis_spacing" value="0.02"/>
+	
+	<xacro:property name="actuator_part1_Mass" value="1"/>
+	<xacro:property name="actuator_part1_Length" value="0.22"/>
+	<xacro:property name="actuator_part1_Width" value="0.22"/>
+	<xacro:property name="actuator_part1_Height" value="0.15"/>
+
+	<xacro:property name="actuator_part2_Mass" value="1"/>
+	<xacro:property name="actuator_part2_Length" value="0.22"/>
+	<xacro:property name="actuator_part2_Width" value="0.4"/>
+	<xacro:property name="actuator_part2_Height" value="0.04"/>
+
+	<!-- Proprietes de la camera -->
+	<xacro:property name="cameraSizeX" value="0.075"/>
+	<xacro:property name="cameraSizeY" value="0.16"/>
+	<xacro:property name="cameraSizeZ" value="0.05"/>
+	<xacro:property name="cameraMass" value="0.5"/>
+	<xacro:property name="cameras_spacing" value="0.1"/>
+	<xacro:property name="camera_inclination" value="20"/> 
+	<xacro:property name="camera_originZ" value="0.34714"/>
+
+	<!-- Proprietes du lidar -->
+	<xacro:property name="lidar_Lenght" value="0.06855"/>
+	<xacro:property name="lidar_Width" value="0.124"/>
+	<xacro:property name="lidar_Height" value="0.106"/>
+	<xacro:property name="lidar_Mass" value="0.5"/>
+	<xacro:property name="lidar_chassis_bottom_spacing" value="0.01472"/>
+
+	<!-- Proprietes de l'IMU -->
+	<xacro:property name="IMU_base_Mass" value="0.5"/>
+	<xacro:property name="IMU_base_Length" value="0.02"/>
+	<xacro:property name="IMU_base_Width" value="0.07"/>
+	<xacro:property name="IMU_base_Height" value="0.1"/>
+
+	<xacro:property name="IMU_Mass" value="0.2"/>
+	<xacro:property name="IMU_Length" value="0.1"/>
+	<xacro:property name="IMU_Width" value="0.1"/>
+	<xacro:property name="IMU_Height" value="0.06"/>
+
+	<!-- Proprietes du bumper -->
+	<xacro:property name="bumper_base_Mass" value="0.3"/>
+	<xacro:property name="bumper_base_Length" value="0.13"/>
+	<xacro:property name="bumper_base_Width" value="0.17340"/>
+	<xacro:property name="bumper_base_Height" value="0.02"/>
+	<xacro:property name="bumper_base_Inclination" value="-40"/>
+
+	<xacro:property name="bumper_Mass" value="0.2"/>
+	<xacro:property name="bumper_Length" value="0.04"/>
+	<xacro:property name="bumper_Width" value="0.41"/>
+	<xacro:property name="bumper_Height" value="0.02"/>
+		
+</robot>

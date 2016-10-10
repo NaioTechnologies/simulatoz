@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Fichier principal de construction du robot -->
+<robot name="oz440" xmlns:xacro="http://www.ros.org/wiki/xacro">
+	<xacro:include filename="$(find oz440_description)/urdf/properties.xacro" />
+    <xacro:include filename="$(find oz440_description)/urdf/oz440.gazebo" />
+    <xacro:include filename="$(find oz440_description)/urdf/materials.xacro" />
+	<xacro:include filename="$(find oz440_description)/urdf/macros.xacro" />
+
+	<!-- link de base, OBLIGATOIRE -->
+	<link name="footprint" />
+
+	<!-- link pour la partie basse du chassis -->
+	<link name="chassis_bottom">
+  		<collision>
+	  		<origin xyz="0 0 0" rpy="0 0 0" />
+	        <geometry>
+	          <box size="${chassis_bottom_length} ${chassis_bottom_width} ${chassis_bottom_height}"/> 
+	        </geometry>
+      	</collision>
+		<visual>
+			<origin xyz="0 0 0" rpy="0 0 0"/> 
+			<geometry> 
+	  			<box size="${chassis_bottom_length} ${chassis_bottom_width} ${chassis_bottom_height}"/> 
+			</geometry> 
+			<material name="white"/>
+		</visual>
+		<inertial> 
+			<origin xyz="0 0 0" rpy="0 0 0"/> 
+			<mass value="${chassis_bottom_mass}"/> 
+			<box_inertia m="${chassis_bottom_mass}" x="${chassis_bottom_length}" y="${chassis_bottom_width}" z="${chassis_bottom_height}"/>
+		</inertial>
+    </link>
+
+    <!-- joint liant footprint a la partie basse du chassis -->
+    <joint name="footprint_to_chassis_bottom_joint" type="fixed">
+		<parent link="footprint"/>
+		<child link="chassis_bottom"/>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
+
+	<!-- link pour la partie haute du chassis -->
+	<link name="chassis_top">
+		<collision>
+			<origin xyz="0 0 0" rpy="0 0 0" />
+			<geometry>
+				<box size="${chassis_top_length} ${chassis_top_width} ${chassis_top_height}"/> 
+			</geometry>
+		</collision>
+
+		<visual> 
+			<origin xyz="0 0 0" rpy="0 0 0"/> 
+			<geometry> 
+				<box size="${chassis_top_length} ${chassis_top_width} ${chassis_top_height}"/> 
+			</geometry> 
+			<material name="white"/>
+		</visual>
+		<inertial> 
+			<origin xyz="0 0 0" rpy="0 0 0"/> 
+			<mass value="${chassis_top_mass}"/> 
+			<box_inertia m="${chassis_top_mass}" x="${chassis_top_length}" y="${chassis_top_width}" z="${chassis_top_height}"/>
+		</inertial>
+	</link>
+
+	<!-- joint liant les deux partie du chassis -->
+	<joint name="chassis_bottom_to_chassis_top" type="fixed">
+		<parent link="chassis_bottom"/>
+		<child link="chassis_top"/>
+		<origin rpy="0 0 0" xyz="0 0 ${chassis_bottom_height/2+chassis_top_height/2}"/>
+	</joint>
+
+	<!-- inclusion du porte outils -->
+    <actuator_macro parent="chassis_bottom"/>
+
+    <!-- inclusion des roues -->
+	<wheel fb="front" lr="right" tX="1" tY="-1"/>
+	<wheel fb="front" lr="left" tX="1" tY="1"/>
+	<wheel fb="back" lr="right" tX="-1" tY="-1"/>
+	<wheel fb="back" lr="left" tX="-1" tY="1"/>
+
+	<!-- inclusion de la camera stereo -->
+	<camera_stereo parent="chassis_bottom"/>
+
+	<!-- inclusion du lidar -->
+	<lidar parent="chassis_bottom"/> 
+
+	<!-- inclusion de l'IMU -->
+	<IMU parent="actuator_base_link"/>
+
+	<!-- inclusion du bumper -->
+	<bumper parent="chassis_top"/>
+</robot>
