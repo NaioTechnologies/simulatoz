@@ -12,24 +12,20 @@
         </plugin>
     </gazebo>
 
-    <!--<gazebo>-->
-        <!--<plugin name="diff_vel_controller" filename="libgazebo_ros_diff_drive.so">-->
-            <!--<robotNamespace>/oz440</robotNamespace>-->
-            <!--<alwaysOn>true</alwaysOn>-->
-            <!--<updateRate>20</updateRate>-->
-            <!--<leftJoint>['front_left_wheel_hinge','back_left_wheel_hinge']</leftJoint>-->
-            <!--<rightJoint>['front_right_wheel_hinge','back_right_wheel_hinge']</rightJoint>-->
-            <!--<wheelSeparation>${chassis_bottom_width+wheel_width+wheel_chassis_bottom_spacing}</wheelSeparation>-->
-            <!--<wheelDiameter>${wheel_diameter}</wheelDiameter>-->
-            <!--<torque>20</torque>-->
-            <!--<legacyMode>false</legacyMode>-->
-            <!--<commandTopic>cmd_vel</commandTopic>-->
-            <!--<odometryTopic>odom</odometryTopic>-->
-            <!--<odometryFrame>odom</odometryFrame>-->
-            <!--<publishWheelJointState>true</publishWheelJointState>-->
-            <!--<robotBaseFrame>footprint</robotBaseFrame>-->
-        <!--</plugin>-->
-    <!--</gazebo>-->
+    <gazebo>
+        <plugin name="side_drive_controller" filename="libgazebo_ros_side_drive.so">
+            <robotNamespace>/oz440</robotNamespace>
+            <leftFrontJoint>front_left_wheel_hinge</leftFrontJoint>
+            <leftRearJoint>back_left_wheel_hinge</leftRearJoint>
+            <rightFrontJoint>front_right_wheel_hinge</rightFrontJoint>
+            <rightRearJoint>back_right_wheel_hinge</rightRearJoint>
+            <wheelSeparation>${chassis_bottom_width+wheel_width+wheel_chassis_bottom_spacing}</wheelSeparation>
+            <wheelDiameter>${wheel_diameter}</wheelDiameter>
+            <torque>20</torque>
+            <commandTopic>/oz440/cmd_vel</commandTopic>
+            <updateRate>20</updateRate>
+        </plugin>
+    </gazebo>
 
     <!-- attribution de la couleur pour le porte outils -->
     <gazebo reference="actuator">
@@ -45,25 +41,6 @@
     <gazebo reference="bumper_link">
         <material>Gazebo/Black</material>
     </gazebo>
-
-    <gazebo>
-    <plugin name="skid_steer_drive_controller" filename="libgazebo_ros_skid_steer_drive.so">
-    <alwaysOn>true</alwaysOn>
-    <updateRate>20</updateRate>
-    <leftFrontJoint>front_left_wheel_hinge</leftFrontJoint>
-    <rightFrontJoint>front_right_wheel_hinge</rightFrontJoint>
-    <leftRearJoint>back_left_wheel_hinge</leftRearJoint>
-    <rightRearJoint>back_right_wheel_hinge</rightRearJoint>
-    <wheelSeparation>${chassis_bottom_width+wheel_width+wheel_chassis_bottom_spacing}</wheelSeparation>
-    <wheelDiameter>${wheel_diameter}</wheelDiameter>
-    <torque>35</torque>
-    <broadcastTF>true</broadcastTF>
-    <topicName>oz440/cmd_vel</topicName>
-    <robotBaseFrame>footprint</robotBaseFrame>
-    </plugin>
-    </gazebo>
-
-
 
     <!-- plugin pour la camera stereo -->
     <gazebo reference="camera_stereo_link">

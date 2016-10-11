@@ -65,10 +65,7 @@ private:
     std::vector< BaseNaio01PacketPtr > packet_to_send_list_;
 
     // ROS PART
-    ros::Publisher back_left_velocity_pub_;
-    ros::Publisher back_right_velocity_pub_;
-    ros::Publisher front_left_velocity_pub_;
-    ros::Publisher front_right_velocity_pub_;
+    ros::Publisher velocity_pub_;
 };
 
 #endif //CORE_HPP

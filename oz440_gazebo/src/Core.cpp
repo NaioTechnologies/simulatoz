@@ -61,10 +61,7 @@ void Core::run( )
 {
     ros::NodeHandle n;
 
-    back_left_velocity_pub_ = n.advertise<std_msgs::Float64>( "/oz440/back_left_wheel_velocity_controller/command", 10 );
-    back_right_velocity_pub_ = n.advertise<std_msgs::Float64>( "/oz440/back_right_wheel_velocity_controller/command", 10 );
-    front_left_velocity_pub_ = n.advertise<std_msgs::Float64>( "/oz440/front_left_wheel_velocity_controller/command", 10 );
-    front_right_velocity_pub_ = n.advertise<std_msgs::Float64>( "/oz440/front_right_wheel_velocity_controller/command", 10 );
+    velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
 
     //ros::Rate loop_rate(10);
 
@@ -174,16 +171,12 @@ void Core::client_read_thread_function( )
                         double leftspeed = static_cast<double>(motorsPacketPtr->left);
                         ROS_INFO("ApiMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
 
-                        std_msgs::Float64 data_left;
-                        std_msgs::Float64 data_right;
+                        geometry_msgs::Vector3 command ;
 
-                        data_left.data = ( ( leftspeed / 127.0 ) * 3.4 );
-                        data_right.data = ( ( rightspeed / 127.0) * 3.4 );
+                        command.x = ( ( leftspeed / 127.0 ) * 3.4 );
+                        command.y = ( ( rightspeed / 127.0) * 3.4 );
 
-                        back_left_velocity_pub_.publish( data_left );
-                        front_left_velocity_pub_.publish( data_left );
-                        back_right_velocity_pub_.publish( data_right );
-                        front_right_velocity_pub_.publish( data_right );
+                        velocity_pub_.publish( command );
                     }
                 }
 

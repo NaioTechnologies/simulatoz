@@ -69,7 +69,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="${fb}_${lr}_wheel"/>
       <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
       <axis xyz="0 1 0" rpy="0 0 0" />
-      <limit effort="50" velocity="3.4"/>
+      <limit effort="22" velocity="3.4"/>
       <joint_properties damping="0.0" friction="0.0"/>
     </joint>
 
