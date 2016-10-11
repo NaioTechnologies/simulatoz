@@ -55,10 +55,10 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="${fb}_${lr}_wheel">
-      <mu1 value="0.2"/>
-      <mu2 value="0.2"/>
+      <mu1 value="0.75"/>
+      <mu2 value="0.8"/>
       <kp  value="10000000.0" />
-      <kd  value="10.0" />
+      <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material>Gazebo/Black</material>
     </gazebo>
@@ -69,7 +69,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="${fb}_${lr}_wheel"/>
       <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
       <axis xyz="0 1 0" rpy="0 0 0" />
-      <limit effort="22" velocity="3.4"/>
+      <limit effort="100" velocity="100"/>
       <joint_properties damping="0.0" friction="0.0"/>
     </joint>
 
