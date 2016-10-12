@@ -357,13 +357,21 @@ void Core::send_odo_packet() {
     uint8_t bl = 0;
     uint8_t fl = 0;
 
-    double pitch_bl, pitch_last_tic_bl = 0;
+    std::this_thread::sleep_for(1s);
+
+    // Initialisation
+    double pitch_bl = getPitch("/back_left_wheel");
+    double pitch_fl = getPitch("/front_left_wheel");
+    double pitch_br = getPitch("/back_right_wheel");
+    double pitch_fr = getPitch("/front_right_wheel");
+
+    double pitch_last_tic_bl = pitch_bl;
     int forward_backward_bl = 0;
-    double pitch_fl, pitch_last_tic_fl = 0;
+    double pitch_last_tic_fl = pitch_fl;
     int forward_backward_fl = 0;
-    double pitch_fr, pitch_last_tic_fr = 0;
+    double pitch_last_tic_fr = pitch_fr;
     int forward_backward_fr = 0;
-    double pitch_br, pitch_last_tic_br = 0;
+    double pitch_last_tic_br = pitch_br;
     int forward_backward_br = 0;
 
     while (ros::ok())
@@ -372,7 +380,7 @@ void Core::send_odo_packet() {
 
         while (not tic and ros::ok())
         {
-            std::this_thread::sleep_for(20ms);
+            std::this_thread::sleep_for(10ms);
 
             pitch_bl = getPitch("/back_left_wheel");
             pitch_fl = getPitch("/front_left_wheel");
@@ -436,9 +444,9 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     double angle_tic = 6.465/14.6;
    bool tic = false;
 
-    if (forward_backward == 0 and pitch - pitch_last_tic > 0) {
+    if (forward_backward == 0 and pitch - pitch_last_tic > 0.001) {
         forward_backward = 1;
-    } else if (forward_backward == 0 and pitch - pitch_last_tic < 0) {
+    } else if (forward_backward == 0 and pitch - pitch_last_tic < -0.001) {
         forward_backward = -1;
     }
 

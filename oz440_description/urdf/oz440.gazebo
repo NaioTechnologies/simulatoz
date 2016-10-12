@@ -21,7 +21,7 @@
             <rightRearJoint>back_right_wheel_hinge</rightRearJoint>
             <wheelSeparation>${chassis_bottom_width+wheel_width+wheel_chassis_bottom_spacing}</wheelSeparation>
             <wheelDiameter>${wheel_diameter}</wheelDiameter>
-            <torque>100</torque>
+            <torque>200</torque>
             <commandTopic>/oz440/cmd_vel</commandTopic>
             <updateRate>20</updateRate>
         </plugin>
