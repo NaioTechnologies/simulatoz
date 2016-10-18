@@ -1,29 +1,29 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Ce fichier contient toutes les macros utilises pour la creation du robot
-Les proprietes sont modifiables dans le fichiers properties.xacro -->                                                                                                                            
+Les proprietes sont modifiables dans le fichiers properties.xacro -->
 <robot name="oz440" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
   <!-- macro pour calculer l'inertie d'un cylindre -->
   <xacro:macro name="cylinder_inertia" params="m r h">
     <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
-      iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
-      izz="${m*r*r/2}"
+              iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
+              izz="${m*r*r/2}"
     />
   </xacro:macro>
 
   <!-- macro pour calculer l'inertie d'un pave -->
   <xacro:macro name="box_inertia" params="m x y z">
     <inertia  ixx="${m*(y*y+z*z)/12}" ixy = "0" ixz = "0"
-      iyy="${m*(x*x+z*z)/12}" iyz = "0"
-      izz="${m*(x*x+z*z)/12}"
+              iyy="${m*(x*x+z*z)/12}" iyz = "0"
+              izz="${m*(x*x+z*z)/12}"
     />
   </xacro:macro>
 
   <!-- macro pour calculer l'inertie d'une sphere -->
   <xacro:macro name="sphere_inertia" params="m r">
     <inertia  ixx="${2*m*r*r/5}" ixy = "0" ixz = "0"
-      iyy="${2*m*r*r/5}" iyz = "0"
-      izz="${2*m*r*r/5}"
+              iyy="${2*m*r*r/5}" iyz = "0"
+              izz="${2*m*r*r/5}"
     />
   </xacro:macro>
 
@@ -35,19 +35,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
         <geometry>
           <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
+          <!--<mesh filename="/home/fanny/.gazebo/models/Wheel/roue.dae "/>-->
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
         <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="/home/fanny/.gazebo/models/Wheel/roue.dae "/>
         </geometry>
         <material name="black"/>
       </visual>
 
       <inertial>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
         <mass value="${wheel_mass}"/>
         <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
       </inertial>
@@ -55,9 +57,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="${fb}_${lr}_wheel">
-      <mu1 value="0.9"/>
-      <mu2 value="0.9"/>
-      <kp  value="5000000.0" />
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material>Gazebo/Black</material>
@@ -92,15 +94,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
     <link name="actuator_base_link">
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${actuator_base_Mass}" x="${actuator_base_Length}" y="${actuator_base_Width}" z="${actuator_base_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${actuator_base_Mass}" x="${actuator_base_Length}" y="${actuator_base_Width}" z="${actuator_base_Height}"/>
       </inertial>
       <collision name="collision_actuator">
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <geometry>
-            <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
-          </geometry>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
+        </geometry>
       </collision>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -108,20 +110,20 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
           <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
         </geometry>
         <material name="green"/>
-      </visual> 
+      </visual>
     </link>
 
     <link name="actuator_part1_link">
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${actuator_part1_Mass}" x="${actuator_part1_Length}" y="${actuator_part1_Width}" z="${actuator_part1_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${actuator_part1_Mass}" x="${actuator_part1_Length}" y="${actuator_part1_Width}" z="${actuator_part1_Height}"/>
       </inertial>
       <collision name="collision_actuator">
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <geometry>
-            <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
-          </geometry>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
+        </geometry>
       </collision>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -129,20 +131,20 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
           <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
         </geometry>
         <material name="green"/>
-      </visual> 
+      </visual>
     </link>
 
     <link name="actuator_part2_link">
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
       </inertial>
       <collision name="collision_actuator">
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <geometry>
-            <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-          </geometry>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+        </geometry>
       </collision>
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -150,7 +152,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
           <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
         </geometry>
         <material name="green"/>
-      </visual> 
+      </visual>
     </link>
 
 
@@ -165,7 +167,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="actuator_part1_link"/>
       <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
       <axis rpy="0 0 0" xyz="0 0 -1"/>
-      <limit upper="0.0" lower=".15" effort="1" velocity=".1"/>
+      <limit upper="0.15" lower="0.15" effort="1" velocity="0.1"/>
     </joint>
 
     <joint name="actuator_part1_to_actuator_part2_joint" type="fixed">
@@ -226,9 +228,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${lidar_Mass}" x="${lidar_Lenght}" y="${lidar_Width}" z="${lidar_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${lidar_Mass}" x="${lidar_Lenght}" y="${lidar_Width}" z="${lidar_Height}"/>
       </inertial>
     </link>
 
@@ -258,9 +260,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${IMU_base_Mass}" x="${IMU_base_Length}" y="${IMU_base_Width}" z="${IMU_base_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${IMU_base_Mass}" x="${IMU_base_Length}" y="${IMU_base_Width}" z="${IMU_base_Height}"/>
       </inertial>
     </link>
 
@@ -280,9 +282,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${IMU_Mass}" x="${IMU_Length}" y="${IMU_Width}" z="${IMU_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${IMU_Mass}" x="${IMU_Length}" y="${IMU_Width}" z="${IMU_Height}"/>
       </inertial>
     </link>
 
@@ -318,9 +320,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${bumper_base_Mass}" x="${bumper_base_Length}" y="${bumper_base_Width}" z="${bumper_base_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${bumper_base_Mass}" x="${bumper_base_Length}" y="${bumper_base_Width}" z="${bumper_base_Height}"/>
       </inertial>
     </link>
 
@@ -340,9 +342,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-          <mass value="1"/>
-          <origin xyz="0 0 0" rpy="0 0 0"/>
-          <box_inertia m="${bumper_Mass}" x="${bumper_Length}" y="${bumper_Width}" z="${bumper_Height}"/>
+        <mass value="1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${bumper_Mass}" x="${bumper_Length}" y="${bumper_Width}" z="${bumper_Height}"/>
       </inertial>
     </link>
 

@@ -20,7 +20,7 @@
 
 #include <vector>
 
-#define IMAGE_SIZE 270720
+#define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
 
 // *********************************************************************************************************************
@@ -182,7 +182,7 @@ void Core::client_read_thread_function( )
 
                 received_packet_list.clear();
             }
-            std::this_thread::sleep_for(20ms);
+            std::this_thread::sleep_for(10ms);
             ros::spinOnce();
         }
     }
@@ -258,7 +258,7 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
           (*dataBuffer)[ i + IMAGE_SIZE ] = image_right->data[ i ];
       }
 
-     ApiStereoCameraPacketPtr stereoCameraPacketPtr = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RECTIFIED_COLORIZED_IMAGES, std::move( dataBuffer ) );
+     ApiStereoCameraPacketPtr stereoCameraPacketPtr = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
 
      packet_to_send_list_access_.lock();
 
@@ -280,9 +280,9 @@ void Core::send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg)
 {
     try {
 
-        int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 / 9.8);
-        int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 / 9.8);
-        int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 / 9.8);
+        int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+        int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+        int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
 
         HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
 
