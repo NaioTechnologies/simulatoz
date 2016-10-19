@@ -47,6 +47,8 @@ private:
     // thread function
     void client_read_thread_function( );
 
+    void disconnected();
+
 private:
     std::shared_ptr<tf::TransformListener> listener_ptr_;
 
@@ -58,8 +60,15 @@ private:
 //    std::shared_ptr< ServerSocket > server_socket_ptr_;
 //    std::shared_ptr< ServerSocket > accepted_socket_ptr_;
 
-    ServerSocket *server_socket_ptr_;
-    ServerSocket *accepted_socket_ptr_;
+    std::mutex socket_access_;
+    int server_socket_desc_;
+    int client_socket_desc_;
+    bool client_socket_connected_;
+    uint64_t last_socket_activity_time_;
+
+
+//    ServerSocket *server_socket_ptr_;
+//    ServerSocket *accepted_socket_ptr_;
 
     std::mutex packet_to_send_list_access_;
     std::vector< BaseNaio01PacketPtr > packet_to_send_list_;

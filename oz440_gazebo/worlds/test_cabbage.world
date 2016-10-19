@@ -59,7 +59,7 @@
                     <uri>model://Cabbage</uri>
                 </include>
             </model>
-            <pose>3.2 -0.35 -0.1 0 0 0</pose>
+            <pose>3.2 -0.35 0 0 0 0</pose>
             <box>
                 <size>4 0.1 0.01</size>
             </box>
@@ -76,7 +76,7 @@
                     <uri>model://Cabbage</uri>
                 </include>
             </model>
-            <pose>3.2 0.35 -0.1 0 0 0</pose>
+            <pose>3.2 0.35 0 0 0 0</pose>
             <box>
                 <size>4 0.1 0.01</size>
             </box>
@@ -93,7 +93,7 @@
                     <uri>model://Cabbage</uri>
                 </include>
             </model>
-            <pose>3.2 -1.05 -0.1 0 0 0</pose>
+            <pose>3.2 -1.05 0 0 0 0</pose>
             <box>
                 <size>4 0.1 0.01</size>
             </box>
@@ -110,7 +110,7 @@
                     <uri>model://Cabbage</uri>
                 </include>
             </model>
-            <pose>3.2 -1.75 -0.1 0 0 0</pose>
+            <pose>3.2 -1.75 0 0 0 0</pose>
             <box>
                 <size>4 0.1 0.01</size>
             </box>

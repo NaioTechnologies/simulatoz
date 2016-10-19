@@ -18,7 +18,8 @@ include_directories(include ${CATKIN_INCLUDE_DIRS})
 set(MY_LIB_SOURCES
    src/Socket.cpp
    src/ServerSocket.cpp  
-   src/ClientSocket.cpp)
+   src/ClientSocket.cpp
+        ../oz440_gazebo/src/DriverSocket.cpp)
    
 add_library(${PROJECT_NAME} ${MY_LIB_SOURCES})
 

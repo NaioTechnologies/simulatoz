@@ -15,7 +15,7 @@ ServerSocket::ServerSocket ( int port )
     {
       throw SocketException ( "Could not bind to port." );
     }
-    
+
   if ( ! Socket::listen() )
     {
       throw SocketException ( "Could not listen to socket." );

@@ -1,4 +1,6 @@
 #include "Core.hpp"
+#include "DriverSocket.hpp"
+#include <chrono>
 
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
@@ -22,6 +24,8 @@
 
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
+
+using namespace std::chrono;
 
 // *********************************************************************************************************************
 
@@ -47,6 +51,8 @@ Core::Core( int argc, char **argv )
     stop_client_read_thread_asked_ = false;
 
     client_read_thread_started_ = false;
+
+    client_socket_connected_ = false;
 }
 
 // *********************************************************************************************************************
@@ -59,6 +65,10 @@ Core::~Core( )
 
 void Core::run( )
 {
+    using namespace std::chrono_literals;
+
+    //signal( SIGPIPE, SIG_IGN );
+
     ros::NodeHandle n;
 
     velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
@@ -86,34 +96,83 @@ void Core::run( )
     // initialize server naio
     int naio01_server_port = 5555;
 
-    server_socket_ptr_ = new ServerSocket( naio01_server_port );
-    accepted_socket_ptr_ = new ServerSocket( );
-
-    server_socket_ptr_->accept( *accepted_socket_ptr_ );
-
-    ROS_INFO( "Connexion Socket");
-
     // creates main thread
     client_read_thread_ = std::thread( &Core::client_read_thread_function, this );
 
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
 
-    // send packets
-    while ( ros::ok() )
+    server_socket_desc_ = DriverSocket::openSocketServer( naio01_server_port );
+
+    client_socket_connected_ = false;
+
+    while (ros :: ok())
     {
+        if( not client_socket_connected_ and server_socket_desc_ > 0 )
+        {
+            socket_access_.lock();
+
+            client_socket_desc_ = DriverSocket::waitConnect(server_socket_desc_);
+
+            socket_access_.unlock();
+
+            if (client_socket_desc_ > 0)
+            {
+                client_socket_connected_ = true;
+
+                milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
+            }
+        }
+
+        if( client_socket_connected_ )
+        {
+            milliseconds now_ms = duration_cast< milliseconds >( system_clock::now().time_since_epoch() );
+            int64_t now = static_cast<int64_t>( now_ms.count() );
+
+            if( now - last_socket_activity_time_ > 1000 )
+            {
+                disconnected();
+            }
+        }
+
+        ROS_INFO( "Connexion Socket");
+
         packet_to_send_list_access_.lock();
 
         for( BaseNaio01PacketPtr packet : packet_to_send_list_ )
         {
             cl::BufferUPtr buffer = packet->encode();
-            accepted_socket_ptr_->sendToSock( buffer->data(), buffer->size() );
+
+            socket_access_.lock();
+
+            int write_size = (int) write(client_socket_desc_, buffer->data(), buffer->size());
+
+            socket_access_.unlock();
         }
 
         packet_to_send_list_.clear();
 
         packet_to_send_list_access_.unlock();
+
+        std::this_thread::sleep_for(10ms);
     }
+
+    close( server_socket_desc_ );
+}
+
+// *********************************************************************************************************************
+void Core::disconnected()
+{
+    close( client_socket_desc_ );
+
+    client_socket_connected_ = false;
+
+    packet_to_send_list_access_.lock();
+
+    packet_to_send_list_.clear();
+
+    packet_to_send_list_access_.unlock();
 }
 
 // *********************************************************************************************************************
@@ -122,7 +181,6 @@ void Core::client_read_thread_function( )
 {
     using namespace std::chrono_literals;
 
-    int size;
     uint8_t received_buffer[ 4096 ];
     bool packet_header_detected = false;
     bool at_least_one_packet_decoded = false;
@@ -137,58 +195,70 @@ void Core::client_read_thread_function( )
         while ( !stop_client_read_thread_asked_ and ros::ok() )
         {
             ROS_INFO("Loop start");
-            size = accepted_socket_ptr_->recvFromSock( received_buffer );
 
-            if (size > 0)
+            if( client_socket_connected_ == true )
             {
-                // Try to decode the received data
-                at_least_one_packet_decoded = naio_01_codec.decode( received_buffer, size, packet_header_detected );
+                socket_access_.lock();
 
-                ROS_INFO("at least one packet decoded");
+                ssize_t size  = read( client_socket_desc_, received_buffer, 4096 );
 
-                naio_01_codec.reset();
-            }
+                socket_access_.unlock();
 
-            if ( at_least_one_packet_decoded )
-            {
-                // If successfull decoding emplace packets in the received buffer
-                for ( uint i = 0; i < naio_01_codec.currentBasePacketList.size() ; i++ )
+                if (size > 0)
                 {
-                    received_packet_list.emplace_back( naio_01_codec.currentBasePacketList[i] );
+                    milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                    last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
+
+                    at_least_one_packet_decoded = naio_01_codec.decode(received_buffer, size, packet_header_detected);
+
+                    ROS_INFO("at least one packet decoded");
+
+                    //naio_01_codec.reset();
                 }
 
-                naio_01_codec.currentBasePacketList.clear();
-
-                for ( uint i = 0; i < received_packet_list.size(); i++ ) // For every packet decoded
+                if ( at_least_one_packet_decoded )
                 {
-                    BaseNaio01PacketPtr basePacketPtr = received_packet_list.at( i );
-
-                    if ( std::dynamic_pointer_cast<HaMotorsPacket>( basePacketPtr ) )
+                    // If successfull decoding emplace packets in the received buffer
+                    for (uint i = 0; i < naio_01_codec.currentBasePacketList.size(); i++)
                     {
-                        //  When receiving a motor order
-                        HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(basePacketPtr);
-                        double rightspeed = static_cast<double>(motorsPacketPtr->right);
-                        double leftspeed = static_cast<double>(motorsPacketPtr->left);
-                        ROS_INFO("ApiMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
-
-                        geometry_msgs::Vector3 command ;
-
-                        command.x = ( ( leftspeed / 127.0 ) * 3.4 );
-                        command.y = ( ( rightspeed / 127.0) * 3.4 );
-
-                        velocity_pub_.publish( command );
+                        received_packet_list.emplace_back(naio_01_codec.currentBasePacketList[i]);
                     }
-                }
 
-                received_packet_list.clear();
+                    naio_01_codec.currentBasePacketList.clear();
+
+                    for (uint i = 0; i < received_packet_list.size(); i++) // For every packet decoded
+                    {
+                        BaseNaio01PacketPtr basePacketPtr = received_packet_list.at(i);
+
+                        if (std::dynamic_pointer_cast<HaMotorsPacket>(basePacketPtr)) {
+                            //  When receiving a motor order
+                            HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(
+                                    basePacketPtr);
+                            double rightspeed = static_cast<double>(motorsPacketPtr->right);
+                            double leftspeed = static_cast<double>(motorsPacketPtr->left);
+                            ROS_INFO("ApiMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
+
+                            geometry_msgs::Vector3 command;
+
+                            command.x = ((leftspeed / 127.0) * 3.4);
+                            command.y = ((rightspeed / 127.0) * 3.4);
+
+                            velocity_pub_.publish(command);
+                        }
+                    }
+
+                    received_packet_list.clear();
+                }
             }
+
             std::this_thread::sleep_for(10ms);
+
             ros::spinOnce();
         }
     }
     catch (SocketException& e )
     {
-        ROS_ERROR( "client_read_thread_function exception was caught : %s", e.description().c_str() );
+        ROS_INFO( "B client_read_thread_function exception was caught : %s", e.description().c_str() );
     }
 
     stop_client_read_thread_asked_ = false;
@@ -248,30 +318,30 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
 
 void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right)
 {
-  try
-  {
-      cl::BufferUPtr dataBuffer = cl::unique_buffer( static_cast<size_t>( 2*IMAGE_SIZE ) );
+    try
+    {
+        cl::BufferUPtr dataBuffer = cl::unique_buffer( static_cast<size_t>( 2*IMAGE_SIZE ) );
 
-      for ( int i = 0 ; i < IMAGE_SIZE ; i++ )
-      {
-          (*dataBuffer)[ i ] = image_left->data[ i ];
-          (*dataBuffer)[ i + IMAGE_SIZE ] = image_right->data[ i ];
-      }
+        for ( int i = 0 ; i < IMAGE_SIZE ; i++ )
+        {
+            (*dataBuffer)[ i ] = image_left->data[ i ];
+            (*dataBuffer)[ i + IMAGE_SIZE ] = image_right->data[ i ];
+        }
 
-     ApiStereoCameraPacketPtr stereoCameraPacketPtr = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
+        ApiStereoCameraPacketPtr stereoCameraPacketPtr = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
 
-     packet_to_send_list_access_.lock();
+        packet_to_send_list_access_.lock();
 
-      packet_to_send_list_.push_back( stereoCameraPacketPtr );
+        packet_to_send_list_.push_back( stereoCameraPacketPtr );
 
-      packet_to_send_list_access_.unlock();
+        packet_to_send_list_access_.unlock();
 
-      ROS_INFO("Stereo camera packet enqueued");
-  }
-  catch (SocketException& e )
-  {
-    ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
-  }
+        ROS_INFO("Stereo camera packet enqueued");
+    }
+    catch (SocketException& e )
+    {
+        ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
+    }
 }
 
 // *********************************************************************************************************************
@@ -442,7 +512,7 @@ double Core::getPitch( std::string wheel ){
 bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic, int& forward_backward)
 {
     double angle_tic = 6.465/14.6;
-   bool tic = false;
+    bool tic = false;
 
     if (forward_backward == 0 and pitch - pitch_last_tic > 0.001) {
         forward_backward = 1;
