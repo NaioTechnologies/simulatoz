@@ -35,15 +35,13 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
         <geometry>
           <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
-          <!--<mesh filename="/home/fanny/.gazebo/models/Wheel/roue.dae "/>-->
         </geometry>
       </collision>
 
       <visual>
         <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
         <geometry>
-          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
-          <mesh filename="/home/fanny/.gazebo/models/Wheel/roue.dae "/>
+          <mesh filename="model:///Wheel/roue.dae "/>
         </geometry>
         <material name="black"/>
       </visual>

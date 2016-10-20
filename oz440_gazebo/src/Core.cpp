@@ -48,8 +48,6 @@ Core::Core( int argc, char **argv )
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
 
-    stop_client_read_thread_asked_ = false;
-
     client_read_thread_started_ = false;
 
     client_socket_connected_ = false;
@@ -120,6 +118,8 @@ void Core::run( )
             {
                 client_socket_connected_ = true;
 
+                ROS_INFO( "Connexion Socket");
+
                 milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
             }
@@ -135,8 +135,6 @@ void Core::run( )
                 disconnected();
             }
         }
-
-        ROS_INFO( "Connexion Socket");
 
         packet_to_send_list_access_.lock();
 
@@ -192,7 +190,7 @@ void Core::client_read_thread_function( )
 
     try
     {
-        while ( !stop_client_read_thread_asked_ and ros::ok() )
+        while ( ros::ok() )
         {
             ROS_INFO("Loop start");
 
@@ -211,7 +209,7 @@ void Core::client_read_thread_function( )
 
                     at_least_one_packet_decoded = naio_01_codec.decode(received_buffer, size, packet_header_detected);
 
-                    ROS_INFO("at least one packet decoded");
+                    ROS_INFO("At least one packet decoded");
 
                     //naio_01_codec.reset();
                 }
@@ -230,12 +228,14 @@ void Core::client_read_thread_function( )
                     {
                         BaseNaio01PacketPtr basePacketPtr = received_packet_list.at(i);
 
-                        if (std::dynamic_pointer_cast<HaMotorsPacket>(basePacketPtr)) {
+                        if (std::dynamic_pointer_cast<HaMotorsPacket>(basePacketPtr))
+                        {
                             //  When receiving a motor order
-                            HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(
-                                    basePacketPtr);
+                            HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(basePacketPtr);
+
                             double rightspeed = static_cast<double>(motorsPacketPtr->right);
                             double leftspeed = static_cast<double>(motorsPacketPtr->left);
+
                             ROS_INFO("ApiMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
 
                             geometry_msgs::Vector3 command;
@@ -246,11 +246,9 @@ void Core::client_read_thread_function( )
                             velocity_pub_.publish(command);
                         }
                     }
-
                     received_packet_list.clear();
                 }
             }
-
             std::this_thread::sleep_for(10ms);
 
             ros::spinOnce();
@@ -258,10 +256,8 @@ void Core::client_read_thread_function( )
     }
     catch (SocketException& e )
     {
-        ROS_INFO( "B client_read_thread_function exception was caught : %s", e.description().c_str() );
+        ROS_INFO( "Client_read_thread_function exception was caught : %s", e.description().c_str() );
     }
-
-    stop_client_read_thread_asked_ = false;
 
     client_read_thread_started_ = false;
 }
@@ -427,51 +423,53 @@ void Core::send_odo_packet() {
     uint8_t bl = 0;
     uint8_t fl = 0;
 
-    std::this_thread::sleep_for(1s);
+    while (ros::ok()) {
 
-    // Initialisation
-    double pitch_bl = getPitch("/back_left_wheel");
-    double pitch_fl = getPitch("/front_left_wheel");
-    double pitch_br = getPitch("/back_right_wheel");
-    double pitch_fr = getPitch("/front_right_wheel");
+        if (client_socket_connected_) {
 
-    double pitch_last_tic_bl = pitch_bl;
-    int forward_backward_bl = 0;
-    double pitch_last_tic_fl = pitch_fl;
-    int forward_backward_fl = 0;
-    double pitch_last_tic_fr = pitch_fr;
-    int forward_backward_fr = 0;
-    double pitch_last_tic_br = pitch_br;
-    int forward_backward_br = 0;
+            // Initialisation
+            double pitch_bl = getPitch("/back_left_wheel");
+            double pitch_fl = getPitch("/front_left_wheel");
+            double pitch_br = getPitch("/back_right_wheel");
+            double pitch_fr = getPitch("/front_right_wheel");
 
-    while (ros::ok())
-    {
-        bool tic = false;
+            double pitch_last_tic_bl = pitch_bl;
+            int forward_backward_bl = 0;
+            double pitch_last_tic_fl = pitch_fl;
+            int forward_backward_fl = 0;
+            double pitch_last_tic_fr = pitch_fr;
+            int forward_backward_fr = 0;
+            double pitch_last_tic_br = pitch_br;
+            int forward_backward_br = 0;
 
-        while (not tic and ros::ok())
-        {
-            std::this_thread::sleep_for(10ms);
+            while (ros::ok()) {
+                bool tic = false;
 
-            pitch_bl = getPitch("/back_left_wheel");
-            pitch_fl = getPitch("/front_left_wheel");
-            pitch_br = getPitch("/back_right_wheel");
-            pitch_fr = getPitch("/front_right_wheel");
+                while (not tic and ros::ok()) {
+                    std::this_thread::sleep_for(10ms);
 
-            tic = odo_wheel(bl, pitch_bl, pitch_last_tic_bl, forward_backward_bl);
-            tic = odo_wheel(fl, pitch_fl, pitch_last_tic_fl, forward_backward_fl) or tic;
-            tic = odo_wheel(br, pitch_br, pitch_last_tic_br, forward_backward_br) or tic;
-            tic = odo_wheel(fr, pitch_fr, pitch_last_tic_fr, forward_backward_fr) or tic;
+                    pitch_bl = getPitch("/back_left_wheel");
+                    pitch_fl = getPitch("/front_left_wheel");
+                    pitch_br = getPitch("/back_right_wheel");
+                    pitch_fr = getPitch("/front_right_wheel");
+
+                    tic = odo_wheel(bl, pitch_bl, pitch_last_tic_bl, forward_backward_bl);
+                    tic = odo_wheel(fl, pitch_fl, pitch_last_tic_fl, forward_backward_fl) or tic;
+                    tic = odo_wheel(br, pitch_br, pitch_last_tic_br, forward_backward_br) or tic;
+                    tic = odo_wheel(fr, pitch_fr, pitch_last_tic_fr, forward_backward_fr) or tic;
+                }
+
+                HaOdoPacketPtr odoPacketPtr = std::make_shared<HaOdoPacket>(fr, br, bl, fl);
+
+                packet_to_send_list_access_.lock();
+
+                packet_to_send_list_.push_back(odoPacketPtr);
+
+                packet_to_send_list_access_.unlock();
+
+                ROS_INFO("Odo Status packet enqueued");
+            }
         }
-
-        HaOdoPacketPtr odoPacketPtr = std::make_shared<HaOdoPacket>(fr, br, bl, fl);
-
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back(odoPacketPtr);
-
-        packet_to_send_list_access_.unlock();
-
-        ROS_INFO("Odo Status packet enqueued");
     }
 }
 

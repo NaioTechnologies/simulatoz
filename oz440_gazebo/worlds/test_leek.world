@@ -25,11 +25,11 @@
                     <uri>model://Red_stick_2</uri>
                 </include>
             </model>
-            <pose>1 -0.7 0.1 0 0 0</pose>
+            <pose>1 -0.35 0.1 0 0 0</pose>
             <box>
-                <size>0.1 3.5 0.01</size>
+                <size>0.1 2.8 0.01</size>
             </box>
-            <model_count>5</model_count>
+            <model_count>4</model_count>
             <distribution>
                 <type>linear-y</type>
             </distribution>
@@ -42,11 +42,11 @@
                     <uri>model://Red_stick_2</uri>
                 </include>
             </model>
-            <pose>5.1 -0.7 0.1 0 0 0</pose>
+            <pose>5.1 -0.35 0.1 0 0 0</pose>
             <box>
-                <size>0.1 3.5 0.01</size>
+                <size>0.1 2.8 0.01</size>
             </box>
-            <model_count>5</model_count>
+            <model_count>4</model_count>
             <distribution>
                 <type>linear-y</type>
             </distribution>
@@ -120,23 +120,6 @@
             </distribution>
         </population>
 
-        <population name="poireaux4">
-            <model name="Leek">
-                <include>
-                    <static>0</static>
-                    <uri>model://Leek_2</uri>
-                </include>
-            </model>
-            <pose>3.2 -2.45 0.2 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>13</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
-
         <population name="Rocks">
             <model name="Rock">
                 <include>
@@ -188,23 +171,6 @@
             </distribution>
         </population>
 
-        <population name="Rocks4">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 -2.1 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
-
         <population name="Grass">
             <model name="Grass">
                 <include>
@@ -212,100 +178,15 @@
                     <uri>model://Grass</uri>
                 </include>
             </model>
-            <pose>3.2 -1.05 -0.02 0 0 0</pose>
+            <pose>3.2 -0.7 -0.02 0 0 0</pose>
             <box>
-                <size>5 3 0.05</size>
+                <size>5 2.3 0.05</size>
             </box>
-            <model_count>120</model_count>
+            <model_count>90</model_count>
             <distribution>
                 <type>random</type>
             </distribution>
         </population>
-
-        <!--<population name="Grass">-->
-            <!--<model name="Grass">-->
-                <!--<include>-->
-                    <!--<static>1</static>-->
-                    <!--<uri>model://Grass</uri>-->
-                <!--</include>-->
-            <!--</model>-->
-            <!--<pose>3.2 0.35 -0.02 0 0 0</pose>-->
-            <!--<box>-->
-                <!--<size>4 0.1 0.06</size>-->
-            <!--</box>-->
-            <!--<model_count>20</model_count>-->
-            <!--<distribution>-->
-                <!--<type>random</type>-->
-            <!--</distribution>-->
-        <!--</population>-->
-
-        <!--<population name="Grass2">-->
-            <!--<model name="Grass">-->
-                <!--<include>-->
-                    <!--<static>1</static>-->
-                    <!--<uri>model://Grass</uri>-->
-                <!--</include>-->
-            <!--</model>-->
-            <!--<pose>3.2 -0.35 -0.02 0 0 0</pose>-->
-            <!--<box>-->
-                <!--<size>4 0.1 0.06</size>-->
-            <!--</box>-->
-            <!--<model_count>20</model_count>-->
-            <!--<distribution>-->
-                <!--<type>random</type>-->
-            <!--</distribution>-->
-        <!--</population>-->
-
-        <!--<population name="Grass3">-->
-            <!--<model name="Grass">-->
-                <!--<include>-->
-                    <!--<static>1</static>-->
-                    <!--<uri>model://Grass</uri>-->
-                <!--</include>-->
-            <!--</model>-->
-            <!--<pose>3.2 -1.05 -0.02 0 0 0</pose>-->
-            <!--<box>-->
-                <!--<size>4 0.1 0.02</size>-->
-            <!--</box>-->
-            <!--<model_count>20</model_count>-->
-            <!--<distribution>-->
-                <!--<type>random</type>-->
-            <!--</distribution>-->
-        <!--</population>-->
-
-        <!--<population name="Grass4">-->
-            <!--<model name="Grass">-->
-                <!--<include>-->
-                    <!--<static>1</static>-->
-                    <!--<uri>model://Grass</uri>-->
-                <!--</include>-->
-            <!--</model>-->
-            <!--<pose>3.2 -1.75 -0.02 0 0 0</pose>-->
-            <!--<box>-->
-                <!--<size>4 0.1 0.06</size>-->
-            <!--</box>-->
-            <!--<model_count>20</model_count>-->
-            <!--<distribution>-->
-                <!--<type>random</type>-->
-            <!--</distribution>-->
-        <!--</population>-->
-
-        <!--<population name="Grass5">-->
-            <!--<model name="Grass">-->
-                <!--<include>-->
-                    <!--<static>1</static>-->
-                    <!--<uri>model://Grass</uri>-->
-                <!--</include>-->
-            <!--</model>-->
-            <!--<pose>3.2 -2.45 -0.02 0 0 0</pose>-->
-            <!--<box>-->
-                <!--<size>4 0.1 0.06</size>-->
-            <!--</box>-->
-            <!--<model_count>20</model_count>-->
-            <!--<distribution>-->
-                <!--<type>random</type>-->
-            <!--</distribution>-->
-        <!--</population>-->
 
     </world>
 </sdf>
