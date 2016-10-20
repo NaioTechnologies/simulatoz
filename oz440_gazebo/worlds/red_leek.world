@@ -15,14 +15,14 @@
         </light>
 
         <include>
-            <uri>model://my_ground_plane_red</uri>
+            <uri>~/catkin_ws/simulatoz/oz440_description/models/my_ground_plane_red</uri>
         </include>
 
         <population name="piquets">
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Red_stick</uri>
                 </include>
             </model>
             <pose>1 -0.35 0.1 0 0 0</pose>
@@ -39,7 +39,7 @@
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
+                    <uri~/catkin_ws/simulatoz/oz440_description/models/Red_stick</uri>
                 </include>
             </model>
             <pose>5.1 -0.35 0.1 0 0 0</pose>
@@ -56,7 +56,7 @@
             <model name="Leek">
                 <include>
                     <static>0</static>
-                    <uri>model://Leek_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Leek</uri>
                 </include>
             </model>
             <pose>3.2 -0.35 0.2 0 0 0</pose>
@@ -73,7 +73,7 @@
             <model name="Leek">
                 <include>
                     <static>0</static>
-                    <uri>model://Leek_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Leek</uri>
                 </include>
             </model>
             <pose>3.2 0.35 0.2 0 0 0</pose>
@@ -90,7 +90,7 @@
             <model name="Leek">
                 <include>
                     <static>0</static>
-                    <uri>model://Leek_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Leek</uri>
                 </include>
             </model>
             <pose>3.2 -1.05 0.2 0 0 0</pose>
@@ -107,7 +107,7 @@
             <model name="Leek">
                 <include>
                     <static>0</static>
-                    <uri>model://Leek_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Leek</uri>
                 </include>
             </model>
             <pose>3.2 -1.75 0.2 0 0 0</pose>
@@ -124,7 +124,7 @@
             <model name="Rock">
                 <include>
                     <static>1</static>
-                    <uri>model://Rock</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
                 </include>
             </model>
             <pose>3.5 0 -0.005 0 0 0</pose>
@@ -141,7 +141,7 @@
             <model name="Rock">
                 <include>
                     <static>1</static>
-                    <uri>model://Rock</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
                 </include>
             </model>
             <pose>3.5 -0.7 -0.005 0 0 0</pose>
@@ -158,7 +158,7 @@
             <model name="Rock">
                 <include>
                     <static>1</static>
-                    <uri>model://Rock</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
                 </include>
             </model>
             <pose>3.5 -1.4 -0.005 0 0 0</pose>
@@ -175,7 +175,7 @@
             <model name="Grass">
                 <include>
                     <static>1</static>
-                    <uri>model://Grass</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Grass</uri>
                 </include>
             </model>
             <pose>3.2 -0.7 -0.02 0 0 0</pose>

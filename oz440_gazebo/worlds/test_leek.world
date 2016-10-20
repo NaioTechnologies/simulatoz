@@ -22,7 +22,7 @@
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
+                    <uri>model://Red_stick</uri>
                 </include>
             </model>
             <pose>1 -0.35 0.1 0 0 0</pose>
@@ -39,154 +39,154 @@
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
-                </include>
-            </model>
-            <pose>5.1 -0.35 0.1 0 0 0</pose>
-            <box>
-                <size>0.1 2.8 0.01</size>
-            </box>
-            <model_count>4</model_count>
-            <distribution>
-                <type>linear-y</type>
-            </distribution>
-        </population>
+                    <uri>model://Red_stick</uri>
+            </include>
+        </model>
+        <pose>5.1 -0.35 0.1 0 0 0</pose>
+        <box>
+            <size>0.1 2.8 0.01</size>
+        </box>
+        <model_count>4</model_count>
+        <distribution>
+            <type>linear-y</type>
+        </distribution>
+    </population>
 
-        <population name="poireaux">
-            <model name="Leek">
-                <include>
-                    <static>0</static>
-                    <uri>model://Leek_2</uri>
-                </include>
-            </model>
-            <pose>3.2 -0.35 0.2 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>13</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="poireaux">
+        <model name="Leek">
+            <include>
+                <static>0</static>
+                <uri>model://Leek</uri>
+            </include>
+        </model>
+        <pose>3.2 -0.35 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="poireaux2">
-            <model name="Leek">
-                <include>
-                    <static>0</static>
-                    <uri>model://Leek_2</uri>
-                </include>
-            </model>
-            <pose>3.2 0.35 0.2 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>13</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="poireaux2">
+        <model name="Leek">
+            <include>
+                <static>0</static>
+                <uri>model://Leek</uri>
+            </include>
+        </model>
+        <pose>3.2 0.35 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="poireaux3">
-            <model name="Leek">
-                <include>
-                    <static>0</static>
-                    <uri>model://Leek_2</uri>
-                </include>
-            </model>
-            <pose>3.2 -1.05 0.2 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>13</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="poireaux3">
+        <model name="Leek">
+            <include>
+                <static>0</static>
+                <uri>model://Leek</uri>
+            </include>
+        </model>
+        <pose>3.2 -1.05 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="poireaux4">
-            <model name="Leek">
-                <include>
-                    <static>0</static>
-                    <uri>model://Leek_2</uri>
-                </include>
-            </model>
-            <pose>3.2 -1.75 0.2 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>13</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="poireaux4">
+        <model name="Leek">
+            <include>
+                <static>0</static>
+                <uri>model://Leek</uri>
+            </include>
+        </model>
+        <pose>3.2 -1.75 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 0 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>model://Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 0 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks2">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 -0.7 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks2">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>model://Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 -0.7 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks3">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 -1.4 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks3">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>model://Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 -1.4 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Grass">
-            <model name="Grass">
-                <include>
-                    <static>1</static>
-                    <uri>model://Grass</uri>
-                </include>
-            </model>
-            <pose>3.2 -0.7 -0.02 0 0 0</pose>
-            <box>
-                <size>5 2.3 0.05</size>
-            </box>
-            <model_count>90</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Grass">
+        <model name="Grass">
+            <include>
+                <static>1</static>
+                <uri>model://Grass</uri>
+            </include>
+        </model>
+        <pose>3.2 -0.7 -0.02 0 0 0</pose>
+        <box>
+            <size>5 2.3 0.05</size>
+        </box>
+        <model_count>100</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
     </world>
 </sdf>

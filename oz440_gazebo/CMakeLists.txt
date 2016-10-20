@@ -44,4 +44,3 @@ add_dependencies(Core oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})
 add_executable(Naio01JoyClient  src/Naio01JoyClient.cpp)
 target_link_libraries(Naio01JoyClient ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET})
 add_dependencies(Naio01JoyClient oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})
-

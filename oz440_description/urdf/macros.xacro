@@ -41,7 +41,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <visual>
         <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
         <geometry>
-          <mesh filename="model:///Wheel/roue.dae "/>
+          <mesh filename="model://Wheel/roue.dae "/>
         </geometry>
         <material name="black"/>
       </visual>

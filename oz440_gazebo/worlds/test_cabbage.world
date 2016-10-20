@@ -15,14 +15,14 @@
         </light>
 
         <include>
-            <uri>model://my_ground_plane</uri>
+            <uri>~/catkin_ws/simulatoz/oz440_description/models/my_ground_plane_red</uri>
         </include>
 
         <population name="piquets">
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
+                    <uri>~/catkin_ws/simulatoz/oz440_description/models/Red_stick</uri>
                 </include>
             </model>
             <pose>1 -0.35 0.1 0 0 0</pose>
@@ -39,154 +39,154 @@
             <model name="Red_stick">
                 <include>
                     <static>0</static>
-                    <uri>model://Red_stick_2</uri>
-                </include>
-            </model>
-            <pose>5.1 -0.35 0.1 0 0 0</pose>
-            <box>
-                <size>0.1 2.8 0.01</size>
-            </box>
-            <model_count>4</model_count>
-            <distribution>
-                <type>linear-y</type>
-            </distribution>
-        </population>
+                    <uri~/catkin_ws/simulatoz/oz440_description/models/Red_stick</uri>
+            </include>
+        </model>
+        <pose>5.1 -0.35 0.1 0 0 0</pose>
+        <box>
+            <size>0.1 2.8 0.01</size>
+        </box>
+        <model_count>4</model_count>
+        <distribution>
+            <type>linear-y</type>
+        </distribution>
+    </population>
 
-        <population name="choux">
-            <model name="Cabbage">
-                <include>
-                    <static>0</static>
-                    <uri>model://Cabbage</uri>
-                </include>
-            </model>
-            <pose>3.2 -0.35 0 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>12</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="choux">
+        <model name="Cabbage">
+            <include>
+                <static>0</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Cabbage</uri>
+            </include>
+        </model>
+        <pose>3.2 -0.35 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="choux2">
-            <model name="Cabbage">
-                <include>
-                    <static>0</static>
-                    <uri>model://Cabbage</uri>
-                </include>
-            </model>
-            <pose>3.2 0.35 0 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>12</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="choux2">
+        <model name="Cabbage">
+            <include>
+                <static>0</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Cabbage</uri>
+            </include>
+        </model>
+        <pose>3.2 0.35 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="choux3">
-            <model name="Cabbage">
-                <include>
-                    <static>0</static>
-                    <uri>model://Cabbage</uri>
-                </include>
-            </model>
-            <pose>3.2 -1.05 0 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>12</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="choux3">
+        <model name="Cabbage">
+            <include>
+                <static>0</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Cabbage</uri>
+            </include>
+        </model>
+        <pose>3.2 -1.05 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="choux4">
-            <model name="Cabbage">
-                <include>
-                    <static>0</static>
-                    <uri>model://Cabbage</uri>
-                </include>
-            </model>
-            <pose>3.2 -1.75 0 0 0 0</pose>
-            <box>
-                <size>4 0.1 0.01</size>
-            </box>
-            <model_count>12</model_count>
-            <distribution>
-                <type>linear-x</type>
-            </distribution>
-        </population>
+    <population name="choux4">
+        <model name="Cabbage">
+            <include>
+                <static>0</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Cabbage</uri>
+            </include>
+        </model>
+        <pose>3.2 -1.75 0.2 0 0 0</pose>
+        <box>
+            <size>4 0.1 0.01</size>
+        </box>
+        <model_count>13</model_count>
+        <distribution>
+            <type>linear-x</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 0 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 0 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks2">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 -0.7 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks2">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 -0.7 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Rocks3">
-            <model name="Rock">
-                <include>
-                    <static>1</static>
-                    <uri>model://Rock</uri>
-                </include>
-            </model>
-            <pose>3.5 -1.4 -0.005 0 0 0</pose>
-            <box>
-                <size>7 0.6 0.01</size>
-            </box>
-            <model_count>60</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Rocks3">
+        <model name="Rock">
+            <include>
+                <static>1</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Rock</uri>
+            </include>
+        </model>
+        <pose>3.5 -1.4 -0.005 0 0 0</pose>
+        <box>
+            <size>7 0.6 0.01</size>
+        </box>
+        <model_count>60</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
-        <population name="Grass">
-            <model name="Grass">
-                <include>
-                    <static>1</static>
-                    <uri>model://Grass</uri>
-                </include>
-            </model>
-            <pose>3.2 -0.7 -0.02 0 0 0</pose>
-            <box>
-                <size>5 2.3 0.05</size>
-            </box>
-            <model_count>90</model_count>
-            <distribution>
-                <type>random</type>
-            </distribution>
-        </population>
+    <population name="Grass">
+        <model name="Grass">
+            <include>
+                <static>1</static>
+                <uri>~/catkin_ws/simulatoz/oz440_description/models/Grass</uri>
+            </include>
+        </model>
+        <pose>3.2 -0.7 -0.02 0 0 0</pose>
+        <box>
+            <size>5 2.3 0.05</size>
+        </box>
+        <model_count>100</model_count>
+        <distribution>
+            <type>random</type>
+        </distribution>
+    </population>
 
     </world>
 </sdf>
