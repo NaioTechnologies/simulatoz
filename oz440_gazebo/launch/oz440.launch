@@ -6,7 +6,7 @@
 
   <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
-    <arg name="world_name" value="$(find oz440_gazebo)/worlds/test_cabbage.world"/>
+    <arg name="world_name" value="$(find oz440_gazebo)/worlds/my_world.world"/>
   </include>
 
     <param name="robot_description" command="$(find xacro)/xacro '$(find oz440_description)/urdf/oz440.xacro'" />
