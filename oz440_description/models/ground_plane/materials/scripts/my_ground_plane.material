@@ -1,0 +1,73 @@
+material my_ground_plane/Sand
+{
+technique
+{
+    pass
+    {
+      ambient 0.9 0.9 0.9 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture dirt4.jpg
+        filtering trilinear
+        scale 0.01 0.01
+      }
+    }
+  }
+}
+
+material my_ground_plane/Grass
+{
+technique
+{
+    pass
+    {
+      ambient 0.9 0.9 0.9 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture grass3.jpg
+        filtering trilinear
+        scale 0.01 0.01
+      }
+    }
+  }
+}
+
+material my_ground_plane/Dirt
+{
+technique
+{
+    pass
+    {
+      ambient 0.9 0.9 0.9 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture dirt2.jpg
+        filtering trilinear
+        scale 0.01 0.01
+      }
+    }
+  }
+}
+
+material my_ground_plane/Brown
+{
+  technique
+  {
+    pass ambient
+    {
+      ambient 0.63 0.57 0.45
+      diffuse 0.63 0.57 0.45
+      specular 0.1 0.1 0.1 1 1
+    }
+  }
+}
+
