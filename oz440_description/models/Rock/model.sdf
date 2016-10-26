@@ -26,7 +26,7 @@
         </geometry>
         <material>
           <script>
-            <uri>model://my_ground_plane/materials/scripts/my_ground_plane.material</uri>
+            <uri>model://ground_plane/materials/scripts/my_ground_plane.material</uri>
             <name>my_ground_plane/Brown</name>
           </script>
           <shader type='vertex'>

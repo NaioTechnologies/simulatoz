@@ -21,7 +21,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>mode://Cabbage/model.dae</uri>
+            <uri>/home/fanny/catkin_ws/src/simulatoz/oz440_description/models/Cabbage/model.dae</uri>
             <scale>3 3 3</scale>
           </mesh>
         </geometry>
@@ -31,14 +31,14 @@
             <uri>file://media/materials/scripts/gazebo.material</uri>
           </script>
           <ambient>0.3 0.4 0.2 1</ambient>
-          <diffuse>0.3 0.5 0.3 1</diffuse>
+          <diffuse>0.5 0.6 0.4 1</diffuse>
           <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
           <shader type='vertex'>
             <normal_map>__default__</normal_map>
           </shader>
         </material>
-        <pose frame=''>0 0 -0.1 1.57 -0 0</pose>
+        <pose frame=''>0 0 -0.08 1.57 -0 0</pose>
         <cast_shadows>1</cast_shadows>
         <transparency>0</transparency>
       </visual>
@@ -48,7 +48,7 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <sphere>
-            <radius>0.086904</radius>
+            <radius>0.09</radius>
           </sphere>
         </geometry>
         <surface>

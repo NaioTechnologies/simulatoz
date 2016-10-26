@@ -15,7 +15,7 @@
         </light>
 
         <include>
-            <uri>model://my_ground_plane_red</uri>
+            <uri>model://dirt_plane</uri>
         </include>
 
         <population name="piquets">
