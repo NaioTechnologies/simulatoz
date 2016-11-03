@@ -38,6 +38,28 @@ technique
   }
 }
 
+
+material my_ground_plane/People
+{
+technique
+{
+    pass
+    {
+      ambient 0.9 0.9 0.9 1.0
+      diffuse 1.0 1.0 1.0 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture people.jpg
+        filtering trilinear
+        scale 1 1
+      }
+    }
+  }
+}
+
+
 material my_ground_plane/Dirt
 {
 technique
@@ -57,6 +79,26 @@ technique
     }
   }
 }
+s
+material my_ground_plane/BigGrass
+{
+technique
+{
+    pass
+    {
+      ambient 0.85 0.85 0.85 1.0
+      diffuse 0.9 0.9 0.9 1.0
+      specular 0.0 0.0 0.0 1.0 0.5
+
+      texture_unit
+      {
+        texture grass3.jpg
+        filtering trilinear
+        scale 0.9 3
+      }
+    }
+  }
+}
 
 material my_ground_plane/Brown
 {
@@ -70,4 +112,3 @@ material my_ground_plane/Brown
     }
   }
 }
-

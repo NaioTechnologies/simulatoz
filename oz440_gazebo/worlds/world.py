@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 # coding: utf8
 
+import random
+
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
@@ -59,6 +61,55 @@ while again == 1:
 
     else :
         print("You did not enter a correct answer. Try again ! \n")
+        again = 1
+again = 1
+
+# Sky
+while again == 1:
+    again = 0
+    while 1 :
+        try :
+            texture = int(raw_input("Do you want a sky ? Press : \n - 0 for yes \n - 1 for no \n "))
+            break
+        except ValueError:
+            print "This is not a number !"
+
+    if texture == 1 :
+        print("You chose the sky \n")
+        file.write("\t \t<scene> \n \
+\t \t \t <sky> \n \
+\t \t \t \t <clouds> \n \
+\t \t \t \t \t <speed>12</speed> \n \
+\t \t \t \t </clouds> \n \
+\t \t \t </sky> \n \
+\t \t </scene> \n \n ")
+
+    elif texture == 0 :
+        print("No sky in your world \n")
+
+    else :
+        print("You did not enter a correct answer. Try again ! \n")
+        again = 1
+again = 1
+
+
+# Mound
+while again == 1:
+    again = 0
+
+    while 1 :
+        try :
+            M = int(raw_input("Do you want mounds below the rows of vegetables ? Press : \n - 0 for no \n - 1 for yes \n To confirm, press enter. \n"))
+            break
+        except ValueError:
+            print "This is not a number !"
+
+    if M == 1 :
+        print("There will be mounds \n")
+    elif M == 0 :
+        print("There won't be any mound\n")
+    else :
+        print("You did not enter a correct answer \n")
         again = 1
 again = 1
 
@@ -140,12 +191,12 @@ while again == 1:
 
     while 1 :
         try :
-            N = int(raw_input("Chose the number of rows ? Press a number between 1 and 6. To confirm, press enter. \n"))
+            N = int(raw_input("Chose the number of rows ? Press a number between 1 and 10. To confirm, press enter. \n"))
             break
         except ValueError:
             print "This is not a number !"
 
-    if N > 0 and N < 7 :
+    if N > 0 and N < 11 :
         print 'There will be ', N, ' rows \n'
     else :
         print("You did not enter a correct answer \n")
@@ -163,38 +214,38 @@ file.write("\t \t <population name=\"sticks\"> \n \
 \t \t \t \t \t <uri>model://Red_stick</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t<pose>1 %f 0.05 0 0 0</pose>\n \
-\t \t \t <box>\n \
-\t \t \t \t <size>0.1 %f 0.01</size>\n \
-\t \t \t </box>\n \
-\t \t \t<model_count>%d</model_count>\n \
-\t \t \t <distribution> \n \
-\t \t \t \t <type>linear-y</type> \n \
-\t \t \t </distribution>\n \
-\t \t </population>\n \
-\n \
-\t \t <population name=\"sticks2\">\n \
-\t \t \t <model name=\"Red_stick\">\n \
+\t \t \t<pose>%f %f 0.1 0 0 0</pose>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
+\t \t \t </distribution>\\n \
+\t \t </population>\n" \
+%(1.1 + L/2.0, -(N-1)*w/2, N, 2, L+0.2, w))
+
+if M == 1:
+    file.write("\t \t <population name=\"Mound\"> \n \
+\t \t \t <model name=\"Mound\">\n \
 \t \t \t \t <include>\n \
-\t \t \t \t \t <static>0</static>\n \
-\t \t \t \t \t <uri>model://Red_stick</uri>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Mound</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t<pose>%d %f 0.05 0 0 0</pose>\n \
-\t \t \t <box>\n \
-\t \t \t \t <size>0.1 %f 0.01</size>\n \
-\t \t \t </box>\n \
-\t \t \t<model_count>%d</model_count>\n \
-\t \t \t <distribution> \n \
-\t \t \t \t <type>linear-y</type> \n \
-\t \t \t </distribution>\n \
-\t \t </population>\n \n" \
-%(-w*N/2+w, N*w, N, L+1, -w*N/2+w, N*w, N))
+\t \t \t<pose>%f %f -0.245 0 0 0</pose>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
+\t \t \t </distribution>\\n \
+\t \t </population>\n" \
+%(1.1 + L/2.0, -(N-1)*w/2, N, 2, L+0.2, w))
+
 
 # Rows of vegetable
-i = 1
-while i < N+1:
-    file.write("\t \t<population name=\"Vegetable%d\">\n \
+
+file.write("\t \t<population name=\"Vegetable\">\n \
 \t \t \t <model name=\"%s\">\n \
 \t \t \t \t <include>\n \
 \t \t \t \t \t <static>0</static>\n \
@@ -202,16 +253,32 @@ while i < N+1:
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
 \t \t \t <pose>%f %f 0.2 0 0 0</pose>\n \
-\t \t \t <box>\n \
-\t \t \t \t <size>%f 0.1 0.01</size>\n \
-\t \t \t </box>\n \
-\t \t \t <model_count>%d</model_count>\n \
-\t \t \t <distribution>\n \
-\t \t \t \t <type>linear-x</type>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\n \
-\t \t </population> \n \n"\
-%(i, V, V, 1.1 + L/2.0, -(i-1)*w, L-0.2, L*F))
-    i += 1
+\t \t </population> \n \n" \
+%(V, V, 1.1 + L/2.0, -(N-1)*w/2, N, L*F, 1/float(F), w))
+
+if M == 1:
+    file.write("\t \t<population name=\"Mound_cyl\">\n \
+\t \t \t <model name=\"Mound_cyl\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Mound_cyl</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.2 0 0 0</pose>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n" \
+%(1.1 + L/2.0, -(N-1)*w/2, N, L*F, 1/float(F), w))
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -219,7 +286,6 @@ while i < N+1:
 # Other objects
 
 print("Other objects \n")
-
 
 # Rocks
 while again == 1:
@@ -247,12 +313,12 @@ while again == 1:
 \t \t \t <box>\n \
 \t \t \t \t <size>%d %f 0.01</size>\n \
 \t \t \t </box>\n \
-\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <model_count>50</model_count>\n \
 \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.0 + L/2.0, -(float(i)-0.5)*w, L+4, w-0.1, 40))
+%(i, 1.0 + L/2.0, -(float(i)-0.5)*w, L+4, w-0.1))
             i += 1
 
     elif R == 0 :
@@ -293,7 +359,29 @@ while again == 1:
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.0 + L/2.0, -w*N/2, L+1, w*N))
+%(1.0 + L/2.0, -w*(N-1)/2, L+1, w*(N-1)))
+
+        i = 1
+        while i < N+1:
+            file.write("\t \t<population name=\"Grass%d\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f 0 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%f 0.2 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>50</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(i, 1.1 + L/2.0, -(i-1)*w, L-0.2))
+
+            i += 1
 
     elif G == 0 :
         print("There wont be any grass \n")
@@ -306,6 +394,8 @@ again = 1
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
 # Closing the file
+
+print("\nYour world is ready ! \n")
 
 file.write("\t </world> \n \
 </sdf>")

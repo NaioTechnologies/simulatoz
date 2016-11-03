@@ -45,19 +45,28 @@
     <!-- plugin pour la camera stereo -->
     <gazebo reference="camera_stereo_link">
         <sensor type="multicamera" name="stereo_camera">
-            <update_rate>5.55</update_rate>
+            <update_rate>5</update_rate>
             <camera name="left">
                 <pose>0 0.05 0 0 0 0</pose>
                 <horizontal_fov>1.63555623712896 </horizontal_fov>
                 <image>
                     <width>752</width>
                     <height>480</height>
-                    <format>BAYER_GRBG8</format>
+                    <format>BAYER_GBRG8</format>
+
                 </image>
                 <clip>
                     <near>0.02</near>
                     <far>300</far>
                 </clip>
+                <!--<distortion>-->
+                    <!--<k1>0.000023</k1>-->
+                    <!--<k2>0.025979</k2>-->
+                    <!--<k3>0.039371</k3>-->
+                    <!--<p1>0.001139</p1>-->
+                    <!--<p2>-0.002029</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
                 <!--<noise>-->
                     <!--<type>gaussian</type>-->
                     <!--<mean>0.0</mean>-->
@@ -70,12 +79,21 @@
                 <image>
                     <width>752</width>
                     <height>480</height>
-                    <format>BAYER_GRBG8</format>
+
+                    <format>BAYER_GBRG8</format>
                 </image>
                 <clip>
                     <near>0.02</near>
                     <far>300</far>
                 </clip>
+                <!--<distortion>-->
+                    <!--<k1>0.9</k1>-->
+                    <!--<k2>0.3291</k2>-->
+                    <!--<k3>0.23518</k3>-->
+                    <!--<p1>0.002938</p1>-->
+                    <!--<p2>-0.00088</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
                 <!--<noise>-->
                     <!--<type>gaussian</type>-->
                     <!--<mean>0.0</mean>-->
@@ -90,12 +108,12 @@
                 <cameraInfoTopicName>camera_info</cameraInfoTopicName>
                 <frameName>camera_stereo_link</frameName>
                 <!--<rightFrameName>right_camera_optical_frame</rightFrameName>-->
-                <hackBaseline>0.07</hackBaseline>
-                <distortionK1>0.0</distortionK1>
-                <distortionK2>0.0</distortionK2>
-                <distortionK3>0.0</distortionK3>
-                <distortionT1>0.0</distortionT1>
-                <distortionT2>0.0</distortionT2>
+                <hackBaseline>0.1</hackBaseline>
+                <distortionK1>0.000023</distortionK1>
+                <distortionK2>0.025979</distortionK2>
+                <distortionK3>0.039371</distortionK3>
+                <distortionT1>0.001139</distortionT1>
+                <distortionT2>-0.002029</distortionT2>
             </plugin>
         </sensor>
     </gazebo>

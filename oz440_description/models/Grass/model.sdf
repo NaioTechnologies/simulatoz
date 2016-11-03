@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
-  <model name='grass'>
+  <model name='Grass'>
     <link name='link'>
       <pose frame=''>0 0 0 0 -0 0</pose>
       <inertial>
@@ -30,9 +30,9 @@
             <name>Gazebo/Grey</name>
             <uri>file://media/materials/scripts/gazebo.material</uri>
           </script>
-          <ambient>0.3 0.5 0.4 1</ambient>
-          <diffuse>0.3 0.5 0.4 1</diffuse>
-          <specular>0.01 0.01 0.01 1</specular>
+          <ambient>0.9 1 0.5 0</ambient>
+          <diffuse>0.25 0.4 0.1 0</diffuse>
+          <specular>0 0 0 1</specular>
           <emissive>0 0 0 1</emissive>
           <shader type='vertex'>
             <normal_map>__default__</normal_map>
