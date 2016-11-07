@@ -104,6 +104,7 @@ private:
     // ROS PART
     ros::Publisher velocity_pub_;
 
+
     bool image_ready_;
 };
 
