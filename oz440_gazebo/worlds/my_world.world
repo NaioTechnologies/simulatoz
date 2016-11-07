@@ -33,12 +33,12 @@
  	 	 	 	 	 <uri>model://Red_stick</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	<pose>2.600000 -0.350000 0.1 0 0 0</pose>
+ 	 	 	<pose>3.600000 -1.050000 0.1 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>2</rows>
+ 	 	 	 	 <rows>4</rows>
  	 	 	 	 <cols>2</cols>
- 	 	 	 	 <step>3.200000 0.700000 0</step>
+ 	 	 	 	 <step>5.200000 0.700000 0</step>
  	 	 	 </distribution>\n 	 	 </population>
 	 	 <population name="Mound"> 
  	 	 	 <model name="Mound">
@@ -47,12 +47,12 @@
  	 	 	 	 	 <uri>model://Mound</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	<pose>2.600000 -0.350000 -0.245 0 0 0</pose>
+ 	 	 	<pose>3.600000 -1.050000 -0.245 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>2</rows>
+ 	 	 	 	 <rows>4</rows>
  	 	 	 	 <cols>2</cols>
- 	 	 	 	 <step>3.200000 0.700000 0</step>
+ 	 	 	 	 <step>5.200000 0.700000 0</step>
  	 	 	 </distribution>\n 	 	 </population>
 	 	<population name="Vegetable">
  	 	 	 <model name="Leek">
@@ -61,11 +61,11 @@
  	 	 	 	 	 <uri>model://Leek</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>2.600000 -0.350000 0.2 0 0 0</pose>
+ 	 	 	 <pose>3.600000 -1.050000 0.2 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>2</rows>
- 	 	 	 	 <cols>12</cols>
+ 	 	 	 	 <rows>4</rows>
+ 	 	 	 	 <cols>20</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population> 
@@ -77,12 +77,148 @@
  	 	 	 	 	 <uri>model://Mound_cyl</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>2.600000 -0.350000 -0.2 0 0 0</pose>
+ 	 	 	 <pose>3.600000 -1.050000 -0.2 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>2</rows>
- 	 	 	 	 <cols>12</cols>
+ 	 	 	 	 <rows>4</rows>
+ 	 	 	 	 <cols>20</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Rocks1">
+ 	 	 	 <model name="Rock">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Rock</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.500000 -0.350000 -0.005 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>9 0.600000 0.01</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Rocks2">
+ 	 	 	 <model name="Rock">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Rock</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.500000 -1.050000 -0.005 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>9 0.600000 0.01</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Rocks3">
+ 	 	 	 <model name="Rock">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Rock</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.500000 -1.750000 -0.005 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>9 0.600000 0.01</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Grass">
+ 	 	 	 <model name="Grass">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Grass</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.500000 -1.050000 -0.02 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>6 2.100000 0.05</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>100</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Grass1">
+ 	 	 	 <model name="Grass">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Grass</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.600000 0.000000 0 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>4.800000 0.2 0.05</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Grass2">
+ 	 	 	 <model name="Grass">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Grass</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.600000 -0.700000 0 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>4.800000 0.2 0.05</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Grass3">
+ 	 	 	 <model name="Grass">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Grass</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.600000 -1.400000 0 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>4.800000 0.2 0.05</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	<population name="Grass4">
+ 	 	 	 <model name="Grass">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Grass</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>3.600000 -2.100000 0 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>4.800000 0.2 0.05</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>50</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 </population> 
  

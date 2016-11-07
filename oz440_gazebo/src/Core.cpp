@@ -395,7 +395,7 @@ void Core::image_thread_function( )
             if (image_socket_desc_ > 0) {
                 image_socket_connected_ = true;
 
-                ROS_INFO("Connexion Image Socket");
+                ROS_ERROR("Connexion Image Socket");
 
                 milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_image_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -407,7 +407,7 @@ void Core::image_thread_function( )
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if (now - last_image_socket_activity_time_ > 1000)
+            if (now - last_image_socket_activity_time_ > 5000)
             {
                 image_disconnected();
             }
@@ -430,18 +430,17 @@ void Core::image_thread_function( )
 
                 if ( new_image_received == true )
                 {
-//                    for( )
-//                    buffer_to_send
 
                     int total_written_bytes = 0;
                     ssize_t write_size = 0;
 
                     int nb_tries = 0;
-                    int max_tries = 50;
+                    int max_tries = 500;
 
                     while ( total_written_bytes < buffer->size() and nb_tries < max_tries )
                     {
                         write_size = send( image_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes, 0 );
+                        std::this_thread::sleep_for( 2ms );
 
                         if ( write_size < 0 )
                         {
@@ -466,7 +465,7 @@ void Core::image_thread_function( )
                 }
             }
         }
-        //std::this_thread::sleep_for( 1ms);
+        std::this_thread::sleep_for( 5ms);
     }
 
     close(image_server_socket_desc_);
@@ -584,11 +583,12 @@ void Core::ozcore_image_thread_function( )
                     ssize_t write_size = 0;
 
                     int nb_tries = 0;
-                    int max_tries = 200;
+                    int max_tries = 500;
 
                     while( total_written_bytes < 721920 and nb_tries < max_tries )
                     {
                         write_size = send( ozcore_image_socket_desc_, image_buffer_to_send + total_written_bytes, 721920 - total_written_bytes, 0 );
+                        std::this_thread::sleep_for( 5ms );
 
                         if( write_size < 0 )
                         {
@@ -614,7 +614,7 @@ void Core::ozcore_image_thread_function( )
             }
         }
 
-        //std::this_thread::sleep_for( 10ms );
+        std::this_thread::sleep_for( 5ms );
     }
 
     close( ozcore_image_server_socket_desc_ );
