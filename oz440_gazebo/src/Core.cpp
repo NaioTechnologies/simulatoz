@@ -205,8 +205,6 @@ void Core::image_disconnected()
     image_socket_connected_ = false;
 
     ROS_ERROR("Image Socket Disconnected");
-
-    system("rosservice call gazebo/reset_world");
 }
 
 // *********************************************************************************************************************
@@ -218,8 +216,6 @@ void Core::ozcore_image_disconnected()
     ozcore_image_socket_connected_ = false;
 
     ROS_ERROR("OzCore Image Socket Disconnected");
-
-    system("rosservice call gazebo/reset_world");
 
 }
 
@@ -236,6 +232,8 @@ void Core::disconnected()
     packet_to_send_list_.clear();
 
     packet_to_send_list_access_.unlock();
+
+    system("rosservice call gazebo/reset_world");
 
 }
 
@@ -440,7 +438,7 @@ void Core::image_thread_function( )
                     while ( total_written_bytes < buffer->size() and nb_tries < max_tries )
                     {
                         write_size = send( image_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes, 0 );
-                        std::this_thread::sleep_for( 2ms );
+                        std::this_thread::sleep_for( 5ms );
 
                         if ( write_size < 0 )
                         {
@@ -465,7 +463,7 @@ void Core::image_thread_function( )
                 }
             }
         }
-        std::this_thread::sleep_for( 5ms);
+        std::this_thread::sleep_for( 10ms);
     }
 
     close(image_server_socket_desc_);
@@ -536,6 +534,8 @@ void Core::ozcore_image_thread_function( )
         if ( not ozcore_image_socket_connected_ and ozcore_image_server_socket_desc_ > 0 )
         {
             ozcore_image_socket_desc_ = DriverSocket::waitConnect( ozcore_image_server_socket_desc_ );
+
+            std::this_thread::sleep_for( 50ms );
 
             if ( ozcore_image_socket_desc_ > 0 )
             {
@@ -684,14 +684,21 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
         ozcore_image_packet_to_send_access_.lock();
 
-        for ( int i = 0 ; i < 360960 ; i++ )
-        {
-            (*dataBuffer)[ i ] = image_left->data[ i ];
-            (*dataBuffer)[ i + IMAGE_SIZE ] = image_right->data[ i ];
+//        for ( int i = 0 ; i < 360960 ; i++ )
+//        {
+//            (*dataBuffer)[ i ] = image_left->data[ i ];
+//            (*dataBuffer)[ i + IMAGE_SIZE ] = image_right->data[ i ];
 
-            image_buffer_to_send_[ i ] = image_left->data[ i ];
-            image_buffer_to_send_[ i + IMAGE_SIZE ] = image_right->data[ i ];
-        }
+//            image_buffer_to_send_[ i ] = image_left->data[ i ];
+//            image_buffer_to_send_[ i + IMAGE_SIZE ] = image_right->data[ i ];
+//        }
+
+        std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
+        std::memcpy( image_buffer_to_send_+ 360960, &image_right->data[ 0 ], 360960 );
+
+        std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
+        std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
+
 
         milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
         last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());

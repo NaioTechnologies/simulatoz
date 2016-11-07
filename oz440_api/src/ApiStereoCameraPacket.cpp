@@ -1,6 +1,9 @@
 #include "../include/oz440_api/ApiStereoCameraPacket.hpp"
 #include "../include/oz440_api/CLByteConversion.h"
 
+#include <cstring>
+//using namespace std;
+
 //=============================================================================
 //
 ApiStereoCameraPacket::ApiStereoCameraPacket( )
@@ -40,10 +43,13 @@ cl::BufferUPtr ApiStereoCameraPacket::encode()
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedSize[2] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedSize[3] );
 
-	for ( uint i = 0; i < dataBuffer->size(); i++ )
-	{
-		(*buffer)[cpt++] = static_cast<uint8_t>( dataBuffer->at(i) );
-	}
+//	for ( uint i = 0; i < dataBuffer->size(); i++ )
+//	{
+//		(*buffer)[cpt++] = static_cast<uint8_t>( dataBuffer->at(i) );
+//	}
+
+	std::memcpy( &(*buffer)[cpt++], &(*dataBuffer)[ 0 ], dataBuffer->size() );
+
 
 	return std::move( getPreparedBuffer( std::move( buffer ), getPacketId() ) );
 }
