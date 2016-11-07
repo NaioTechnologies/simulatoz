@@ -548,7 +548,7 @@ void Core::ozcore_image_thread_function( )
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if ( now - last_ozcore_image_socket_activity_time_ > 1000 )
+            if ( now - last_ozcore_image_socket_activity_time_ > 5000 )
             {
                 ozcore_image_disconnected();
             }
@@ -578,7 +578,7 @@ void Core::ozcore_image_thread_function( )
                     ssize_t write_size = 0;
 
                     int nb_tries = 0;
-                    int max_tries = 50;
+                    int max_tries = 200;
 
                     while( total_written_bytes < 721920 and nb_tries < max_tries )
                     {
