@@ -96,8 +96,10 @@ private:
     std::mutex ozcore_image_packet_to_send_access_;
     std::vector< BaseNaio01PacketPtr > packet_to_send_list_;
     ApiStereoCameraPacketPtr image_packet_to_send_;
-    int8_t image_buffer_to_send_[ 721920 ];
-    bool image_buffer_to_send_ready_;
+    uint8_t image_buffer_to_send_[ 721920 ];
+    int64_t last_image_ms_;
+    int64_t last_ozcore_image_ms_;
+
 
     // ROS PART
     ros::Publisher velocity_pub_;

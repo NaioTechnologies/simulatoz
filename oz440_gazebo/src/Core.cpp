@@ -62,14 +62,9 @@ Core::Core( int argc, char **argv )
 
     image_packet_to_send_ = nullptr;
 
-    image_ready_ = false;
+    last_image_ms_ = 0;
 
-    image_buffer_to_send_ready_ = false;
-
-    for ( uint i = 0 ; i < 721920; i++ )
-    {
-        image_buffer_to_send_[ i ] = 0;
-    }
+    last_ozcore_image_ms_ = 0;
 
 }
 
@@ -181,7 +176,7 @@ void Core::run( )
 
             while( total_written_bytes < buffer->size() and write_size >= 0 )
             {
-                int write_size = (int) write( client_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes);
+                write_size = (int) write( client_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes);
 
                 total_written_bytes = total_written_bytes + write_size;
 
@@ -208,6 +203,7 @@ void Core::image_disconnected()
 
     image_socket_connected_ = false;
 
+    ROS_ERROR("Image Socket Disconnected");
 }
 
 // *********************************************************************************************************************
@@ -217,6 +213,8 @@ void Core::ozcore_image_disconnected()
     close( ozcore_image_socket_desc_ );
 
     ozcore_image_socket_connected_ = false;
+
+    ROS_ERROR("OzCore Image Socket Disconnected");
 }
 
 // *********************************************************************************************************************
@@ -254,7 +252,6 @@ void Core::client_read_thread_function( )
     {
         while ( ros::ok() )
         {
-            ROS_INFO("Loop start");
 
             if( client_socket_connected_ == true )
             {
@@ -270,10 +267,6 @@ void Core::client_read_thread_function( )
                     last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
 
                     at_least_one_packet_decoded = naio_01_codec.decode(received_buffer, size, packet_header_detected);
-
-                    ROS_INFO("At least one packet decoded");
-
-                    //naio_01_codec.reset();
                 }
 
                 if ( at_least_one_packet_decoded )
@@ -338,7 +331,6 @@ void Core::image_read_thread_function( )
     {
         while ( ros::ok() )
         {
-            ROS_INFO("Loop start");
 
             if( image_socket_connected_ == true )
             {
@@ -374,15 +366,20 @@ void Core::image_thread_function( )
     using namespace std::chrono_literals;
     int naio01_image_server_port = 5557;
 
+//    uint8_t buffer_to_send[ 4000000 ];
+
     image_thread_started_ = true;
 
     image_server_socket_desc_ = DriverSocket::openSocketServer(naio01_image_server_port);
 
     image_socket_connected_ = false;
 
+    int64_t last_image_sent_ms = 0;
+
     while (ros::ok())
     {
-        if (not image_socket_connected_ and image_server_socket_desc_ > 0) {
+        if (not image_socket_connected_ and image_server_socket_desc_ > 0)
+        {
             image_socket_access_.lock();
 
             image_socket_desc_ = DriverSocket::waitConnect(image_server_socket_desc_);
@@ -399,42 +396,71 @@ void Core::image_thread_function( )
             }
         }
 
-        if (image_socket_connected_) {
+        if (image_socket_connected_)
+        {
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if (now - last_image_socket_activity_time_ > 1000) {
+            if (now - last_image_socket_activity_time_ > 1000)
+            {
                 image_disconnected();
             }
-        }
-
-        image_packet_to_send_access_.lock();
-
-        if( image_ready_ == true )
-        {
-            cl::BufferUPtr buffer = image_packet_to_send_->encode();
-
-            image_socket_access_.lock();
-
-            int total_written_bytes = 0;
-            int write_size = 0;
-
-            while( total_written_bytes < buffer->size() and write_size >= 0 )
+            else
             {
-                int write_size = (int) write(image_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes);
+                bool new_image_received = false;
 
-                total_written_bytes = total_written_bytes + write_size;
+                image_packet_to_send_access_.lock();
 
+                cl::BufferUPtr buffer = image_packet_to_send_->encode();
+
+                if( last_image_sent_ms != last_image_ms_ )
+                {
+                    new_image_received = true;
+
+                    last_image_sent_ms = last_image_ms_;
+                }
+
+                image_packet_to_send_access_.unlock();
+
+                if ( new_image_received == true )
+                {
+//                    for( )
+//                    buffer_to_send
+
+                    int total_written_bytes = 0;
+                    ssize_t write_size = 0;
+
+                    int nb_tries = 0;
+                    int max_tries = 50;
+
+                    while ( total_written_bytes < buffer->size() and nb_tries < max_tries )
+                    {
+                        write_size = send( image_socket_desc_, buffer->data() + total_written_bytes, buffer->size() - total_written_bytes, 0 );
+
+                        if ( write_size < 0 )
+                        {
+                            nb_tries++;
+                            std::this_thread::sleep_for( 10ms );
+                        }
+                        else
+                        {
+                            total_written_bytes = total_written_bytes + static_cast<int>( write_size );
+                            nb_tries = 0;
+                        }
+                    }
+
+                    if (nb_tries >= max_tries)
+                    {
+                        ROS_ERROR("send packet failed, too many tries");
+                    }
+                    else
+                    {
+                        ROS_INFO("Camera packet send to 5557");
+                    }
+                }
             }
-
-            image_socket_access_.unlock();
-
-            image_ready_ = false;
         }
-
-        image_packet_to_send_access_.unlock();
-
-        std::this_thread::sleep_for( 1ms);
+        //std::this_thread::sleep_for( 1ms);
     }
 
     close(image_server_socket_desc_);
@@ -445,7 +471,7 @@ void Core::image_thread_function( )
 
 // *********************************************************************************************************************
 
-void Core::ozcore_image_read_thread_function( )
+void Core::ozcore_image_read_thread_function()
 {
     using namespace std::chrono_literals;
 
@@ -457,13 +483,12 @@ void Core::ozcore_image_read_thread_function( )
     {
         while ( ros::ok() )
         {
-            ROS_INFO("Loop start");
 
             if( ozcore_image_socket_connected_ == true )
             {
                 ozcore_image_socket_access_.lock();
 
-                ssize_t size = read(ozcore_image_socket_desc_, received_buffer, 4096);
+                ssize_t size = read( ozcore_image_socket_desc_, received_buffer, 4096 );
 
                 ozcore_image_socket_access_.unlock();
 
@@ -488,31 +513,30 @@ void Core::ozcore_image_read_thread_function( )
 
 void Core::ozcore_image_thread_function( )
 {
-
     using namespace std::chrono_literals;
     int naio01_ozcore_image_server_port = 5558;
 
     ozcore_image_thread_started_ = true;
 
-    ozcore_image_server_socket_desc_ = DriverSocket::openSocketServer(naio01_ozcore_image_server_port);
+    ozcore_image_server_socket_desc_ = DriverSocket::openSocketServer( naio01_ozcore_image_server_port );
 
     ozcore_image_socket_connected_ = false;
+
+    int64_t last_ozcore_image_sent_ms = 0;
+
+    uint8_t image_buffer_to_send[ 721920 ];
 
     while ( ros::ok() )
     {
         if ( not ozcore_image_socket_connected_ and ozcore_image_server_socket_desc_ > 0 )
         {
-            ozcore_image_socket_access_.lock();
-
-            ozcore_image_socket_desc_ = DriverSocket::waitConnect(ozcore_image_server_socket_desc_);
-
-            ozcore_image_socket_access_.unlock();
+            ozcore_image_socket_desc_ = DriverSocket::waitConnect( ozcore_image_server_socket_desc_ );
 
             if ( ozcore_image_socket_desc_ > 0 )
             {
                 ozcore_image_socket_connected_ = true;
 
-                ROS_INFO("Connexion OzCore Image Socket");
+                ROS_ERROR( "OzCore Image Socket Connected" );
 
                 milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_ozcore_image_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -524,42 +548,70 @@ void Core::ozcore_image_thread_function( )
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if (now - last_ozcore_image_socket_activity_time_ > 1000)
+            if ( now - last_ozcore_image_socket_activity_time_ > 1000 )
             {
                 ozcore_image_disconnected();
             }
             else
             {
+                bool new_image_received = false;
+
                 ozcore_image_packet_to_send_access_.lock();
 
-                if (image_buffer_to_send_ready_ == true)
+                if( last_ozcore_image_sent_ms != last_ozcore_image_ms_ )
                 {
-                    ozcore_image_socket_access_.lock();
-
-                    int total_written_bytes = 0;
-                    int write_size = 0;
-
-                    while( total_written_bytes < 721920 and write_size >= 0 )
+                    for( uint i = 0 ; i < 721920 ; i++ )
                     {
-                        int write_size = (int)write( ozcore_image_socket_desc_, image_buffer_to_send_ + total_written_bytes, 721920 - total_written_bytes );
-
-                        total_written_bytes = total_written_bytes + write_size;
-
+                        image_buffer_to_send[ i ] = image_buffer_to_send_[ i ];
                     }
 
-                    ozcore_image_socket_access_.unlock();
+                    new_image_received = true;
 
-                    image_buffer_to_send_ready_ = false;
+                    last_ozcore_image_sent_ms = last_ozcore_image_ms_;
                 }
 
                 ozcore_image_packet_to_send_access_.unlock();
+
+                if ( new_image_received == true )
+                {
+                    int total_written_bytes = 0;
+                    ssize_t write_size = 0;
+
+                    int nb_tries = 0;
+                    int max_tries = 50;
+
+                    while( total_written_bytes < 721920 and nb_tries < max_tries )
+                    {
+                        write_size = send( ozcore_image_socket_desc_, image_buffer_to_send + total_written_bytes, 721920 - total_written_bytes, 0 );
+
+                        if( write_size < 0 )
+                        {
+                            nb_tries++;
+                            std::this_thread::sleep_for( 10ms );
+                        }
+                        else
+                        {
+                            total_written_bytes = total_written_bytes + static_cast<int>( write_size );
+                            nb_tries = 0;
+                        }
+                    }
+
+                    if( nb_tries >= max_tries )
+                    {
+                        ROS_ERROR("send packet failed, too many tries");
+                    }
+                    else
+                    {
+                        ROS_INFO("Camera packet send to 5558");
+                    }
+                }
             }
         }
 
-        std::this_thread::sleep_for( 1ms);
+        //std::this_thread::sleep_for( 10ms );
     }
 
-    close(ozcore_image_server_socket_desc_);
+    close( ozcore_image_server_socket_desc_ );
 
     ozcore_image_thread_started_ = false;
 
@@ -635,7 +687,8 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
             image_buffer_to_send_[ i + IMAGE_SIZE ] = image_right->data[ i ];
         }
 
-        image_buffer_to_send_ready_ = true;
+        milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());
 
         ozcore_image_packet_to_send_access_.unlock();
 
@@ -643,11 +696,12 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
         image_packet_to_send_ = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) ); ;
 
-        image_ready_ = true;
+        milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        last_image_ms_ = static_cast<int64_t>( image_now_ms.count());
 
         image_packet_to_send_access_.unlock();
 
-        ROS_INFO("Stereo camera packet enqueued");
+        ROS_INFO("Stereo camera packet managed");
     }
     catch (SocketException& e )
     {

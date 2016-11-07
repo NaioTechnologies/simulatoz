@@ -69,17 +69,17 @@ while again == 1:
     again = 0
     while 1 :
         try :
-            texture = int(raw_input("Do you want a sky ? Press : \n - 0 for yes \n - 1 for no \n "))
+            sky = int(raw_input("Do you want a sky ? Press : \n - 0 for no \n - 1 for yes \n "))
             break
         except ValueError:
             print "This is not a number !"
 
-    if texture == 1 :
+    if sky == 1 :
         print("You chose the sky \n")
         file.write("\t \t<scene> \n \
 \t \t \t <sky> \n \
 \t \t \t \t <clouds> \n \
-\t \t \t \t \t <speed>12</speed> \n \
+\t \t \t \t \t <speed>0</speed> \n \
 \t \t \t \t </clouds> \n \
 \t \t \t </sky> \n \
 \t \t </scene> \n \n ")
