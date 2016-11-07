@@ -21,6 +21,7 @@
 #include "oz440_api/HaOdoPacket.hpp"
 
 #include <vector>
+#include <stdlib.h>
 
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
@@ -204,6 +205,8 @@ void Core::image_disconnected()
     image_socket_connected_ = false;
 
     ROS_ERROR("Image Socket Disconnected");
+
+    system("rosservice call gazebo/reset_world");
 }
 
 // *********************************************************************************************************************
@@ -215,6 +218,9 @@ void Core::ozcore_image_disconnected()
     ozcore_image_socket_connected_ = false;
 
     ROS_ERROR("OzCore Image Socket Disconnected");
+
+    system("rosservice call gazebo/reset_world");
+
 }
 
 // *********************************************************************************************************************
