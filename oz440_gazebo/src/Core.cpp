@@ -565,7 +565,7 @@ void Core::ozcore_image_thread_function( )
 
                 if( last_ozcore_image_sent_ms != last_ozcore_image_ms_ )
                 {
-                    std::memcpy( image_buffer_to_send, image_buffer_to_send_, 360960 );
+                    std::memcpy( image_buffer_to_send, image_buffer_to_send_, 721920 );
                     new_image_received = true;
 
                     last_ozcore_image_sent_ms = last_ozcore_image_ms_;
