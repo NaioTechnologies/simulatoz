@@ -190,7 +190,7 @@ void Core::run( )
 
         packet_to_send_list_access_.unlock();
 
-        std::this_thread::sleep_for(15ms);
+        std::this_thread::sleep_for(10ms);
     }
 
     close( server_socket_desc_ );
@@ -308,7 +308,7 @@ void Core::client_read_thread_function( )
                     received_packet_list.clear();
                 }
             }
-            std::this_thread::sleep_for(5ms);
+            std::this_thread::sleep_for(1ms);
 
             ros::spinOnce();
         }
@@ -369,6 +369,8 @@ void Core::image_thread_function( )
 
     using namespace std::chrono_literals;
     int naio01_image_server_port = 5557;
+
+//    uint8_t buffer_to_send[ 4000000 ];
 
     image_thread_started_ = true;
 
@@ -563,7 +565,7 @@ void Core::ozcore_image_thread_function( )
 
                 if( last_ozcore_image_sent_ms != last_ozcore_image_ms_ )
                 {
-                    std::memcpy(&image_buffer_to_send[ 0 ], &image_buffer_to_send_[ 0 ], 721920 );
+                    std::memcpy( image_buffer_to_send, image_buffer_to_send_, 360960 );
                     new_image_received = true;
 
                     last_ozcore_image_sent_ms = last_ozcore_image_ms_;
@@ -608,7 +610,7 @@ void Core::ozcore_image_thread_function( )
             }
         }
 
-        std::this_thread::sleep_for( 10ms );
+        std::this_thread::sleep_for( 5ms );
     }
 
     close( ozcore_image_server_socket_desc_ );
@@ -632,42 +634,39 @@ void Core::join_client_read_thread()
 
 void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
-    if( client_socket_connected_ )
+    try
     {
-        try
+        uint16_t distance[ 271 ];
+        uint8_t albedo[ 271 ];
+
+        for (int i = 0; i < 271; ++i)
         {
-            uint16_t distance[ 271 ];
-            uint8_t albedo[ 271 ];
-
-            for (int i = 0; i < 271; ++i)
+            if( i >= 45 and i < 226 )
             {
-                if( i >= 45 and i < 226 )
-                {
-                    distance[ i ] = lidar_msg->ranges[ 270- i ] * 1000; //Convert meters to millimeters
-                }
-                else
-                {
-                    distance[ i ] = 0;
-                }
-
-                albedo[ i ] = 0;
+                distance[ i ] = lidar_msg->ranges[ 270- i ] * 1000; //Convert meters to millimeters
+            }
+            else
+            {
+                distance[ i ] = 0;
             }
 
-            HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
-
-            packet_to_send_list_access_.lock();
-
-            packet_to_send_list_.push_back( lidarPacketPtr );
-
-            packet_to_send_list_access_.unlock();
-
-
-            ROS_INFO("Lidar packet enqueued");
+            albedo[ i ] = 0;
         }
-        catch ( SocketException& e )
-        {
-            ROS_ERROR( "Socket exception was caught : %s", e.description().c_str() );
-        }
+
+        HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
+
+        packet_to_send_list_access_.lock();
+
+        packet_to_send_list_.push_back( lidarPacketPtr );
+
+        packet_to_send_list_access_.unlock();
+
+
+        ROS_INFO("Lidar packet enqueued");
+    }
+    catch ( SocketException& e )
+    {
+        ROS_ERROR( "Socket exception was caught : %s", e.description().c_str() );
     }
 }
 
@@ -675,40 +674,38 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
 
 void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right)
 {
-    if ( ozcore_image_socket_connected_ or image_socket_connected_ )
+    try
     {
-        try {
-            cl::BufferUPtr dataBuffer = cl::unique_buffer(static_cast<size_t>( 721920 ));
+        cl::BufferUPtr dataBuffer = cl::unique_buffer( static_cast<size_t>( 721920 ) );
 
-            ozcore_image_packet_to_send_access_.lock();
+        ozcore_image_packet_to_send_access_.lock();
 
-            std::memcpy(image_buffer_to_send_, &image_left->data[0], 360960);
-            std::memcpy(image_buffer_to_send_ + 360960, &image_right->data[0], 360960);
+        std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
+        std::memcpy( image_buffer_to_send_+ 360960, &image_right->data[ 0 ], 360960 );
 
-            std::memcpy(&(*dataBuffer)[0], &image_left->data[0], 360960);
-            std::memcpy(&(*dataBuffer)[0] + 360960, &image_right->data[0], 360960);
+        std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
+        std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
 
 
-            milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-            last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());
+        milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());
 
-            ozcore_image_packet_to_send_access_.unlock();
+        ozcore_image_packet_to_send_access_.unlock();
 
-            image_packet_to_send_access_.lock();
+        image_packet_to_send_access_.lock();
 
-            image_packet_to_send_ = std::make_shared<ApiStereoCameraPacket>(
-                    ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move(dataBuffer));;
+        image_packet_to_send_ = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) ); ;
 
-            milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-            last_image_ms_ = static_cast<int64_t>( image_now_ms.count());
+        milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+        last_image_ms_ = static_cast<int64_t>( image_now_ms.count());
 
-            image_packet_to_send_access_.unlock();
+        image_packet_to_send_access_.unlock();
 
-            ROS_INFO("Stereo camera packet managed");
-        }
-        catch (SocketException &e) {
-            ROS_ERROR("Socket exception was caught : %s", e.description().c_str());
-        }
+        ROS_INFO("Stereo camera packet managed");
+    }
+    catch (SocketException& e )
+    {
+        ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
     }
 }
 
@@ -716,42 +713,39 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
 void Core::send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg)
 {
-    if( client_socket_connected_ )
+    try {
+
+        int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+        int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+        int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+
+        HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
+
+        packet_to_send_list_access_.lock();
+
+        packet_to_send_list_.push_back(gyroPacketPtr);
+
+        packet_to_send_list_access_.unlock();
+
+        ROS_INFO("Gyro packet enqueued");
+
+        int16_t x_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 / 9.8);
+        int16_t y_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 / 9.8);
+        int16_t z_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 / 9.8);
+
+        HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared<HaAcceleroPacket>(x_accelero, y_accelero, z_accelero);
+
+        packet_to_send_list_access_.lock();
+
+        packet_to_send_list_.push_back(acceleroPacketPtr);
+
+        packet_to_send_list_access_.unlock();
+
+        ROS_INFO("Accelero packet enqueued");
+    }
+    catch (SocketException& e)
     {
-        try {
-
-            int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
-            int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
-            int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
-
-            HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
-
-            packet_to_send_list_access_.lock();
-
-            packet_to_send_list_.push_back(gyroPacketPtr);
-
-            packet_to_send_list_access_.unlock();
-
-            ROS_INFO("Gyro packet enqueued");
-
-            int16_t x_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 / 9.8);
-            int16_t y_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 / 9.8);
-            int16_t z_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 / 9.8);
-
-            HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared<HaAcceleroPacket>(x_accelero, y_accelero, z_accelero);
-
-            packet_to_send_list_access_.lock();
-
-            packet_to_send_list_.push_back(acceleroPacketPtr);
-
-            packet_to_send_list_access_.unlock();
-
-            ROS_INFO("Accelero packet enqueued");
-        }
-        catch (SocketException& e)
-        {
-            ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
-        }
+        ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
     }
 }
 
@@ -759,35 +753,32 @@ void Core::send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg)
 
 void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
 {
-    if( client_socket_connected_ )
+    try
     {
-        try
-        {
 
-            ulong time = gps_fix_msg->header.stamp.toSec()*1000;
-            double lat = gps_fix_msg->latitude;
-            double lon = gps_fix_msg->longitude;
-            double alt = gps_fix_msg->altitude;
-            uint8_t unit = 1;
-            uint8_t satUsed = 3;
-            uint8_t quality = 3;
-            double groundSpeed = sqrt(gps_vel_msg->vector.x*gps_vel_msg->vector.x + gps_vel_msg->vector.y*gps_vel_msg->vector.y );
+        ulong time = gps_fix_msg->header.stamp.toSec()*1000;
+        double lat = gps_fix_msg->latitude;
+        double lon = gps_fix_msg->longitude;
+        double alt = gps_fix_msg->altitude;
+        uint8_t unit = 1;
+        uint8_t satUsed = 3;
+        uint8_t quality = 3;
+        double groundSpeed = sqrt(gps_vel_msg->vector.x*gps_vel_msg->vector.x + gps_vel_msg->vector.y*gps_vel_msg->vector.y );
 
-            HaGpsPacketPtr gpsPacketPtr = std::make_shared<HaGpsPacket>(time,lat,lon,alt,unit,satUsed,quality,groundSpeed);
+        HaGpsPacketPtr gpsPacketPtr = std::make_shared<HaGpsPacket>(time,lat,lon,alt,unit,satUsed,quality,groundSpeed);
 
-            packet_to_send_list_access_.lock();
+        packet_to_send_list_access_.lock();
 
-            packet_to_send_list_.push_back(gpsPacketPtr);
+        packet_to_send_list_.push_back(gpsPacketPtr);
 
-            packet_to_send_list_access_.unlock();
+        packet_to_send_list_access_.unlock();
 
-            ROS_INFO("Gps packet enqueued");
+        ROS_INFO("Gps packet enqueued");
 
-        }
-        catch (SocketException& e)
-        {
-            ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
-        }
+    }
+    catch (SocketException& e)
+    {
+        ROS_ERROR("Socket exception was caught : %s",e.description().c_str());
     }
 }
 

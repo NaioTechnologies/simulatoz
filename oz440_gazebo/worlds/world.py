@@ -22,7 +22,7 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t \t <linear>0.01</linear> \n \
 \t \t \t \t <quadratic>0.001</quadratic> \n \
 \t \t \t </attenuation> \n \
-\t \t \t <direction>-0.5 0.5 -1</direction> \n \
+\t \t \t <direction>0.9 0.5 -1</direction> \n \
 \t \t </light>\n \n")
 
 
@@ -222,7 +222,7 @@ file.write("\t \t <population name=\"sticks\"> \n \
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\\n \
 \t \t </population>\n" \
-%(1.1 + L/2.0, -(N-1)*w/2, N, 2, L+0.2, w))
+%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
 
 if M == 1:
     file.write("\t \t <population name=\"Mound\"> \n \
@@ -240,12 +240,14 @@ if M == 1:
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\\n \
 \t \t </population>\n" \
-%(1.1 + L/2.0, -(N-1)*w/2, N, 2, L+0.2, w))
+%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
 
 
 # Rows of vegetable
 
-file.write("\t \t<population name=\"Vegetable\">\n \
+if M == 1:
+
+    file.write("\t \t<population name=\"Vegetable\">\n \
 \t \t \t <model name=\"%s\">\n \
 \t \t \t \t <include>\n \
 \t \t \t \t \t <static>0</static>\n \
@@ -260,9 +262,8 @@ file.write("\t \t<population name=\"Vegetable\">\n \
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n" \
-%(V, V, 1.1 + L/2.0, -(N-1)*w/2, N, L*F, 1/float(F), w))
+%(V, V, 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, L*F, 1/float(F), w))
 
-if M == 1:
     file.write("\t \t<population name=\"Mound_cyl\">\n \
 \t \t \t <model name=\"Mound_cyl\">\n \
 \t \t \t \t <include>\n \
@@ -278,7 +279,23 @@ if M == 1:
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n" \
-%(1.1 + L/2.0, -(N-1)*w/2, N, L*F, 1/float(F), w))
+%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, L*F, 1/float(F), w))
+
+else :
+
+    row = 1
+    while row < N+1:
+        num = 1
+        while num < L * F + 1 :
+            Ran = ( random.random() - 0.5 )/ 10
+            file.write("\t \t<include> \n \
+\t \t \t <uri>model://%s</uri> \n \
+\t \t \t <pose>%f %f 0.9 0 0 %f</pose> \n \
+\t \t </include> \n \n" \
+%(V, 1.03 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0 ))
+            num += 1
+        row += 1
+
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -309,16 +326,16 @@ while again == 1:
 \t \t \t \t \t <uri>model://Rock</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f %f -0.005 0 0 0</pose>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
 \t \t \t <box>\n \
 \t \t \t \t <size>%d %f 0.01</size>\n \
 \t \t \t </box>\n \
-\t \t \t <model_count>50</model_count>\n \
+\t \t \t <model_count>%d</model_count>\n \
 \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.0 + L/2.0, -(float(i)-0.5)*w, L+4, w-0.1))
+%(i, 1.0 + L/2.0, -(float(i)-0.5)*w + w/2, L+4, w-0.1, L*6.0))
             i += 1
 
     elif R == 0 :
@@ -354,12 +371,12 @@ while again == 1:
 \t \t \t <box>\n \
 \t \t \t \t <size>%d %f 0.05</size>\n \
 \t \t \t </box>\n \
-\t \t \t <model_count>100</model_count>\n \
+\t \t \t <model_count>%d</model_count>\n \
 \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.0 + L/2.0, -w*(N-1)/2, L+1, w*(N-1)))
+%(1.0 + L/2.0, -w*(N-1)/2 + w/2, L+1, w*(N-1), L*N))
 
         i = 1
         while i < N+1:
@@ -374,12 +391,12 @@ while again == 1:
 \t \t \t <box>\n \
 \t \t \t \t <size>%f 0.2 0.05</size>\n \
 \t \t \t </box>\n \
-\t \t \t <model_count>50</model_count>\n \
+\t \t \t <model_count>%d</model_count>\n \
 \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.1 + L/2.0, -(i-1)*w, L-0.2))
+%(i, 1.1 + L/2.0, -(i-1)*w + w/2 , L-0.2, L * 6.0))
 
             i += 1
 
