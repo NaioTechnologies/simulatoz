@@ -52,7 +52,7 @@
 			<geometry> 
 				<box size="${chassis_top_length} ${chassis_top_width} ${chassis_top_height}"/> 
 			</geometry> 
-			<material name="white"/>
+			<material name="naio"/>
 		</visual>
 		<inertial> 
 			<origin xyz="0 0 0" rpy="0 0 0"/> 

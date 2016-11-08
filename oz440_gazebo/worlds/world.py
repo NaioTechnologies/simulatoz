@@ -32,13 +32,14 @@ file.write("<sdf version='1.6'> \n \
 
 print("New world Setup\nWorld configuration")
 again = 1
+static = 0
 
 # Ground texture
 while again == 1:
     again = 0
     while 1 :
         try :
-            texture = int(raw_input("Which ground texture do you want ? Press : \n - 1 for sand \n - 2 for dirt \n - 3 for grass \n - 4 if you do not want any texture \n To confirm, press enter. \n"))
+            texture = int(raw_input("Which ground texture do you want ? Press : \n - 0 if you want a heightmap \n - 1 for sand \n - 2 for dirt \n - 3 for grass \n To confirm, press enter. \n"))
             break
         except ValueError:
             print "This is not a number !"
@@ -55,9 +56,10 @@ while again == 1:
         print("You chose a grass ground \n")
         file.write("\t \t <include> \n \t \t \t <uri>model://grass_plane</uri> \n \t \t </include>\n \n")
 
-    elif texture == 4 :
-        print("You chose not to have any texture \n")
-        file.write("\t \t <include> \n \t \t \t <uri>model://ground_plane</uri> \n \t \t </include>\n \n")
+    elif texture == 0 :
+        static = 1
+        print("You chose a heightmap \n")
+        file.write("\t \t <include> \n \t \t \t <uri>model://heightmap</uri> \n \t \t </include>\n \n")
 
     else :
         print("You did not enter a correct answer. Try again ! \n")
@@ -207,7 +209,9 @@ again = 1
 # World file writting
 
 # Red Sticks
-file.write("\t \t <population name=\"sticks\"> \n \
+if M == 1:
+
+    file.write("\t \t <population name=\"sticks\"> \n \
 \t \t \t <model name=\"Red_stick\">\n \
 \t \t \t \t <include>\n \
 \t \t \t \t \t <static>0</static>\n \
@@ -222,9 +226,32 @@ file.write("\t \t <population name=\"sticks\"> \n \
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\\n \
 \t \t </population>\n" \
-%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+%( 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+
+else:
+
+    file.write("\t \t <population name=\"sticks\"> \n \
+\t \t \t <model name=\"Red_stick\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>%d</static>\n \
+\t \t \t \t \t <uri>model://Red_stick</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t<pose>%f %f 0.1 0 0 0</pose>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
+\t \t \t </distribution>\\n \
+\t \t </population>\n" \
+%( static, 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+
+
+# Mounds
 
 if M == 1:
+
     file.write("\t \t <population name=\"Mound\"> \n \
 \t \t \t <model name=\"Mound\">\n \
 \t \t \t \t <include>\n \
@@ -241,6 +268,23 @@ if M == 1:
 \t \t \t </distribution>\\n \
 \t \t </population>\n" \
 %(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+
+    file.write("\t \t<population name=\"Mound_cyl\">\n \
+\t \t \t <model name=\"Mound_cyl\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Mound_cyl</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.2 0 0 0</pose>\n \
+\t \t \t<distribution> \n \
+\t \t \t \t <type>grid</type> \n \
+\t \t \t \t <rows>%d</rows>\n \
+\t \t \t \t <cols>%d</cols>\n \
+\t \t \t \t <step>%f %f 0</step>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n" \
+%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, L*F, 1/float(F), w))
 
 
 # Rows of vegetable
@@ -264,23 +308,6 @@ if M == 1:
 \t \t </population> \n \n" \
 %(V, V, 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, L*F, 1/float(F), w))
 
-    file.write("\t \t<population name=\"Mound_cyl\">\n \
-\t \t \t <model name=\"Mound_cyl\">\n \
-\t \t \t \t <include>\n \
-\t \t \t \t \t <static>1</static>\n \
-\t \t \t \t \t <uri>model://Mound_cyl</uri>\n \
-\t \t \t \t </include>\n \
-\t \t \t </model>\n \
-\t \t \t <pose>%f %f -0.2 0 0 0</pose>\n \
-\t \t \t<distribution> \n \
-\t \t \t \t <type>grid</type> \n \
-\t \t \t \t <rows>%d</rows>\n \
-\t \t \t \t <cols>%d</cols>\n \
-\t \t \t \t <step>%f %f 0</step>\n \
-\t \t \t </distribution>\n \
-\t \t </population> \n \n" \
-%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, L*F, 1/float(F), w))
-
 else :
 
     row = 1
@@ -290,9 +317,10 @@ else :
             Ran = ( random.random() - 0.5 )/ 10
             file.write("\t \t<include> \n \
 \t \t \t <uri>model://%s</uri> \n \
-\t \t \t <pose>%f %f 0.9 0 0 %f</pose> \n \
+\t \t \t <pose>%f %f 0.15 0 0 %f</pose> \n \
+\t \t \t <static>%d</static> \n \
 \t \t </include> \n \n" \
-%(V, 1.03 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0 ))
+%(V, 1.03 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0, static ))
             num += 1
         row += 1
 
@@ -387,7 +415,7 @@ while again == 1:
 \t \t \t \t \t <uri>model://Grass</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f %f 0 0 0 0</pose>\n \
+\t \t \t <pose>%f %f -0.02 0 0 0</pose>\n \
 \t \t \t <box>\n \
 \t \t \t \t <size>%f 0.2 0.05</size>\n \
 \t \t \t </box>\n \
