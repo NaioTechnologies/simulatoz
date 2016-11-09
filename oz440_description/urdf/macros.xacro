@@ -81,7 +81,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </joint>
       <actuator name="${fb}_${lr}_Motor">
         <hardwareInterface>EffortJointInterface</hardwareInterface>
-        <mechanicalReduction>46</mechanicalReduction>
+        <mechanicalRedu.ction>46</mechanicalRedu.ction>
       </actuator>
     </transmission>
 

@@ -1,0 +1,42 @@
+<?xml version='1.0'?>
+<sdf version='1.6'>
+  <model name='Sign'>
+    <link name='link'>
+      <pose frame=''>0 0 0 0 -0 0</pose>
+      <inertial>
+        <mass>1</mass>
+        <inertia>
+          <ixx>0.166667</ixx>
+          <ixy>0</ixy>
+          <ixz>0</ixz>
+          <iyy>0.166667</iyy>
+          <iyz>0</iyz>
+          <izz>0.166667</izz>
+        </inertia>
+        <pose frame=''>0 0 0 0 -0 0</pose>
+      </inertial>
+      <self_collide>0</self_collide>
+      <kinematic>0</kinematic>
+      <gravity>1</gravity>
+      <visual name='visual'>
+        <geometry>
+          <box>
+            <size>1 0.05 1</size>
+          </box>
+        </geometry>
+        <material>
+          <script>
+            <uri>model://ground_plane/materials/scripts/my_ground_plane.material</uri>
+            <uri>model://ground_plane/materials/textures</uri>
+            <name>my_ground_plane/NaioLogo</name>
+          </script>
+        </material>
+        <pose frame=''>0 0 0.5 0 -0 1.57</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+    </link>
+    <static>1</static>
+    <allow_auto_disable>1</allow_auto_disable>
+  </model>
+</sdf>
