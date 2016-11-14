@@ -40,17 +40,22 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         </geometry>
       </collision>
 
-      <visual>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/4}"/>
-        </geometry>
-      </visual>
+      <!--<visual>-->
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+        <!--<geometry>-->
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/4}"/>-->
+        <!--</geometry>-->
+      <!--</visual>-->
 
       <visual>
-        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
+        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
         <geometry>
-          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
+        <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
+        <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
+        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
+        <!--<geometry>-->
+          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
         </geometry>
         <material name="black"/>
       </visual>
