@@ -79,7 +79,7 @@ namespace gazebo {
             gzthrow(error);
         }
 
-        joints->SetPosition(, 0, -0.15*position_/100);
+        joints->SetPosition( 0, 0.0);
 
         // Make sure the ROS node for Gazebo has already been initialized
         if (!ros::isInitialized())
@@ -94,20 +94,19 @@ namespace gazebo {
         ROS_INFO("Starting GazeboRosActuator Plugin (ns = %s)!", this->robot_namespace_.c_str());
 
         // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
-        cmd_subscriber_ = rosnode_->subscribe("/oz440/cmd_vel_act", 50, &GazeboRosActuator::cmdVelCallback, this);
+        cmd_subscriber_ = rosnode_->subscribe(this->command_topic_, 50, &GazeboRosActuator::cmdCallback, this);
 
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboRosActuator::OnUpdate, this));
     }
 
     void GazeboRosSideDrive::OnUpdate()
     {
-        joints->SetParam("vel", 0, speed_);
-
+        joints->SetPosition( 0, -0.15 * position_ /100);
     }
 
-    void GazeboRosActuator::cmdVelCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
+    void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
-        speed_ = cmd_msg->x;
+        position_ = cmd_msg->x;
 
     }
 
