@@ -111,6 +111,7 @@ namespace gazebo {
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
         position_ = cmd_msg->x;
+        ROS_ERROR("position : %f", position_);
 
     }
 
