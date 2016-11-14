@@ -713,7 +713,6 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
     try
     {
         actuator_position_ = joint_states_msg->position[0] ;
-        ROS_ERROR( "actuator_position_ : %f", actuator_position_ );
 
         ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( (uint8_t) actuator_position_  * ( -100.0 / 0.15 ) );
 
