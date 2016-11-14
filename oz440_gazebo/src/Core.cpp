@@ -321,18 +321,18 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(actuator_position_ - 2.0);
-                                ROS_ERROR("MONTE : %f", actuator_position_ - 2.0);
+                                command.x = actuator_position_ + 0.1;
+                                ROS_ERROR("MONTE : %f", actuator_position_ +0.1);
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(actuator_position_  + 2.0);
-                                ROS_ERROR("DESCEND : %f", actuator_position_ + 2.0);
+                                command.x = actuator_position_  - 0.1;
+                                ROS_ERROR("DESCEND : %f", actuator_position_ -0.1);
                             }
                             else
                             {
-                                command.x = static_cast<double>(actuator_position_);
+                                command.x = actuator_position_;
                             }
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
@@ -712,10 +712,10 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
 {
     try
     {
-        actuator_position_ = joint_states_msg->position[0] * ( -100.0 / 0.15 );
+        actuator_position_ = joint_states_msg->position[0] ;
         ROS_ERROR( "actuator_position_ : %f", actuator_position_ );
 
-        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( actuator_position_ );
+        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( (uint8_t) actuator_position_  * ( -100.0 / 0.15 ) );
 
         packet_to_send_list_access_.lock();
 

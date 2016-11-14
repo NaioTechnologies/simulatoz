@@ -66,7 +66,7 @@ namespace gazebo {
         }
 
         // Initialize velocity stuff
-        position_ = 0;
+        position_ = 0.0;
 
         joints = this->parent->GetJoint(joint_name_);
 
@@ -103,13 +103,13 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-        joints->SetPosition( 1, -0.15 * position_ /100);
+        joints->SetPosition( 1, position_ );
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
         position_ = cmd_msg->x;
-        ROS_ERROR("position : %f to update : %f", position_, -0.15 * position_ /100);
+        ROS_ERROR("position to update: %f ", position_);
 
     }
 

@@ -45,7 +45,7 @@ namespace gazebo {
         std::string joint_name_;
 
         double torque;
-        double position_;
+        float64 position_;
 
         physics::JointPtr joints;
 
