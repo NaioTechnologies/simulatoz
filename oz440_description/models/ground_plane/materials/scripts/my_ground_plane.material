@@ -18,26 +18,6 @@ technique
   }
 }
 
-material my_ground_plane/Grass
-{
-technique
-{
-    pass
-    {
-      ambient 0.9 0.9 0.9 1.0
-      diffuse 1.0 1.0 1.0 1.0
-      specular 0.0 0.0 0.0 1.0 0.5
-
-      texture_unit
-      {
-        texture grass3.jpg
-        filtering trilinear
-        scale 0.01 0.01
-      }
-    }
-  }
-}
-
 
 material my_ground_plane/People
 {

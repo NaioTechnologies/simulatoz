@@ -33,7 +33,8 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t \t <quadratic>0.001</quadratic> \n \
 \t \t \t </attenuation> \n \
 \t \t \t <direction>0.9 0.5 -1</direction> \n \
-\t \t </light>\n \n \
+\t \t </light>\n \
+\n \
 \t \t <population name=\"Sign\">\n \
 \t \t \t <model name=\"Sign\">\n \
 \t \t \t \t <include>\n \
@@ -49,7 +50,24 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
-\t \t </population>\n \n")
+\t \t </population>\n \
+\n \
+\t \t <population name=\"Sign2\">\n \
+\t \t \t <model name=\"Sign\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Sign</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>-4 1 0 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>0.01 0.01 0.01</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>1</model_count>\n \
+\t \t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population>\n \n ")
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -340,7 +358,7 @@ else :
 \t \t \t <pose>%f %f 0.15 0 0 %f</pose> \n \
 \t \t \t <static>%d</static> \n \
 \t \t </include> \n \n" \
-%(V, 1.03 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0, static ))
+%(V, 1.2 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0, static ))
             num += 1
         row += 1
 
@@ -526,7 +544,7 @@ while again == 1:
 \t \t \t \t \t <uri>model://Tree</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>-10 0 -0.6 0 0 0</pose>\n \
+\t \t \t <pose>-11 0 -0.6 0 0 0</pose>\n \
 \t \t \t <box>\n \
 \t \t \t \t <size>10 30 3</size>\n \
 \t \t \t </box>\n \

@@ -32,22 +32,32 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
     <link name="${fb}_${lr}_wheel">
       <collision>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} 0" />-->
+        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
         <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
+        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
         <geometry>
-          <mesh filename="model://Wheel/roue.dae "/>
+          <cylinder length="${wheel_width}" radius="${wheel_diameter/4}"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
+        <geometry>
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
         </geometry>
         <material name="black"/>
       </visual>
 
       <inertial>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} 0" />
+        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}" />
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} 0" />-->
         <mass value="${wheel_mass}"/>
         <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
       </inertial>
@@ -111,6 +121,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
     </link>
 
+    <gazebo reference="actuator_base_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
+
     <link name="actuator_part1_link">
       <inertial>
         <mass value="1"/>
@@ -131,6 +150,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <material name="green"/>
       </visual>
     </link>
+
+    <gazebo reference="actuator_part1_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
 
     <link name="actuator_part2_link">
       <inertial>
@@ -153,6 +181,14 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
     </link>
 
+    <gazebo reference="actuator_part2_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
 
     <joint name="chassis_bottom_to_actuator_base_joint" type="fixed">
       <parent link="${parent}"/>
@@ -164,9 +200,20 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <parent link="actuator_base_link"/>
       <child link="actuator_part1_link"/>
       <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
-      <axis rpy="0 0 0" xyz="0 0 -1"/>
-      <limit upper="0.15" lower="0.15" effort="1" velocity="0.1"/>
+      <axis rpy="0 0 0" xyz="0 0 1"/>
+      <limit upper="0" lower="-0.15" effort="1" velocity="0.1"/>
     </joint>
+
+    <transmission name="actuator_base_link_to_actuator_part1_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="actuator_base_link_to_actuator_part1_joint">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="actuator_base_link_to_actuator_part1_actuator">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalRedu.ction>46</mechanicalRedu.ction>
+      </actuator>
+    </transmission>
 
     <joint name="actuator_part1_to_actuator_part2_joint" type="fixed">
       <parent link="actuator_part1_link"/>
@@ -200,6 +247,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <box_inertia m="${cameraMass}" x="${cameraSizeX}" y="${cameraSizeY/2}" z="${cameraSizeZ}" />
       </inertial>
     </link>
+
+    <gazebo reference="camera_stereo_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Grey</material>
+    </gazebo>
 
     <joint name="chassis_top_to_camera_stereo" type="fixed">
       <parent link="${parent}"/>
@@ -264,6 +320,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </inertial>
     </link>
 
+    <gazebo reference="IMU_base_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
+
     <link name="IMU_link">
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -285,6 +350,15 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <box_inertia m="${IMU_Mass}" x="${IMU_Length}" y="${IMU_Width}" z="${IMU_Height}"/>
       </inertial>
     </link>
+
+    <gazebo reference="IMU_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Grey</material>
+    </gazebo>
 
     <joint name="actuator_base_to_IMU_base_joint" type="fixed">
       <parent link="${parent}"/>

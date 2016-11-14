@@ -12,6 +12,7 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/Image.h"
+#include "sensor_msgs/JointState.h"
 #include "sensor_msgs/LaserScan.h"
 #include "gazebo_msgs/LinkStates.h"
 #include "sensor_msgs/NavSatFix.h"
@@ -33,6 +34,7 @@ public:
 
     // callback functions
     void send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
+    void send_actuator_position_callback( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
     void send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right);
     void send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
@@ -100,9 +102,12 @@ private:
     int64_t last_image_ms_;
     int64_t last_ozcore_image_ms_;
 
+    float actuator_position_;
+
 
     // ROS PART
     ros::Publisher velocity_pub_;
+    ros::Publisher actuator_pub_;
 
 
     bool image_ready_;

@@ -19,6 +19,7 @@
 #include "oz440_api/HaAcceleroPacket.hpp"
 #include "oz440_api/ApiStereoCameraPacket.hpp"
 #include "oz440_api/HaOdoPacket.hpp"
+#include "oz440_api/ApiMoveActuatorPacket.hpp"
 
 #include <vector>
 #include <stdlib.h>
@@ -67,6 +68,8 @@ Core::Core( int argc, char **argv )
 
     last_ozcore_image_ms_ = 0;
 
+    actuator_position_ = 0.0;
+
 }
 
 // *********************************************************************************************************************
@@ -86,11 +89,15 @@ void Core::run( )
     ros::NodeHandle n;
 
     velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
+    actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
 
     //ros::Rate loop_rate(10);
 
     // subscribe to lidar topic
     ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500000, &Core::send_lidar_packet_callback, this );
+
+    // subscribe to actuator position
+    ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500000, &Core::send_actuator_position_callback, this );
 
     // subscribe to imu topic
     ros::Subscriber imu_sub = n.subscribe("/oz440/imu/data", 50, &Core::send_imu_packet_callback, this);
@@ -303,6 +310,31 @@ void Core::client_read_thread_function( )
                             command.y = ((rightspeed / 127.0) * 3.4);
 
                             velocity_pub_.publish(command);
+                        }
+
+                        if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr))
+                        {
+                            //  When receiving an actuator order
+                            ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
+
+                            geometry_msgs::Vector3 command;
+
+                            if ( ActuatorPacketPtr->position == 1 )
+                            {
+                                command.x = static_cast<double>(ActuatorPacketPtr->position + 0.01);
+                            }
+                            else if ( ActuatorPacketPtr->position == 2 )
+                            {
+                                command.x = static_cast<double>(ActuatorPacketPtr->position - 0.01);
+                            }
+                            else
+                            {
+                                command.x = static_cast<double>(ActuatorPacketPtr->position);
+                            }
+
+                            ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
+
+                            actuator_pub_.publish(command);
                         }
                     }
                     received_packet_list.clear();
@@ -663,6 +695,34 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
 
 
         ROS_INFO("Lidar packet enqueued");
+    }
+    catch ( SocketException& e )
+    {
+        ROS_ERROR( "Socket exception was caught : %s", e.description().c_str() );
+    }
+}
+
+
+// *********************************************************************************************************************
+
+void Core::send_actuator_position_callback( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
+{
+    try
+    {
+        actuator_position_ = joint_states_msg->position[0];
+        uint8_t position_to_send = (uint8_t) (actuator_position_ * ( -100.0 / 0.15 ));
+
+        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( position_to_send );
+
+        packet_to_send_list_access_.lock();
+
+        packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
+
+        packet_to_send_list_access_.unlock();
+
+        ROS_ERROR("Position = %f, cast = %d", actuator_position_ , position_to_send );
+
+        ROS_INFO("Actuator position packet enqueued");
     }
     catch ( SocketException& e )
     {
