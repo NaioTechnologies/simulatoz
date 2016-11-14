@@ -317,17 +317,17 @@ void Core::client_read_thread_function( )
                             //  When receiving an actuator order
                             ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
 
-                            ROS_ERROR("%f",  ActuatorPacketPtr->position );
+                            ROS_ERROR("%d",  ActuatorPacketPtr->position );
 
                             geometry_msgs::Vector3 command;
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(actuator_position_ + 0.01);
+                                command.x = static_cast<double>(actuator_position_ - 1);
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(actuator_position_ - 0.01);
+                                command.x = static_cast<double>(actuator_position_  + 1);
                             }
                             else
                             {
@@ -711,18 +711,15 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
 {
     try
     {
-        actuator_position_ = joint_states_msg->position[0];
-        uint8_t position_to_send = (uint8_t) (actuator_position_ * ( -100.0 / 0.15 ));
+        actuator_position_ = joint_states_msg->position[0] * ( -100.0 / 0.15 );
 
-        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( position_to_send );
+        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( actuator_position_ );
 
         packet_to_send_list_access_.lock();
 
         packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
 
         packet_to_send_list_access_.unlock();
-
-        ROS_ERROR("Position = %f, cast = %d", actuator_position_ , position_to_send );
 
         ROS_INFO("Actuator position packet enqueued");
     }
