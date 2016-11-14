@@ -57,7 +57,7 @@ namespace gazebo {
         std::string command_topic_;
 
         // DiffDrive stuff
-        void cmdVelCallback(const geometry_msgs::Vector3::ConstPtr& cmd_msg);
+        void cmdCallback(const geometry_msgs::Vector3::ConstPtr& cmd_msg);
 
     };
 

@@ -101,9 +101,9 @@ namespace gazebo {
         this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboRosActuator::OnUpdate, this));
     }
 
-    void GazeboRosSideDrive::OnUpdate()
+    void GazeboRosActuator::OnUpdate()
     {
-//        joints->SetPosition( 1, -0.15 * position_ /100);
+        joints->SetPosition( 1, -0.15 * position_ /100);
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
