@@ -321,14 +321,14 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(actuator_position_ - 1.0);
-                                ROS_ERROR("MONTE : %f", actuator_position_ - 1.0);
+                                command.x = static_cast<double>(actuator_position_ - 2.0);
+                                ROS_ERROR("MONTE : %f", actuator_position_ - 2.0);
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(actuator_position_  + 1.0);
-                                ROS_ERROR("DESCEND : %f", actuator_position_ + 1.0);
+                                command.x = static_cast<double>(actuator_position_  + 2.0);
+                                ROS_ERROR("DESCEND : %f", actuator_position_ + 2.0);
                             }
                             else
                             {
@@ -713,6 +713,7 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
     try
     {
         actuator_position_ = joint_states_msg->position[0] * ( -100.0 / 0.15 );
+        ROS_ERROR( "actuator_position_ : %f", actuator_position_ );
 
         ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( actuator_position_ );
 

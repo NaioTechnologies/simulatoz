@@ -104,14 +104,12 @@ namespace gazebo {
     void GazeboRosActuator::OnUpdate()
     {
         joints->SetPosition( 1, -0.15 * position_ /100);
-
-        ROS_ERROR("UPDATE : %f", -0.15 * position_ /100);
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
         position_ = cmd_msg->x;
-        ROS_ERROR("position : %f", position_);
+        ROS_ERROR("position : %f to update : %f", position_, -0.15 * position_ /100);
 
     }
 
