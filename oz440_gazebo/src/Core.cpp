@@ -317,6 +317,8 @@ void Core::client_read_thread_function( )
                             //  When receiving an actuator order
                             ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
 
+                            ROS_ERROR("%f",  ActuatorPacketPtr->position );
+
                             geometry_msgs::Vector3 command;
 
                             if ( ActuatorPacketPtr->position == 1 )
