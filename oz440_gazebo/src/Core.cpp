@@ -321,14 +321,14 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(actuator_position_ - 10.0);
-                                ROS_ERROR("MONTE : %f", actuator_position_ - 10.0);
+                                command.x = static_cast<double>(actuator_position_ - 1.0);
+                                ROS_ERROR("MONTE : %f", actuator_position_ - 1.0);
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(actuator_position_  + 10.0);
-                                ROS_ERROR("DESCEND : %f", actuator_position_ - 10.0);
+                                command.x = static_cast<double>(actuator_position_  + 1.0);
+                                ROS_ERROR("DESCEND : %f", actuator_position_ + 1.0);
                             }
                             else
                             {
