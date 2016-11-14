@@ -79,7 +79,7 @@ namespace gazebo {
             gzthrow(error);
         }
 
-        joints->SetPosition( 0, 0.0);
+        joints->SetParam( "fmax", 0, torque);
 
         // Make sure the ROS node for Gazebo has already been initialized
         if (!ros::isInitialized())
@@ -101,7 +101,7 @@ namespace gazebo {
 
     void GazeboRosSideDrive::OnUpdate()
     {
-        joints->SetPosition( 0, -0.15 * position_ /100);
+        joints->SetPosition( 2, -0.15 * position_ /100);
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)

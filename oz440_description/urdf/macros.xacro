@@ -127,7 +127,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
-      <material>Gazebo/Grass</material>
+      <material name="orange">
+        <color rgba="${255/255} ${108/255} ${10/255} 1.0"/>
+      </material>
     </gazebo>
 
     <link name="actuator_part1_link">
