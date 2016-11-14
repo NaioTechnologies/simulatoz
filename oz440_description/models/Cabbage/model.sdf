@@ -21,7 +21,7 @@
       <visual name='visual'>
         <geometry>
           <mesh>
-            <uri>/home/fanny/catkin_ws/src/simulatoz/oz440_description/models/Cabbage/model.dae</uri>
+            <uri>model://Cabbage/model.dae</uri>
             <scale>3 3 3</scale>
           </mesh>
         </geometry>
