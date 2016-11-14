@@ -317,17 +317,15 @@ void Core::client_read_thread_function( )
                             //  When receiving an actuator order
                             ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
 
-                            ROS_ERROR("%d",  ActuatorPacketPtr->position );
-
                             geometry_msgs::Vector3 command;
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(actuator_position_ - 1);
+                                command.x = static_cast<double>(actuator_position_ - 10);
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(actuator_position_  + 1);
+                                command.x = static_cast<double>(actuator_position_  + 10);
                             }
                             else
                             {
