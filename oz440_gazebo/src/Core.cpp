@@ -321,15 +321,15 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = static_cast<double>(ActuatorPacketPtr->position + 0.01);
+                                command.x = static_cast<double>(actuator_position_ + 0.01);
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = static_cast<double>(ActuatorPacketPtr->position - 0.01);
+                                command.x = static_cast<double>(actuator_position_ - 0.01);
                             }
                             else
                             {
-                                command.x = static_cast<double>(ActuatorPacketPtr->position);
+                                command.x = static_cast<double>(actuator_position_);
                             }
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
