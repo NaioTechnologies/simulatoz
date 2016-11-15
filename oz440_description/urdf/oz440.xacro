@@ -89,5 +89,7 @@
 	<!-- inclusion du bumper -->
 	<bumper parent="chassis_top"/>
 
+	<tool_macro parent="actuator_part2_link"/>
+
 
 </robot>

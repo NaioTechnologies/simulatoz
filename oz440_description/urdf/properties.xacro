@@ -37,9 +37,9 @@
 	<xacro:property name="actuator_part1_Height" value="0.1"/>
 
 	<xacro:property name="actuator_part2_Mass" value="1"/>
-	<xacro:property name="actuator_part2_Length" value="0.1"/>
-	<xacro:property name="actuator_part2_Width" value="0.12"/>
-	<xacro:property name="actuator_part2_Height" value="0.02"/>
+	<xacro:property name="actuator_part2_Length" value="0.04"/>
+	<xacro:property name="actuator_part2_Width" value="0.04"/>
+	<xacro:property name="actuator_part2_Height" value="0.04"/>
 
 	<!-- Proprietes de la camera -->
 	<xacro:property name="cameraSizeX" value="0.075"/>

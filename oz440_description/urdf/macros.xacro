@@ -228,6 +228,63 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
   </xacro:macro>
 
+  <!-- macro pour l'outils -->
+  <xacro:macro name="tool_macro" params="parent">
+
+    <link name="tool">
+      <inertial>
+        <mass value="100"/>
+        <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+        <sphere_inertia m="50" r="0.05"/>
+      </inertial>
+      <collision name="sphere">
+        <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.05"/>
+        </geometry>
+      </collision>
+      <visual>
+        <origin xyz="-0.15 0 0" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.05"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+      <!--<collision name="stick">-->
+        <!--<origin xyz="-0.05 0 0" rpy="0 ${PI/2} 0"/>-->
+        <!--<geometry>-->
+          <!--<cylinder radius="0.01" length="0.1"/>-->
+        <!--</geometry>-->
+      <!--</collision>-->
+      <visual>
+        <origin xyz="-0.05 0 0" rpy="0 ${PI/2} 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.1"/>
+        </geometry>
+        <material name="grey"/>
+      </visual>
+    </link>
+
+    <gazebo reference="tool">
+      <mu1 value="0.999"/>
+      <mu2 value="0.999"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material> Gazebo/Grey </material>
+    </gazebo>
+
+    <joint name="tool_to_actuator_part_2" type="continuous">
+      <parent link="actuator_part2_link"/>
+      <child link="tool"/>
+      <origin xyz="0 0 ${-actuator_part2_Height/2}" rpy="0 0 0" />
+      <axis xyz="0 1 0" rpy="0 0 0" />
+      <limit effort="50" velocity="3"/>
+      <joint_properties damping="0.0" friction="0.3"/>
+    </joint>
+
+  </xacro:macro>
+
   <!-- macro pour la camera stereo -->
   <xacro:macro name="camera_stereo" params="parent">
     <link name="camera_stereo_link">
