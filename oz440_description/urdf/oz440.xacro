@@ -71,6 +71,8 @@
 	<!-- inclusion du porte outils -->
     <actuator_macro parent="chassis_bottom"/>
 
+	<!--<tool_macro parent="actuator_part2_link"/>-->
+
     <!-- inclusion des roues -->
 	<wheel fb="front" lr="right" tX="1" tY="-1"/>
 	<wheel fb="front" lr="left" tX="1" tY="1"/>
@@ -88,8 +90,6 @@
 
 	<!-- inclusion du bumper -->
 	<bumper parent="chassis_top"/>
-
-	<tool_macro parent="actuator_part2_link"/>
 
 
 </robot>

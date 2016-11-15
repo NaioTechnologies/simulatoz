@@ -67,6 +67,7 @@ namespace gazebo {
 
         // Initialize velocity stuff
         position_ = 0.0;
+        connection_ = 0;
 
         joints = this->parent->GetJoint(joint_name_);
 
@@ -74,14 +75,14 @@ namespace gazebo {
 
             char error[200];
             snprintf(error, 200,
-                     "GazeboRosActuator Plugin (ns = %s) couldn't get left front hinge joint named \"%s\"",
+                     "GazeboRosActuator Plugin (ns = %s) couldn't get joint named \"%s\"",
                      this->robot_namespace_.c_str(), this->joint_name_.c_str());
             gzthrow(error);
         }
 
-        joints->SetParam( "fmax", 0, torque);
+//        joints->SetParam( "fmax", 0, torque);
 
-        joints->SetPosition( 0, 0.0);
+//        joints->SetPosition( 0, 0.0);
 
         // Make sure the ROS node for Gazebo has already been initialized
         if (!ros::isInitialized())
@@ -103,13 +104,17 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-        joints->SetPosition( 0, position_ );
+        if (connection_ == 1)
+        {
+            joints->SetPosition( 0, position_ );
+            connection_ = 0;
+        }
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
+        connection_ = 1;
         position_ = cmd_msg->x;
-//        ROS_ERROR("position to update: %f ", position_);
 
     }
 
