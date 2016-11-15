@@ -233,7 +233,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
     <link name="tool">
       <inertial>
-        <mass value="100"/>
+        <mass value="50"/>
         <origin xyz="-0.15 0 0" rpy="0 0 0"/>
         <sphere_inertia m="50" r="0.05"/>
       </inertial>
@@ -266,8 +266,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="tool">
-      <mu1 value="0.999"/>
-      <mu2 value="0.999"/>
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
@@ -279,8 +279,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="tool"/>
       <origin xyz="0 0 ${-actuator_part2_Height/2}" rpy="0 0 0" />
       <axis xyz="0 1 0" rpy="0 0 0" />
-      <limit effort="100" velocity="5"/>
-      <joint_properties damping="0.0" friction="0.2"/>
+      <limit effort="200" velocity="10"/>
+      <joint_properties damping="0.0" friction="0.0"/>
     </joint>
 
   </xacro:macro>

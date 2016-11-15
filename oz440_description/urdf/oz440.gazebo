@@ -27,14 +27,14 @@
         </plugin>
     </gazebo>
 
-    <gazebo>
-        <plugin name="actuator_controller" filename="libgazebo_ros_actuator.so">
-            <robotNamespace>/oz440</robotNamespace>
-            <Joint>actuator_base_link_to_actuator_part1_joint</Joint>
-            <torque>200</torque>
-            <commandTopic>/oz440/cmd_act</commandTopic>
-        </plugin>
-    </gazebo>
+    <!--<gazebo>-->
+        <!--<plugin name="actuator_controller" filename="libgazebo_ros_actuator.so">-->
+            <!--<robotNamespace>/oz440</robotNamespace>-->
+            <!--<Joint>actuator_base_link_to_actuator_part1_joint</Joint>-->
+            <!--<torque>200</torque>-->
+            <!--<commandTopic>/oz440/cmd_act</commandTopic>-->
+        <!--</plugin>-->
+    <!--</gazebo>-->
 
     <!-- attribution de la couleur pour le porte outils -->
     <gazebo reference="actuator">
