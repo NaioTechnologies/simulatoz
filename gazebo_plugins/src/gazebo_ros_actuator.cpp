@@ -104,11 +104,22 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-        if (connection_ == 1)
+        if (connection==1)
         {
-            joints->SetPosition( 0, position_ );
+            if (position_ == 1)
+            {
+                joints->SetPosition( 0, 0.0 );
+
+            }
+
+            else if (position_ == 2)
+            {
+                joints->SetPosition( 0, -0.15 );
+
+            }
             connection_ = 0;
         }
+
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
