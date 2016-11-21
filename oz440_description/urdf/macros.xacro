@@ -67,8 +67,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="${fb}_${lr}_wheel">
-      <mu1 value="0.999"/>
-      <mu2 value="0.999"/>
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
@@ -266,8 +266,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="tool">
-      <mu1 value="0.1"/>
-      <mu2 value="0.1"/>
+      <mu1 value="1"/>
+      <mu2 value="1"/>
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
