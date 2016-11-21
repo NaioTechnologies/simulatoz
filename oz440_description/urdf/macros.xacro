@@ -232,8 +232,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="0 0 -0.017" rpy="0 0 0" />
-        <mass value="10"/>
-        <sphere_inertia m="${10}" r="${0.05}"/>
+        <mass value="1"/>
+        <sphere_inertia m="${1}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
