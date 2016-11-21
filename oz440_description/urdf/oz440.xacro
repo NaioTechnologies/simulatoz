@@ -91,5 +91,4 @@
 	<!-- inclusion du bumper -->
 	<bumper parent="chassis_top"/>
 
-
 </robot>
