@@ -32,6 +32,7 @@
             <robotNamespace>/oz440</robotNamespace>
             <Joint>actuator_base_link_to_actuator_part1_joint</Joint>
             <commandTopic>/oz440/cmd_act</commandTopic>
+            <torque>500</torque>
         </plugin>
     </gazebo>
 
