@@ -51,11 +51,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
         <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
         <geometry>
-        <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
           <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
-        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
-        <!--<geometry>-->
-          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
         </geometry>
         <material name="black"/>
       </visual>
@@ -70,8 +67,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="${fb}_${lr}_wheel">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
+      <mu1 value="0.999"/>
+      <mu2 value="0.999"/>
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
@@ -84,7 +81,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="${fb}_${lr}_wheel"/>
       <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
       <axis xyz="0 1 0" rpy="0 0 0" />
-      <limit effort="200" velocity="3.4"/>
+      <limit effort="2000" velocity="3.4"/>
       <joint_properties damping="0.0" friction="0.0"/>
     </joint>
 
@@ -134,36 +131,6 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <fdir1 value="0 0 0"/>
       <material> Gazebo/white </material>
     </gazebo>
-
-
-    <!--<link name="butee">-->
-      <!--<inertial>-->
-        <!--<mass value="0.01"/>-->
-        <!--<origin xyz="${-actuator_base_Length/2 - 0.01} 0 ${actuator_base_Height/2 - actuator_part1_Height/2 - 0.01}" rpy="0 0 0"/>-->
-        <!--<box_inertia m="0.01" x="0.02" y="${actuator_base_Width}" z="0.02"/>-->
-      <!--</inertial>-->
-      <!--<collision name="butee">-->
-        <!--<origin xyz="${-actuator_base_Length/2 - 0.01} 0 ${actuator_base_Height/2 - actuator_part1_Height/2 - 0.01}" rpy="0 0 0"/>-->
-        <!--<geometry>-->
-          <!--<box size="0.02 ${actuator_base_Width} 0.02"/>-->
-        <!--</geometry>-->
-      <!--</collision>-->
-      <!--<visual>-->
-        <!--<origin xyz="${-actuator_base_Length/2 - 0.01} 0 ${actuator_base_Height/2 - actuator_part1_Height/2 - 0.01}" rpy="0 0 0"/>-->
-        <!--<geometry>-->
-          <!--<box size="0.02 ${actuator_base_Width} 0.02"/>-->
-        <!--</geometry>-->
-      <!--</visual>-->
-    <!--</link>-->
-
-    <!--<gazebo reference="butee">-->
-      <!--<mu1 value="0.99"/>-->
-      <!--<mu2 value="0.99"/>-->
-      <!--<kp  value="1e+7" />-->
-      <!--<kd  value="1.0" />-->
-      <!--<fdir1 value="0 0 0"/>-->
-      <!--<material> Gazebo/white </material>-->
-    <!--</gazebo>-->
 
     <link name="actuator_part1_link">
       <inertial>
@@ -231,12 +198,6 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
     </joint>
 
-    <!--<joint name="butee_to_actuator_base_joint" type="fixed">-->
-      <!--<parent link="actuator_base_link"/>-->
-      <!--<child link="butee"/>-->
-      <!--<origin xyz="0 0 -0.01" rpy="0 0 0"/>-->
-    <!--</joint>-->
-
     <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
       <parent link="actuator_base_link"/>
       <child link="actuator_part1_link"/>
@@ -270,23 +231,23 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <link name="tool">
 
       <inertial>
-        <origin xyz="0 0 -0.013" rpy="0 0 0" />
-        <mass value="10"/>
-        <sphere_inertia m="${10}" r="${0.05}"/>
+        <origin xyz="0 0 -0.017" rpy="0 0 0" />
+        <mass value="40"/>
+        <sphere_inertia m="${40}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
-        <origin xyz="0 0 -0.013" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.17" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.03"/>
+          <sphere radius="0.06"/>
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="0 0 -0.013" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.17" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.03"/>
+          <sphere radius="0.06"/>
         </geometry>
       </visual>
       <!--<collision name="stick">-->
@@ -296,9 +257,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <!--</geometry>-->
       <!--</collision>-->
       <visual>
-        <origin xyz="0 0 -0.05" rpy="0 0 0"/>
+        <origin xyz="0 0 -0.065" rpy="0 0 0"/>
         <geometry>
-          <cylinder radius="0.01" length="0.1"/>
+          <cylinder radius="0.01" length="0.13"/>
         </geometry>
       </visual>
 
