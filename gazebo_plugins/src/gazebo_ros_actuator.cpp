@@ -104,7 +104,7 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-        if (connection==1)
+        if (connection_==1)
         {
             if (position_ == 1)
             {
