@@ -337,7 +337,7 @@ void Core::client_read_thread_function( )
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
 
-                            actuator_pub_.publish(command);
+//                            actuator_pub_.publish(command);
                         }
                     }
                     received_packet_list.clear();
