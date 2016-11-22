@@ -162,7 +162,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <material>Gazebo/Green</material>
     </gazebo>
 
-    <link name="actuator_part2_link">
+    <link name="actuator_part21_link">
 
       <inertial>
         <mass value="${actuator_part2_Mass}"/>
@@ -186,7 +186,73 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
     </link>
 
-    <gazebo reference="actuator_part2_link">
+    <link name="actuator_part22_link">
+
+      <inertial>
+        <mass value="${actuator_part2_Mass}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+      </inertial>
+
+      <collision name="collision_actuator">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+        </geometry>
+      </visual>
+
+    </link>
+
+    <link name="actuator_part23_link">
+
+      <inertial>
+        <mass value="${actuator_part2_Mass}"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+      </inertial>
+
+      <collision name="collision_actuator">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+        </geometry>
+      </visual>
+
+    </link>
+
+    <gazebo reference="actuator_part21_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
+
+    <gazebo reference="actuator_part22_link">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Green</material>
+    </gazebo>
+
+    <gazebo reference="actuator_part23_link">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
       <kp  value="1e+7" />
@@ -223,10 +289,22 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </transmission>
 
 
-    <joint name="actuator_part1_to_actuator_part2_joint" type="fixed">
+    <joint name="actuator_part1_to_actuator_part21_joint" type="fixed">
       <parent link="actuator_part1_link"/>
-      <child link="actuator_part2_link"/>
+      <child link="actuator_part21_link"/>
       <origin xyz="0 0 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="actuator_part1_to_actuator_part22_joint" type="fixed">
+      <parent link="actuator_part1_link"/>
+      <child link="actuator_part22_link"/>
+      <origin xyz="0 -0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="actuator_part1_to_actuator_part23_joint" type="fixed">
+      <parent link="actuator_part1_link"/>
+      <child link="actuator_part23_link"/>
+      <origin xyz="0 0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
     </joint>
 
   </xacro:macro>
@@ -234,39 +312,140 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
   <!-- macro pour l'outils -->
   <xacro:macro name="tool_macro" params="parent">
 
-    <link name="tool">
+    <link name="tool1">
 
       <inertial>
-        <origin xyz="0 0 -0.017" rpy="0 0 0" />
-        <mass value="1"/>
-        <sphere_inertia m="${1}" r="${0.05}"/>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0" />
+        <mass value="10"/>
+        <sphere_inertia m="${10}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
-        <origin xyz="0 0 -0.17" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.06"/>
+          <sphere radius="0.02"/>
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="0 0 -0.17" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.06"/>
+          <sphere radius="0.02"/>
         </geometry>
       </visual>
 
       <visual>
-        <origin xyz="0 0 -0.065" rpy="0 0 0"/>
+        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
         <geometry>
-          <cylinder radius="0.01" length="0.13"/>
+          <cylinder radius="0.007" length="0.29"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.007" length="0.035"/>
         </geometry>
       </visual>
 
     </link>
 
-    <gazebo reference="tool">
+    <link name="tool2">
+
+      <inertial>
+        <origin xyz="-0.25 -0.2 -0.2" rpy="0 0 0" />
+        <mass value="10"/>
+        <sphere_inertia m="${10}" r="${0.05}"/>
+      </inertial>
+      <gravity>1</gravity>
+
+      <collision name="sphere">
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.02"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.02"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+        <geometry>
+          <cylinder radius="0.007" length="0.29"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.007" length="0.035"/>
+        </geometry>
+      </visual>
+
+    </link>
+
+    <link name="tool3">
+
+      <inertial>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0" />
+        <mass value="10"/>
+        <sphere_inertia m="${10}" r="${0.05}"/>
+      </inertial>
+      <gravity>1</gravity>
+
+      <collision name="sphere">
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.02"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <geometry>
+          <sphere radius="0.02"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+        <geometry>
+          <cylinder radius="0.007" length="0.29"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.007" length="0.035"/>
+        </geometry>
+      </visual>
+
+    </link>
+
+    <gazebo reference="tool1">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+4" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material> Gazebo/Grey </material>
+    </gazebo>
+    <gazebo reference="tool2">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+4" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material> Gazebo/Grey </material>
+    </gazebo>
+    <gazebo reference="tool3">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
       <kp  value="1e+4" />
@@ -275,9 +454,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <material> Gazebo/Grey </material>
     </gazebo>
 
-    <joint name="tool_to_actuator_part_2" type="fixed">
-      <parent link="actuator_part2_link"/>
-      <child link="tool"/>
+    <joint name="tool1_to_actuator_part_21" type="fixed">
+      <parent link="actuator_part21_link"/>
+      <child link="tool1"/>
+      <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+    </joint>
+
+    <joint name="tool2_to_actuator_part_22" type="fixed">
+      <parent link="actuator_part22_link"/>
+      <child link="tool2"/>
+      <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+    </joint>
+
+    <joint name="tool3_to_actuator_part_23" type="fixed">
+      <parent link="actuator_part23_link"/>
+      <child link="tool3"/>
       <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
     </joint>
 
