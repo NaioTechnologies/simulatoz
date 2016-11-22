@@ -7,7 +7,7 @@
 	<xacro:include filename="$(find oz440_description)/urdf/macros.xacro" />
 
 	<!-- link de base, OBLIGATOIRE -->
-	<!--<link name="footprint" />-->
+	<link name="footprint" />
 
 	<!-- link pour la partie basse du chassis -->
 	<link name="chassis_bottom">
@@ -32,11 +32,11 @@
     </link>
 
     <!--&lt;!&ndash; joint liant footprint a la partie basse du chassis &ndash;&gt;-->
-    <!--<joint name="footprint_to_chassis_bottom_joint" type="fixed">-->
-		<!--<parent link="footprint"/>-->
-		<!--<child link="chassis_bottom"/>-->
-		<!--<origin rpy="0 0 0" xyz="0 0 0"/>-->
-    <!--</joint>-->
+    <joint name="footprint_to_chassis_bottom_joint" type="fixed">
+		<parent link="footprint"/>
+		<child link="chassis_bottom"/>
+		<origin rpy="0 0 0" xyz="0 0 0"/>
+    </joint>
 
 	<!-- link pour la partie haute du chassis -->
 	<link name="chassis_top">
