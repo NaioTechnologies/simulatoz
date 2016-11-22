@@ -315,21 +315,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <link name="tool1">
 
       <inertial>
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0" />
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
         <mass value="3"/>
         <sphere_inertia m="${3}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
@@ -343,9 +343,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <visual>
-        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
         <geometry>
-          <cylinder radius="0.007" length="0.035"/>
+          <cylinder radius="0.007" length="0.055"/>
         </geometry>
       </visual>
 
@@ -354,21 +354,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <link name="tool2">
 
       <inertial>
-        <origin xyz="-0.25 -0.2 -0.2" rpy="0 0 0" />
+        <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
         <mass value="3"/>
         <sphere_inertia m="${3}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
@@ -382,9 +382,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <visual>
-        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
         <geometry>
-          <cylinder radius="0.007" length="0.035"/>
+          <cylinder radius="0.007" length="0.055"/>
         </geometry>
       </visual>
 
@@ -393,21 +393,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <link name="tool3">
 
       <inertial>
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0" />
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
         <mass value="3"/>
         <sphere_inertia m="${3}" r="${0.05}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
       </collision>
 
       <visual>
-        <origin xyz="-0.25 0 -0.2" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
           <sphere radius="0.02"/>
         </geometry>
@@ -421,9 +421,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <visual>
-        <origin xyz="-0.25 0 -0.165" rpy="0 0 0"/>
+        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
         <geometry>
-          <cylinder radius="0.007" length="0.035"/>
+          <cylinder radius="0.007" length="0.055"/>
         </geometry>
       </visual>
 
