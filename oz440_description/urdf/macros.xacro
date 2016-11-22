@@ -58,33 +58,28 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       </visual>
 
       <inertial>
-        <origin xyz="0 0 0" rpy="${PI/2} 0 ${PI/2}" />
-        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} 0" />-->
+        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
         <mass value="${wheel_mass}"/>
         <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
       </inertial>
-      <gravity>1</gravity>
     </link>
 
     <gazebo reference="${fb}_${lr}_wheel">
+      <gravity>true</gravity>
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+7" />
+      <kp  value="1e+6" />
       <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
       <material>Gazebo/Black</material>
     </gazebo>
-
 
     <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
       <parent link="chassis_bottom"/>
       <child link="${fb}_${lr}_wheel"/>
       <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
       <axis xyz="0 1 0" rpy="0 0 0" />
-      <limit effort="2000" velocity="3.4"/>
-      <joint_properties damping="0.0" friction="0.0"/>
+      <dynamics damping="0.1" friction="0.0"/>
     </joint>
-
 
     <transmission name="${fb}_${lr}_trans">
       <type>transmission_interface/SimpleTransmission</type>
@@ -103,23 +98,25 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
   <xacro:macro name="actuator_macro" params="parent">
 
     <link name="actuator_base_link">
+
       <inertial>
         <mass value="1"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${actuator_base_Mass}" x="${actuator_base_Length}" y="${actuator_base_Width}" z="${actuator_base_Height}"/>
       </inertial>
+
       <collision name="collision_actuator">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
         </geometry>
       </collision>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
         </geometry>
-        <material name="green"/>
       </visual>
     </link>
 
@@ -133,24 +130,27 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </gazebo>
 
     <link name="actuator_part1_link">
+
       <inertial>
-        <mass value="1"/>
+        <mass value="${actuator_part1_Mass}"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${actuator_part1_Mass}" x="${actuator_part1_Length}" y="${actuator_part1_Width}" z="${actuator_part1_Height}"/>
       </inertial>
+
       <collision name="collision_actuator">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
         </geometry>
       </collision>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
         </geometry>
-        <material name="green"/>
       </visual>
+
     </link>
 
     <gazebo reference="actuator_part1_link">
@@ -159,28 +159,31 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
-      <material>Gazebo/Grass</material>
+      <material>Gazebo/Green</material>
     </gazebo>
 
     <link name="actuator_part2_link">
+
       <inertial>
-        <mass value="1"/>
+        <mass value="${actuator_part2_Mass}"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
       </inertial>
+
       <collision name="collision_actuator">
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
         </geometry>
       </collision>
+
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
           <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
         </geometry>
-        <material name="green"/>
       </visual>
+
     </link>
 
     <gazebo reference="actuator_part2_link">
@@ -189,7 +192,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <kp  value="1e+7" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
-      <material>Gazebo/Grass</material>
+      <material>Gazebo/Green</material>
     </gazebo>
 
     <joint name="chassis_bottom_to_actuator_base_joint" type="fixed">
@@ -198,30 +201,14 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
     </joint>
 
-    <!--<joint name="actuator_base_link_to_actuator_part1_joint" type="fixed">-->
-      <!--<parent link="actuator_base_link"/>-->
-      <!--<child link="actuator_part1_link"/>-->
-      <!--<origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>-->
-    <!--</joint>-->
-
     <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
       <parent link="actuator_base_link"/>
       <child link="actuator_part1_link"/>
       <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
       <axis rpy="0 0 0" xyz="0 0 1"/>
-      <limit upper="0" lower="-0.015" effort="100" velocity="3"/>
+      <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
+      <dynamics damping="0.7" friction="0.9"/>
     </joint>
-
-    <!--<transmission name="actuator_base_link_to_actuator_part1_trans">-->
-      <!--<type>transmission_interface/SimpleTransmission</type>-->
-      <!--<joint name="actuator_base_link_to_actuator_part1_joint">-->
-        <!--<hardwareInterface>EffortJointInterface</hardwareInterface>-->
-      <!--</joint>-->
-      <!--<actuator name="actuator_base_link_to_actuator_part1_actuator">-->
-        <!--<hardwareInterface>EffortJointInterface</hardwareInterface>-->
-        <!--<mechanicalRedu.ction>46</mechanicalRedu.ction>-->
-      <!--</actuator>-->
-    <!--</transmission>-->
 
     <joint name="actuator_part1_to_actuator_part2_joint" type="fixed">
       <parent link="actuator_part1_link"/>
@@ -267,22 +254,13 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     </link>
 
     <gazebo reference="tool">
-      <mu1 value="1"/>
-      <mu2 value="1"/>
-      <kp  value="1e+7" />
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+4" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
     </gazebo>
-
-    <!--<joint name="tool_to_actuator_part_2" type="continuous">-->
-      <!--<parent link="actuator_part2_link"/>-->
-      <!--<child link="tool"/>-->
-      <!--<origin xyz="0 0 ${-actuator_part2_Height/2}" rpy="0 0 0" />-->
-      <!--<axis xyz="0 1 0" rpy="0 0 0" />-->
-      <!--<dynamics damping="0.0"/>-->
-      <!--<joint_properties damping="0.0" friction="0.0"/>-->
-    <!--</joint>-->
 
     <joint name="tool_to_actuator_part_2" type="fixed">
       <parent link="actuator_part2_link"/>
@@ -294,7 +272,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
   <!-- macro pour la camera stereo -->
   <xacro:macro name="camera_stereo" params="parent">
+
     <link name="camera_stereo_link">
+
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -307,7 +287,6 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <geometry>
           <box size="${cameraSizeX} ${cameraSizeY} ${cameraSizeZ}"/>
         </geometry>
-        <material name="white"/>
       </visual>
 
       <inertial>
@@ -331,10 +310,12 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <child link="camera_stereo_link"/>
       <origin rpy="0 ${camera_inclination*PI/180} 0" xyz="${chassis_bottom_length/2+cameraSizeX/2} 0 ${camera_originZ - chassis_bottom_height/2}"/>
     </joint>
+
   </xacro:macro>
 
   <!-- macro pour le lidar -->
   <xacro:macro name="lidar" params='parent'>
+
     <link name="lidar_link">
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -355,6 +336,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${lidar_Mass}" x="${lidar_Lenght}" y="${lidar_Width}" z="${lidar_Height}"/>
       </inertial>
+
     </link>
 
     <joint name="chassis_bottom_to_lidar" type="fixed">
@@ -367,6 +349,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
   <!-- macro pour l'IMU -->
   <xacro:macro name="IMU" params='parent'>
+
     <link name="IMU_base_link">
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
@@ -387,6 +370,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${IMU_base_Mass}" x="${IMU_base_Length}" y="${IMU_base_Width}" z="${IMU_base_Height}"/>
       </inertial>
+
     </link>
 
     <gazebo reference="IMU_base_link">
@@ -446,6 +430,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
   <!-- macro pour le bumper -->
   <xacro:macro name="bumper" params='parent'>
     <link name="bumper_base_link">
+
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -465,9 +450,11 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${bumper_base_Mass}" x="${bumper_base_Length}" y="${bumper_base_Width}" z="${bumper_base_Height}"/>
       </inertial>
+
     </link>
 
     <link name="bumper_link">
+
       <collision>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
@@ -487,6 +474,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <box_inertia m="${bumper_Mass}" x="${bumper_Length}" y="${bumper_Width}" z="${bumper_Height}"/>
       </inertial>
+
     </link>
 
     <joint name="chassis_top_to_bumper_base_joint" type="fixed">

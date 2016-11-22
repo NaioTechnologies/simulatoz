@@ -321,16 +321,16 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = 1;
+                                command.x = actuator_position_ +0.01;
                                 ROS_ERROR("MONTE : %f", actuator_position_ +0.01);
-                                actuator_pub_.publish(command);
+//                                actuator_pub_.publish(command);
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = 2;
+                                command.x = actuator_position_ -0.01;
                                 ROS_ERROR("DESCEND : %f", actuator_position_ -0.01);
-                                actuator_pub_.publish(command);
+//                                actuator_pub_.publish(command);
                             }
                             else
                             {
@@ -339,7 +339,7 @@ void Core::client_read_thread_function( )
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
 
-//                            actuator_pub_.publish(command);
+                            actuator_pub_.publish(command);
                         }
                     }
                     received_packet_list.clear();

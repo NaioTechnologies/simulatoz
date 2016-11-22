@@ -3,11 +3,11 @@
 <robot name="oz440" xmlns:xacro="http://www.ros.org/wiki/xacro">
 	<xacro:include filename="$(find oz440_description)/urdf/properties.xacro" />
     <xacro:include filename="$(find oz440_description)/urdf/oz440.gazebo" />
-    <xacro:include filename="$(find oz440_description)/urdf/materials.xacro" />
+    <!--<xacro:include filename="$(find oz440_description)/urdf/materials.xacro" />-->
 	<xacro:include filename="$(find oz440_description)/urdf/macros.xacro" />
 
 	<!-- link de base, OBLIGATOIRE -->
-	<link name="footprint" />
+	<!--<link name="footprint" />-->
 
 	<!-- link pour la partie basse du chassis -->
 	<link name="chassis_bottom">
@@ -31,12 +31,12 @@
 		</inertial>
     </link>
 
-    <!-- joint liant footprint a la partie basse du chassis -->
-    <joint name="footprint_to_chassis_bottom_joint" type="fixed">
-		<parent link="footprint"/>
-		<child link="chassis_bottom"/>
-		<origin rpy="0 0 0" xyz="0 0 0"/>
-    </joint>
+    <!--&lt;!&ndash; joint liant footprint a la partie basse du chassis &ndash;&gt;-->
+    <!--<joint name="footprint_to_chassis_bottom_joint" type="fixed">-->
+		<!--<parent link="footprint"/>-->
+		<!--<child link="chassis_bottom"/>-->
+		<!--<origin rpy="0 0 0" xyz="0 0 0"/>-->
+    <!--</joint>-->
 
 	<!-- link pour la partie haute du chassis -->
 	<link name="chassis_top">
@@ -51,8 +51,7 @@
 			<origin xyz="0 0 0" rpy="0 0 0"/> 
 			<geometry> 
 				<box size="${chassis_top_length} ${chassis_top_width} ${chassis_top_height}"/> 
-			</geometry> 
-			<material name="white"/>
+			</geometry>
 		</visual>
 		<inertial> 
 			<origin xyz="0 0 0" rpy="0 0 0"/> 
