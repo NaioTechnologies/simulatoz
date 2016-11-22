@@ -210,6 +210,19 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <dynamics damping="0.7" friction="0.9"/>
     </joint>
 
+
+    <transmission name="actuator_base_link_to_actuator_part1_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="actuator_base_link_to_actuator_part1_joint">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="actuator_base_link_to_actuator_part1_motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalRedu.ction>46</mechanicalRedu.ction>
+      </actuator>
+    </transmission>
+
+
     <joint name="actuator_part1_to_actuator_part2_joint" type="fixed">
       <parent link="actuator_part1_link"/>
       <child link="actuator_part2_link"/>
