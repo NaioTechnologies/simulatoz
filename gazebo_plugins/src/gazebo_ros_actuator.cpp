@@ -80,9 +80,9 @@ namespace gazebo {
             gzthrow(error);
         }
 
-//        joints->SetParam( "fmax", 0, torque);
+        joints->SetParam( "fmax", 0, torque);
 
-//        joints->SetPosition( 0, 0.0);
+        joints->SetPosition( 0, -0.15);
 
         // Make sure the ROS node for Gazebo has already been initialized
         if (!ros::isInitialized())
