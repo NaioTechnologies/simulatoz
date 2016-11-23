@@ -379,8 +379,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="2"/>
-        <sphere_inertia m="${2}" r="${0.04}"/>
+        <mass value="4"/>
+        <sphere_inertia m="${4}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
@@ -418,8 +418,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
-        <mass value="2"/>
-        <sphere_inertia m="${2}" r="${0.04}"/>
+        <mass value="4"/>
+        <sphere_inertia m="${4}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
@@ -457,8 +457,8 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="2"/>
-        <sphere_inertia m="${2}" r="${0.04}"/>
+        <mass value="4"/>
+        <sphere_inertia m="${4}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
@@ -495,7 +495,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool1">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+2" />
+      <kp  value="1e+6" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
@@ -503,7 +503,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool2">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+2" />
+      <kp  value="1e+6" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
@@ -511,7 +511,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool3">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+2" />
+      <kp  value="1e+6" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
