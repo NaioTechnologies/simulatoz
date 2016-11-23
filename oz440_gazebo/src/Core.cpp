@@ -321,15 +321,15 @@ void Core::client_read_thread_function( )
 
                             if ( ActuatorPacketPtr->position == 1 )
                             {
-                                command.x = actuator_position_ +0.01;
-                                ROS_ERROR("MONTE : %f", actuator_position_ +0.01);
+                                command.x = actuator_position_ +0.005;
+                                ROS_ERROR("MONTE : %f", actuator_position_ +0.005);
 //                                actuator_pub_.publish(command);
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
-                                command.x = actuator_position_ -0.01;
-                                ROS_ERROR("DESCEND : %f", actuator_position_ -0.01);
+                                command.x = actuator_position_ -0.005;
+                                ROS_ERROR("DESCEND : %f", actuator_position_ -0.005);
 //                                actuator_pub_.publish(command);
                             }
                             else
@@ -901,6 +901,12 @@ void Core::send_odo_packet()
 
                 ROS_INFO("Odo Status packet enqueued");
             }
+        }
+        else{
+            fr = 0;
+            br = 0;
+            bl = 0;
+            fl = 0;
         }
     }
 }

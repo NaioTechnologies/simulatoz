@@ -27,34 +27,33 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     />
   </xacro:macro>
 
-  <!-- macro pour creer une roue -->
-  <xacro:macro name="wheel" params="fb lr tX tY">
+  <!-- macro pour creer une roue droite  -->
+  <xacro:macro name="right_wheel" params="fb lr tX tY">
 
     <link name="${fb}_${lr}_wheel">
       <collision>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+        <origin xyz="${-wheel_diameter/2} ${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${-PI/2}" />
         <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
-          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
         </geometry>
       </collision>
 
-      <!--<visual>-->
-        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
-        <!--<geometry>-->
-          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/4}"/>-->
-        <!--</geometry>-->
-      <!--</visual>-->
-
       <visual>
         <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
         <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
-          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
+          <cylinder length="${wheel_width-0.02}" radius="${wheel_diameter/4}"/>
         </geometry>
-        <material name="black"/>
+      </visual>
+
+      <visual>
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+        <origin xyz="${-wheel_diameter/2} ${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${-PI/2}" />
+        <geometry>
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
+        </geometry>
       </visual>
 
       <inertial>
@@ -68,9 +67,73 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <gravity>true</gravity>
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+7" />
+      <kp  value="1e+6" />
       <kd  value="1.0" />
-      <material>Gazebo/Black</material>
+      <material>Gazebo/DarkGrey</material>
+    </gazebo>
+
+    <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
+      <parent link="chassis_bottom"/>
+      <child link="${fb}_${lr}_wheel"/>
+      <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
+      <axis xyz="0 1 0" rpy="0 0 0" />
+      <dynamics damping="0.0" friction="0.0"/>
+    </joint>
+
+    <transmission name="${fb}_${lr}_trans">
+      <type>transmission_interface/SimpleTransmission</type>
+      <joint name="${fb}_${lr}_wheel_hinge">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+      </joint>
+      <actuator name="${fb}_${lr}_Motor">
+        <hardwareInterface>EffortJointInterface</hardwareInterface>
+        <mechanicalRedu.ction>46</mechanicalRedu.ction>
+      </actuator>
+    </transmission>
+
+  </xacro:macro><!-- macro pour creer une roue -->
+  <xacro:macro name="left_wheel" params="fb lr tX tY">
+
+    <link name="${fb}_${lr}_wheel">
+      <collision>
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
+        <geometry>
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <geometry>
+          <cylinder length="${wheel_width-0.02}" radius="${wheel_diameter/4}"/>
+        </geometry>
+      </visual>
+
+      <visual>
+        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
+        <geometry>
+          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
+        </geometry>
+      </visual>
+
+      <inertial>
+        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+        <mass value="${wheel_mass}"/>
+        <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="${fb}_${lr}_wheel">
+      <gravity>true</gravity>
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+6" />
+      <kd  value="1.0" />
+      <material>Gazebo/DarkGrey</material>
     </gazebo>
 
     <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
@@ -273,7 +336,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
       <axis rpy="0 0 0" xyz="0 0 1"/>
       <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
-      <dynamics damping="0.7" friction="0.9"/>
+      <dynamics damping="0.9" friction="0.98"/>
     </joint>
 
 
@@ -316,22 +379,22 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="0.1"/>
-        <sphere_inertia m="${0.1}" r="${0.05}"/>
+        <mass value="5"/>
+        <sphere_inertia m="${5}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </collision>
 
       <visual>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </visual>
 
@@ -355,22 +418,22 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
-        <mass value="0.1"/>
-        <sphere_inertia m="${0.1}" r="${0.05}"/>
+        <mass value="5"/>
+        <sphere_inertia m="${5}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </collision>
 
       <visual>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </visual>
 
@@ -394,22 +457,22 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
       <inertial>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="0.1"/>
-        <sphere_inertia m="${0.1}" r="${0.05}"/>
+        <mass value="5"/>
+        <sphere_inertia m="${5}" r="${0.04}"/>
       </inertial>
       <gravity>1</gravity>
 
       <collision name="sphere">
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </collision>
 
       <visual>
         <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
         <geometry>
-          <sphere radius="0.02"/>
+          <sphere radius="0.03"/>
         </geometry>
       </visual>
 
@@ -432,7 +495,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool1">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+4" />
+      <kp  value="1e+2" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
@@ -440,7 +503,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool2">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+4" />
+      <kp  value="1e+2" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
@@ -448,7 +511,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
     <gazebo reference="tool3">
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+4" />
+      <kp  value="1e+2" />
       <kd  value="1.0" />
       <fdir1 value="0 0 0"/>
       <material> Gazebo/Grey </material>
@@ -617,6 +680,37 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <material>Gazebo/Grey</material>
     </gazebo>
 
+    <link name="IMU_light">
+      <collision>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.01"/>
+        </geometry>
+      </collision>
+
+      <visual>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <geometry>
+          <cylinder radius="0.01" length="0.01"/>
+        </geometry>
+      </visual>
+
+      <inertial>
+        <mass value="0.1"/>
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <sphere_inertia m="0.1" r="0.01"/>
+      </inertial>
+    </link>
+
+    <gazebo reference="IMU_light">
+      <mu1 value="0.99"/>
+      <mu2 value="0.99"/>
+      <kp  value="1e+7" />
+      <kd  value="1.0" />
+      <fdir1 value="0 0 0"/>
+      <material>Gazebo/Red</material>
+    </gazebo>
+
     <joint name="actuator_base_to_IMU_base_joint" type="fixed">
       <parent link="${parent}"/>
       <child link="IMU_base_link"/>
@@ -627,6 +721,12 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <parent link="IMU_base_link"/>
       <child link="IMU_link"/>
       <origin xyz="${IMU_base_Length/2-IMU_Length/2} 0 ${IMU_base_Height/2+IMU_Height/2}" rpy="0 0 0"/>
+    </joint>
+
+    <joint name="IMU_to_IMU_light" type="fixed">
+      <parent link="IMU_link"/>
+      <child link="IMU_light"/>
+      <origin xyz="0 -0.03 ${IMU_Height/2+0.005}" rpy="0 0 0"/>
     </joint>
 
   </xacro:macro>

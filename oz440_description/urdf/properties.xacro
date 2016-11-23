@@ -6,7 +6,7 @@
 
 	<!-- Proprietes de la partie basse du robot -->
 	<xacro:property name="chassis_bottom_height" value="0.243"/>
-	<xacro:property name="chassis_bottom_width" value="0.17340"/>
+	<xacro:property name="chassis_bottom_width" value="0.20"/>
 	<xacro:property name="chassis_bottom_length" value="0.67454"/>
 	<xacro:property name="chassis_bottom_mass" value="30"/>
 
@@ -17,10 +17,11 @@
 	<xacro:property name="chassis_top_mass" value="70"/>
 
 	<!-- Proprietes des roues -->
-	<xacro:property name="wheel_diameter" value="0.292"/>
-	<xacro:property name="wheel_width" value="0.08786"/>
+	<!--<xacro:property name="wheel_diameter" value="0.292"/>-->
+	<xacro:property name="wheel_diameter" value="0.3092"/>
+	<xacro:property name="wheel_width" value="0.08761"/>
 	<xacro:property name="wheel_transmission_height" value="0.058"/>
-	<xacro:property name="wheel_chassis_bottom_spacing" value="0.03430"/>
+	<xacro:property name="wheel_chassis_bottom_spacing" value="0.01"/>
 	<xacro:property name="wheels_spacing" value="0.435"/>
 	<xacro:property name="wheel_mass" value="3"/>
 
@@ -29,7 +30,7 @@
 	<xacro:property name="actuator_base_Length" value="0.04"/>
 	<xacro:property name="actuator_base_Width" value="0.1"/>
 	<xacro:property name="actuator_base_Height" value="0.2"/>
-	<xacro:property name="actuator_base_chassis_spacing" value="0.02"/>
+	<xacro:property name="actuator_base_chassis_spacing" value="0.01"/>
 	
 	<xacro:property name="actuator_part1_Mass" value="1"/>
 	<xacro:property name="actuator_part1_Length" value="0.05"/>
@@ -37,8 +38,8 @@
 	<xacro:property name="actuator_part1_Height" value="0.05"/>
 
 	<xacro:property name="actuator_part2_Mass" value="1"/>
-	<xacro:property name="actuator_part2_Length" value="0.04"/>
-	<xacro:property name="actuator_part2_Width" value="0.04"/>
+	<xacro:property name="actuator_part2_Length" value="0.035"/>
+	<xacro:property name="actuator_part2_Width" value="0.035"/>
 	<xacro:property name="actuator_part2_Height" value="0.04"/>
 
 	<!-- Proprietes de la camera -->
@@ -64,9 +65,9 @@
 	<xacro:property name="IMU_base_Height" value="0.1"/>
 
 	<xacro:property name="IMU_Mass" value="0.2"/>
-	<xacro:property name="IMU_Length" value="0.1"/>
+	<xacro:property name="IMU_Length" value="0.05"/>
 	<xacro:property name="IMU_Width" value="0.1"/>
-	<xacro:property name="IMU_Height" value="0.06"/>
+	<xacro:property name="IMU_Height" value="0.05"/>
 
 	<!-- Proprietes du bumper -->
 	<xacro:property name="bumper_base_Mass" value="0.3"/>

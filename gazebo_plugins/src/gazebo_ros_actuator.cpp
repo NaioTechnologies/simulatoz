@@ -16,6 +16,12 @@
 #include "geometry_msgs/Vector3.h"
 
 #include <boost/bind.hpp>
+#include <chrono>
+#include <stdlib.h>
+#include <iostream>
+#include <thread>
+
+
 
 namespace gazebo {
 
@@ -82,7 +88,7 @@ namespace gazebo {
 
         joints->SetParam( "fmax", 0, torque);
 
-        joints->SetPosition( 0, -0.15);
+        joints->SetPosition( 0, 0);
 
         // Make sure the ROS node for Gazebo has already been initialized
         if (!ros::isInitialized())
@@ -104,20 +110,23 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-//        if (connection_==1)
-//        {
-//            joints->SetPosition( 0, position_ );
-//            connection_ = 0;
-//        }
+        if (connection_==1)
+        {
+            joints->SetPosition( 0, position_ );
+            connection_ = 0;
+        }
 
-        joints->SetPosition( 0, position_ );
+//        joints->SetPosition( 0, position_ );
 
     }
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
-//        connection_ = 1;
+
+        connection_ = 1;
         position_ = cmd_msg->x;
+
+        std::this_thread::sleep_for( std::chrono::milliseconds(5) );
 
     }
 
