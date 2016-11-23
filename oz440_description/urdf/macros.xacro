@@ -3,796 +3,764 @@
 Les proprietes sont modifiables dans le fichiers properties.xacro -->
 <robot name="oz440" xmlns:xacro="http://www.ros.org/wiki/xacro">
 
-  <!-- macro pour calculer l'inertie d'un cylindre -->
-  <xacro:macro name="cylinder_inertia" params="m r h">
-    <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
-              iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
-              izz="${m*r*r/2}"
-    />
-  </xacro:macro>
+    <!-- macro pour calculer l'inertie d'un cylindre -->
+    <xacro:macro name="cylinder_inertia" params="m r h">
+        <inertia  ixx="${m*(3*r*r+h*h)/12}" ixy = "0" ixz = "0"
+                  iyy="${m*(3*r*r+h*h)/12}" iyz = "0"
+                  izz="${m*r*r/2}"
+        />
+    </xacro:macro>
 
-  <!-- macro pour calculer l'inertie d'un pave -->
-  <xacro:macro name="box_inertia" params="m x y z">
-    <inertia  ixx="${m*(y*y+z*z)/12}" ixy = "0" ixz = "0"
-              iyy="${m*(x*x+z*z)/12}" iyz = "0"
-              izz="${m*(x*x+z*z)/12}"
-    />
-  </xacro:macro>
+    <!-- macro pour calculer l'inertie d'un pave -->
+    <xacro:macro name="box_inertia" params="m x y z">
+        <inertia  ixx="${m*(y*y+z*z)/12}" ixy = "0" ixz = "0"
+                  iyy="${m*(x*x+z*z)/12}" iyz = "0"
+                  izz="${m*(x*x+z*z)/12}"
+        />
+    </xacro:macro>
 
-  <!-- macro pour calculer l'inertie d'une sphere -->
-  <xacro:macro name="sphere_inertia" params="m r">
-    <inertia  ixx="${2*m*r*r/5}" ixy = "0" ixz = "0"
-              iyy="${2*m*r*r/5}" iyz = "0"
-              izz="${2*m*r*r/5}"
-    />
-  </xacro:macro>
+    <!-- macro pour calculer l'inertie d'une sphere -->
+    <xacro:macro name="sphere_inertia" params="m r">
+        <inertia  ixx="${2*m*r*r/5}" ixy = "0" ixz = "0"
+                  iyy="${2*m*r*r/5}" iyz = "0"
+                  izz="${2*m*r*r/5}"
+        />
+    </xacro:macro>
 
-  <!-- macro pour creer une roue droite  -->
-  <xacro:macro name="right_wheel" params="fb lr tX tY">
+    <!-- macro pour creer les centres  -->
+    <xacro:macro name="center" params="fb lr tX tY">
 
-    <link name="${fb}_${lr}_wheel">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <!--<origin xyz="${-wheel_diameter/2} ${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${-PI/2}" />-->
-        <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
-          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
-        </geometry>
-      </collision>
+        <link name="${fb}_${lr}_center">
+            <visual>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+                <geometry>
+                    <cylinder length="${wheel_width-0.02}" radius="${wheel_diameter/4}"/>
+                </geometry>
+            </visual>
 
-      <visual>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <geometry>
-          <cylinder length="${wheel_width-0.02}" radius="${wheel_diameter/4}"/>
-        </geometry>
-      </visual>
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+                <mass value="${wheel_mass/2}"/>
+                <cylinder_inertia m="${wheel_mass/2}" r="${wheel_diameter/4}" h="${wheel_width}"/>
+            </inertial>
 
-      <visual>
-        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
-        <origin xyz="${-wheel_diameter/2} ${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${-PI/2}" />
-        <geometry>
-          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
-          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
-        </geometry>
-      </visual>
+        </link>
 
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <mass value="${wheel_mass}"/>
-        <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
-      </inertial>
-    </link>
+        <gazebo reference="${fb}_${lr}_center">
+            <gravity>true</gravity>
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <material>Gazebo/Grey</material>
+        </gazebo>
 
-    <gazebo reference="${fb}_${lr}_wheel">
-      <gravity>true</gravity>
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <material>Gazebo/DarkGrey</material>
-    </gazebo>
-
-    <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
-      <parent link="chassis_bottom"/>
-      <child link="${fb}_${lr}_wheel"/>
-      <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
-      <axis xyz="0 1 0" rpy="0 0 0" />
-      <dynamics damping="0.0" friction="0.0"/>
-    </joint>
-
-    <transmission name="${fb}_${lr}_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${fb}_${lr}_wheel_hinge">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="${fb}_${lr}_Motor">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-        <mechanicalRedu.ction>46</mechanicalRedu.ction>
-      </actuator>
-    </transmission>
-
-  </xacro:macro><!-- macro pour creer une roue -->
-  <xacro:macro name="left_wheel" params="fb lr tX tY">
-
-    <link name="${fb}_${lr}_wheel">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
-        <geometry>
-          <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
-          <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <geometry>
-          <cylinder length="${wheel_width-0.02}" radius="${wheel_diameter/4}"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
-        <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
-        <geometry>
-          <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
-          <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
-        </geometry>
-      </visual>
-
-      <inertial>
-        <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
-        <mass value="${wheel_mass}"/>
-        <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
-      </inertial>
-    </link>
-
-    <gazebo reference="${fb}_${lr}_wheel">
-      <gravity>true</gravity>
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <material>Gazebo/DarkGrey</material>
-    </gazebo>
-
-    <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
-      <parent link="chassis_bottom"/>
-      <child link="${fb}_${lr}_wheel"/>
-      <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
-      <axis xyz="0 1 0" rpy="0 0 0" />
-      <dynamics damping="0.0" friction="0.0"/>
-    </joint>
-
-    <transmission name="${fb}_${lr}_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="${fb}_${lr}_wheel_hinge">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="${fb}_${lr}_Motor">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-        <mechanicalRedu.ction>46</mechanicalRedu.ction>
-      </actuator>
-    </transmission>
-
-  </xacro:macro>
-
-  <!-- macro pour le porte outils -->
-  <xacro:macro name="actuator_macro" params="parent">
-
-    <link name="actuator_base_link">
-
-      <inertial>
-        <mass value="1"/>
+        <joint name="${fb}_${lr}_wheel_to_wheel_center" type="fixed">
+        <parent link="${fb}_${lr}_wheel"/>
+        <child link="${fb}_${lr}_center"/>
         <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${actuator_base_Mass}" x="${actuator_base_Length}" y="${actuator_base_Width}" z="${actuator_base_Height}"/>
-      </inertial>
-
-      <collision name="collision_actuator">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
-        </geometry>
-      </visual>
-    </link>
-
-    <gazebo reference="actuator_base_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material> Gazebo/white </material>
-    </gazebo>
-
-    <link name="actuator_part1_link">
-
-      <inertial>
-        <mass value="${actuator_part1_Mass}"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${actuator_part1_Mass}" x="${actuator_part1_Length}" y="${actuator_part1_Width}" z="${actuator_part1_Height}"/>
-      </inertial>
-
-      <collision name="collision_actuator">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <gazebo reference="actuator_part1_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Green</material>
-    </gazebo>
-
-    <link name="actuator_part21_link">
-
-      <inertial>
-        <mass value="${actuator_part2_Mass}"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
-      </inertial>
-
-      <collision name="collision_actuator">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <link name="actuator_part22_link">
-
-      <inertial>
-        <mass value="${actuator_part2_Mass}"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
-      </inertial>
-
-      <collision name="collision_actuator">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <link name="actuator_part23_link">
-
-      <inertial>
-        <mass value="${actuator_part2_Mass}"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
-      </inertial>
-
-      <collision name="collision_actuator">
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <gazebo reference="actuator_part21_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Green</material>
-    </gazebo>
-
-    <gazebo reference="actuator_part22_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Green</material>
-    </gazebo>
-
-    <gazebo reference="actuator_part23_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Green</material>
-    </gazebo>
-
-    <joint name="chassis_bottom_to_actuator_base_joint" type="fixed">
-      <parent link="${parent}"/>
-      <child link="actuator_base_link"/>
-      <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
-      <parent link="actuator_base_link"/>
-      <child link="actuator_part1_link"/>
-      <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
-      <axis rpy="0 0 0" xyz="0 0 1"/>
-      <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
-      <dynamics damping="0.7" friction="0.98"/>
-    </joint>
-
-
-    <transmission name="actuator_base_link_to_actuator_part1_trans">
-      <type>transmission_interface/SimpleTransmission</type>
-      <joint name="actuator_base_link_to_actuator_part1_joint">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-      </joint>
-      <actuator name="actuator_base_link_to_actuator_part1_motor">
-        <hardwareInterface>EffortJointInterface</hardwareInterface>
-        <mechanicalRedu.ction>46</mechanicalRedu.ction>
-      </actuator>
-    </transmission>
-
-
-    <joint name="actuator_part1_to_actuator_part21_joint" type="fixed">
-      <parent link="actuator_part1_link"/>
-      <child link="actuator_part21_link"/>
-      <origin xyz="0 0 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="actuator_part1_to_actuator_part22_joint" type="fixed">
-      <parent link="actuator_part1_link"/>
-      <child link="actuator_part22_link"/>
-      <origin xyz="0 -0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="actuator_part1_to_actuator_part23_joint" type="fixed">
-      <parent link="actuator_part1_link"/>
-      <child link="actuator_part23_link"/>
-      <origin xyz="0 0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-  </xacro:macro>
-
-  <!-- macro pour l'outils -->
-  <xacro:macro name="tool_macro" params="parent">
-
-    <link name="tool1">
-
-      <inertial>
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="4"/>
-        <sphere_inertia m="${4}" r="${0.04}"/>
-      </inertial>
-      <gravity>1</gravity>
-
-      <collision name="sphere">
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.29"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.055"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <link name="tool2">
-
-      <inertial>
-        <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
-        <mass value="4"/>
-        <sphere_inertia m="${4}" r="${0.04}"/>
-      </inertial>
-      <gravity>1</gravity>
-
-      <collision name="sphere">
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.29"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.055"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <link name="tool3">
-
-      <inertial>
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
-        <mass value="4"/>
-        <sphere_inertia m="${4}" r="${0.04}"/>
-      </inertial>
-      <gravity>1</gravity>
-
-      <collision name="sphere">
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
-        <geometry>
-          <sphere radius="0.03"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.29"/>
-        </geometry>
-      </visual>
-
-      <visual>
-        <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
-        <geometry>
-          <cylinder radius="0.007" length="0.055"/>
-        </geometry>
-      </visual>
-
-    </link>
-
-    <gazebo reference="tool1">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+6" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material> Gazebo/Grey </material>
-    </gazebo>
-    <gazebo reference="tool2">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+6" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material> Gazebo/Grey </material>
-    </gazebo>
-    <gazebo reference="tool3">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+6" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material> Gazebo/Grey </material>
-    </gazebo>
-
-    <joint name="tool1_to_actuator_part_21" type="fixed">
-      <parent link="actuator_part21_link"/>
-      <child link="tool1"/>
-      <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
-    </joint>
-
-    <joint name="tool2_to_actuator_part_22" type="fixed">
-      <parent link="actuator_part22_link"/>
-      <child link="tool2"/>
-      <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
-    </joint>
-
-    <joint name="tool3_to_actuator_part_23" type="fixed">
-      <parent link="actuator_part23_link"/>
-      <child link="tool3"/>
-      <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
-    </joint>
-
-  </xacro:macro>
-
-  <!-- macro pour la camera stereo -->
-  <xacro:macro name="camera_stereo" params="parent">
-
-    <link name="camera_stereo_link">
-
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${cameraSizeX} ${cameraSizeY} ${cameraSizeZ}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${cameraSizeX} ${cameraSizeY} ${cameraSizeZ}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="${cameraMass}" />
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${cameraMass}" x="${cameraSizeX}" y="${cameraSizeY/2}" z="${cameraSizeZ}" />
-      </inertial>
-    </link>
-
-    <gazebo reference="camera_stereo_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Grey</material>
-    </gazebo>
-
-    <joint name="chassis_top_to_camera_stereo" type="fixed">
-      <parent link="${parent}"/>
-      <child link="camera_stereo_link"/>
-      <origin rpy="0 ${camera_inclination*PI/180} 0" xyz="${chassis_bottom_length/2+cameraSizeX/2} 0 ${camera_originZ - chassis_bottom_height/2}"/>
-    </joint>
-
-  </xacro:macro>
-
-  <!-- macro pour le lidar -->
-  <xacro:macro name="lidar" params='parent'>
-
-    <link name="lidar_link">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${lidar_Lenght} ${lidar_Width} ${lidar_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${lidar_Lenght} ${lidar_Width} ${lidar_Height}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${lidar_Mass}" x="${lidar_Lenght}" y="${lidar_Width}" z="${lidar_Height}"/>
-      </inertial>
-
-    </link>
-
-    <joint name="chassis_bottom_to_lidar" type="fixed">
-      <parent link="${parent}"/>
-      <child link="lidar_link"/>
-      <origin xyz="${chassis_bottom_length/2+lidar_Lenght/2} 0 ${-chassis_bottom_height/2-lidar_chassis_bottom_spacing+lidar_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-  </xacro:macro>
-
-  <!-- macro pour l'IMU -->
-  <xacro:macro name="IMU" params='parent'>
-
-    <link name="IMU_base_link">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${IMU_base_Length} ${IMU_base_Width} ${IMU_base_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${IMU_base_Length} ${IMU_base_Width} ${IMU_base_Height}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${IMU_base_Mass}" x="${IMU_base_Length}" y="${IMU_base_Width}" z="${IMU_base_Height}"/>
-      </inertial>
-
-    </link>
-
-    <gazebo reference="IMU_base_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Green</material>
-    </gazebo>
-
-    <link name="IMU_link">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${IMU_Length} ${IMU_Width} ${IMU_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${IMU_Length} ${IMU_Width} ${IMU_Height}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${IMU_Mass}" x="${IMU_Length}" y="${IMU_Width}" z="${IMU_Height}"/>
-      </inertial>
-    </link>
-
-    <gazebo reference="IMU_link">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Grey</material>
-    </gazebo>
-
-    <link name="IMU_light">
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <cylinder radius="0.01" length="0.01"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <cylinder radius="0.01" length="0.01"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="0.1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <sphere_inertia m="0.1" r="0.01"/>
-      </inertial>
-    </link>
-
-    <gazebo reference="IMU_light">
-      <mu1 value="0.99"/>
-      <mu2 value="0.99"/>
-      <kp  value="1e+7" />
-      <kd  value="1.0" />
-      <fdir1 value="0 0 0"/>
-      <material>Gazebo/Red</material>
-    </gazebo>
-
-    <joint name="actuator_base_to_IMU_base_joint" type="fixed">
-      <parent link="${parent}"/>
-      <child link="IMU_base_link"/>
-      <origin xyz="0 0 ${actuator_base_Height/2+IMU_base_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="IMU_base_to_IMU_joint" type="fixed">
-      <parent link="IMU_base_link"/>
-      <child link="IMU_link"/>
-      <origin xyz="${IMU_base_Length/2-IMU_Length/2} 0 ${IMU_base_Height/2+IMU_Height/2}" rpy="0 0 0"/>
-    </joint>
-
-    <joint name="IMU_to_IMU_light" type="fixed">
-      <parent link="IMU_link"/>
-      <child link="IMU_light"/>
-      <origin xyz="0 -0.03 ${IMU_Height/2+0.005}" rpy="0 0 0"/>
-    </joint>
-
-  </xacro:macro>
-
-  <!-- macro pour le bumper -->
-  <xacro:macro name="bumper" params='parent'>
-    <link name="bumper_base_link">
-
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${bumper_base_Length} ${bumper_base_Width} ${bumper_base_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${bumper_base_Length} ${bumper_base_Width} ${bumper_base_Height}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${bumper_base_Mass}" x="${bumper_base_Length}" y="${bumper_base_Width}" z="${bumper_base_Height}"/>
-      </inertial>
-
-    </link>
-
-    <link name="bumper_link">
-
-      <collision>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${bumper_Length} ${bumper_Width} ${bumper_Height}"/>
-        </geometry>
-      </collision>
-
-      <visual>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <geometry>
-          <box size="${bumper_Length} ${bumper_Width} ${bumper_Height}"/>
-        </geometry>
-      </visual>
-
-      <inertial>
-        <mass value="1"/>
-        <origin xyz="0 0 0" rpy="0 0 0"/>
-        <box_inertia m="${bumper_Mass}" x="${bumper_Length}" y="${bumper_Width}" z="${bumper_Height}"/>
-      </inertial>
-
-    </link>
-
-    <joint name="chassis_top_to_bumper_base_joint" type="fixed">
-      <parent link="${parent}"/>
-      <child link="bumper_base_link"/>
-      <origin xyz="${chassis_top_length/2+bumper_base_Length/2} 0 ${-chassis_top_height/2}" rpy="0 ${-bumper_base_Inclination*PI/180} 0"/>
-    </joint>
-
-    <joint name="bumper_base_to_bumper_joint" type="fixed">
-      <parent link="bumper_base_link"/>
-      <child link="bumper_link"/>
-      <origin xyz="${bumper_base_Length/2+bumper_Length/2} 0 0" rpy="0 0 0"/>
-    </joint>
-
-  </xacro:macro>
+        </joint>
+
+    </xacro:macro>
+
+
+    <!-- macro pour creer une roue -->
+    <xacro:macro name="wheel" params="fb lr tX tY">
+
+        <link name="${fb}_${lr}_wheel">
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+                <!--<origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />-->
+                <geometry>
+                    <cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>
+                    <!--<mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />-->
+                </geometry>
+            </collision>
+
+            <visual>
+                <!--<origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />-->
+                <origin xyz="${wheel_diameter/2} -${wheel_width/2} -${wheel_diameter/2}" rpy="0 0 ${PI/2}" />
+                <geometry>
+                    <!--<cylinder length="${wheel_width}" radius="${wheel_diameter/2}"/>-->
+                    <mesh filename="model://Wheel/pneu.dae" scale ="0.001 0.001 0.001" />
+                </geometry>
+            </visual>
+
+            <inertial>
+                <origin xyz="0 0 0" rpy="0 ${PI/2} ${PI/2}" />
+                <mass value="${wheel_mass}"/>
+                <cylinder_inertia m="${wheel_mass}" r="${wheel_diameter/2}" h="${wheel_width}"/>
+            </inertial>
+
+        </link>
+
+        <gazebo reference="${fb}_${lr}_wheel">
+            <gravity>true</gravity>
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <material>Gazebo/DarkGrey</material>
+        </gazebo>
+
+        <joint name="${fb}_${lr}_wheel_hinge" type="continuous">
+            <parent link="chassis_bottom"/>
+            <child link="${fb}_${lr}_wheel"/>
+            <origin xyz="${tX*wheels_spacing/2} ${tY*((chassis_bottom_width/2)+wheel_chassis_bottom_spacing+(wheel_width/2))} ${wheel_transmission_height-chassis_bottom_height/2}" rpy="0 0 0" />
+            <axis xyz="0 1 0" rpy="0 0 0" />
+            <dynamics damping="0.0" friction="0.0"/>
+        </joint>
+
+        <transmission name="${fb}_${lr}_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="${fb}_${lr}_wheel_hinge">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="${fb}_${lr}_Motor">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+                <mechanicalRedu.ction>46</mechanicalRedu.ction>
+            </actuator>
+        </transmission>
+
+    </xacro:macro>
+
+    <!-- macro pour le porte outils -->
+    <xacro:macro name="actuator_macro" params="parent">
+
+        <link name="actuator_base_link">
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${actuator_base_Mass}" x="${actuator_base_Length}" y="${actuator_base_Width}" z="${actuator_base_Height}"/>
+            </inertial>
+
+            <collision name="collision_actuator">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_base_Length} ${actuator_base_Width} ${actuator_base_Height}"/>
+                </geometry>
+            </visual>
+        </link>
+
+        <gazebo reference="actuator_base_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/white </material>
+        </gazebo>
+
+        <link name="actuator_part1_link">
+
+            <inertial>
+                <mass value="${actuator_part1_Mass}"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${actuator_part1_Mass}" x="${actuator_part1_Length}" y="${actuator_part1_Width}" z="${actuator_part1_Height}"/>
+            </inertial>
+
+            <collision name="collision_actuator">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part1_Length} ${actuator_part1_Width} ${actuator_part1_Height}"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <gazebo reference="actuator_part1_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Green</material>
+        </gazebo>
+
+        <link name="actuator_part21_link">
+
+            <inertial>
+                <mass value="${actuator_part2_Mass}"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+            </inertial>
+
+            <collision name="collision_actuator">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <link name="actuator_part22_link">
+
+            <inertial>
+                <mass value="${actuator_part2_Mass}"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+            </inertial>
+
+            <collision name="collision_actuator">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <link name="actuator_part23_link">
+
+            <inertial>
+                <mass value="${actuator_part2_Mass}"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${actuator_part2_Mass}" x="${actuator_part2_Length}" y="${actuator_part2_Width}" z="${actuator_part2_Height}"/>
+            </inertial>
+
+            <collision name="collision_actuator">
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${actuator_part2_Length} ${actuator_part2_Width} ${actuator_part2_Height}"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <gazebo reference="actuator_part21_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Green</material>
+        </gazebo>
+
+        <gazebo reference="actuator_part22_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Green</material>
+        </gazebo>
+
+        <gazebo reference="actuator_part23_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Green</material>
+        </gazebo>
+
+        <joint name="chassis_bottom_to_actuator_base_joint" type="fixed">
+            <parent link="${parent}"/>
+            <child link="actuator_base_link"/>
+            <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
+            <parent link="actuator_base_link"/>
+            <child link="actuator_part1_link"/>
+            <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
+            <axis rpy="0 0 0" xyz="0 0 1"/>
+            <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
+            <dynamics damping="0.7" friction="0.98"/>
+        </joint>
+
+
+        <transmission name="actuator_base_link_to_actuator_part1_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="actuator_base_link_to_actuator_part1_joint">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="actuator_base_link_to_actuator_part1_motor">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+                <mechanicalRedu.ction>46</mechanicalRedu.ction>
+            </actuator>
+        </transmission>
+
+
+        <joint name="actuator_part1_to_actuator_part21_joint" type="fixed">
+            <parent link="actuator_part1_link"/>
+            <child link="actuator_part21_link"/>
+            <origin xyz="0 0 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="actuator_part1_to_actuator_part22_joint" type="fixed">
+            <parent link="actuator_part1_link"/>
+            <child link="actuator_part22_link"/>
+            <origin xyz="0 -0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="actuator_part1_to_actuator_part23_joint" type="fixed">
+            <parent link="actuator_part1_link"/>
+            <child link="actuator_part23_link"/>
+            <origin xyz="0 0.18 ${-actuator_part1_Height/2-actuator_part2_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+    </xacro:macro>
+
+    <!-- macro pour l'outils -->
+    <xacro:macro name="tool_macro" params="parent">
+
+        <link name="tool1">
+
+            <inertial>
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
+
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.29"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.055"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <link name="tool2">
+
+            <inertial>
+                <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
+
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.29"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.055"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <link name="tool3">
+
+            <inertial>
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
+
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.29"/>
+                </geometry>
+            </visual>
+
+            <visual>
+                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.055"/>
+                </geometry>
+            </visual>
+
+        </link>
+
+        <gazebo reference="tool1">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
+        <gazebo reference="tool2">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
+        <gazebo reference="tool3">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
+
+        <joint name="tool1_to_actuator_part_21" type="fixed">
+            <parent link="actuator_part21_link"/>
+            <child link="tool1"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
+
+        <joint name="tool2_to_actuator_part_22" type="fixed">
+            <parent link="actuator_part22_link"/>
+            <child link="tool2"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
+
+        <joint name="tool3_to_actuator_part_23" type="fixed">
+            <parent link="actuator_part23_link"/>
+            <child link="tool3"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
+
+    </xacro:macro>
+
+    <!-- macro pour la camera stereo -->
+    <xacro:macro name="camera_stereo" params="parent">
+
+        <link name="camera_stereo_link">
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${cameraSizeX} ${cameraSizeY} ${cameraSizeZ}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${cameraSizeX} ${cameraSizeY} ${cameraSizeZ}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="${cameraMass}" />
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${cameraMass}" x="${cameraSizeX}" y="${cameraSizeY/2}" z="${cameraSizeZ}" />
+            </inertial>
+        </link>
+
+        <gazebo reference="camera_stereo_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Grey</material>
+        </gazebo>
+
+        <joint name="chassis_top_to_camera_stereo" type="fixed">
+            <parent link="${parent}"/>
+            <child link="camera_stereo_link"/>
+            <origin rpy="0 ${camera_inclination*PI/180} 0" xyz="${chassis_bottom_length/2+cameraSizeX/2} 0 ${camera_originZ - chassis_bottom_height/2}"/>
+        </joint>
+
+    </xacro:macro>
+
+    <!-- macro pour le lidar -->
+    <xacro:macro name="lidar" params='parent'>
+
+        <link name="lidar_link">
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${lidar_Lenght} ${lidar_Width} ${lidar_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${lidar_Lenght} ${lidar_Width} ${lidar_Height}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${lidar_Mass}" x="${lidar_Lenght}" y="${lidar_Width}" z="${lidar_Height}"/>
+            </inertial>
+
+        </link>
+
+        <joint name="chassis_bottom_to_lidar" type="fixed">
+            <parent link="${parent}"/>
+            <child link="lidar_link"/>
+            <origin xyz="${chassis_bottom_length/2+lidar_Lenght/2} 0 ${-chassis_bottom_height/2-lidar_chassis_bottom_spacing+lidar_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+    </xacro:macro>
+
+    <!-- macro pour l'IMU -->
+    <xacro:macro name="IMU" params='parent'>
+
+        <link name="IMU_base_link">
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${IMU_base_Length} ${IMU_base_Width} ${IMU_base_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${IMU_base_Length} ${IMU_base_Width} ${IMU_base_Height}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${IMU_base_Mass}" x="${IMU_base_Length}" y="${IMU_base_Width}" z="${IMU_base_Height}"/>
+            </inertial>
+
+        </link>
+
+        <gazebo reference="IMU_base_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Green</material>
+        </gazebo>
+
+        <link name="IMU_link">
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${IMU_Length} ${IMU_Width} ${IMU_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${IMU_Length} ${IMU_Width} ${IMU_Height}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${IMU_Mass}" x="${IMU_Length}" y="${IMU_Width}" z="${IMU_Height}"/>
+            </inertial>
+        </link>
+
+        <gazebo reference="IMU_link">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Grey</material>
+        </gazebo>
+
+        <link name="IMU_light">
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.01" length="0.01"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.01" length="0.01"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="0.1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <sphere_inertia m="0.1" r="0.01"/>
+            </inertial>
+        </link>
+
+        <gazebo reference="IMU_light">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+7" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material>Gazebo/Red</material>
+        </gazebo>
+
+        <joint name="actuator_base_to_IMU_base_joint" type="fixed">
+            <parent link="${parent}"/>
+            <child link="IMU_base_link"/>
+            <origin xyz="0 0 ${actuator_base_Height/2+IMU_base_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="IMU_base_to_IMU_joint" type="fixed">
+            <parent link="IMU_base_link"/>
+            <child link="IMU_link"/>
+            <origin xyz="${IMU_base_Length/2-IMU_Length/2} 0 ${IMU_base_Height/2+IMU_Height/2}" rpy="0 0 0"/>
+        </joint>
+
+        <joint name="IMU_to_IMU_light" type="fixed">
+            <parent link="IMU_link"/>
+            <child link="IMU_light"/>
+            <origin xyz="0 -0.03 ${IMU_Height/2+0.005}" rpy="0 0 0"/>
+        </joint>
+
+    </xacro:macro>
+
+    <!-- macro pour le bumper -->
+    <xacro:macro name="bumper" params='parent'>
+        <link name="bumper_base_link">
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${bumper_base_Length} ${bumper_base_Width} ${bumper_base_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${bumper_base_Length} ${bumper_base_Width} ${bumper_base_Height}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${bumper_base_Mass}" x="${bumper_base_Length}" y="${bumper_base_Width}" z="${bumper_base_Height}"/>
+            </inertial>
+
+        </link>
+
+        <link name="bumper_link">
+
+            <collision>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${bumper_Length} ${bumper_Width} ${bumper_Height}"/>
+                </geometry>
+            </collision>
+
+            <visual>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <geometry>
+                    <box size="${bumper_Length} ${bumper_Width} ${bumper_Height}"/>
+                </geometry>
+            </visual>
+
+            <inertial>
+                <mass value="1"/>
+                <origin xyz="0 0 0" rpy="0 0 0"/>
+                <box_inertia m="${bumper_Mass}" x="${bumper_Length}" y="${bumper_Width}" z="${bumper_Height}"/>
+            </inertial>
+
+        </link>
+
+        <joint name="chassis_top_to_bumper_base_joint" type="fixed">
+            <parent link="${parent}"/>
+            <child link="bumper_base_link"/>
+            <origin xyz="${chassis_top_length/2+bumper_base_Length/2} 0 ${-chassis_top_height/2}" rpy="0 ${-bumper_base_Inclination*PI/180} 0"/>
+        </joint>
+
+        <joint name="bumper_base_to_bumper_joint" type="fixed">
+            <parent link="bumper_base_link"/>
+            <child link="bumper_link"/>
+            <origin xyz="${bumper_base_Length/2+bumper_Length/2} 0 0" rpy="0 0 0"/>
+        </joint>
+
+    </xacro:macro>
 
 </robot>
