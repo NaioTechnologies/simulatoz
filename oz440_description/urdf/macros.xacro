@@ -67,7 +67,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <gravity>true</gravity>
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+6" />
+      <kp  value="5000000" />
       <kd  value="1.0" />
       <material>Gazebo/DarkGrey</material>
     </gazebo>
@@ -131,7 +131,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <gravity>true</gravity>
       <mu1 value="0.99"/>
       <mu2 value="0.99"/>
-      <kp  value="1e+6" />
+      <kp  value="5000000" />
       <kd  value="1.0" />
       <material>Gazebo/DarkGrey</material>
     </gazebo>
