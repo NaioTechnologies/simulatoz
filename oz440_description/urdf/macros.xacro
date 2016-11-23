@@ -336,7 +336,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
       <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
       <axis rpy="0 0 0" xyz="0 0 1"/>
       <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
-      <dynamics damping="0.9" friction="0.98"/>
+      <dynamics damping="0.7" friction="1.0"/>
     </joint>
 
 
