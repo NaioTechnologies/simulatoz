@@ -732,7 +732,7 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
 
         packet_to_send_list_access_.lock();
 
-        ROS_ERROR( "Send position : %d",position_percent);
+//        ROS_ERROR( "Send position : %d",position_percent);
 
         packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
 

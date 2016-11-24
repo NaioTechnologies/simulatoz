@@ -35,39 +35,17 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t <direction>0.9 0.5 -1</direction> \n \
 \t \t </light>\n \
 \n \
-\t \t <population name=\"Sign\">\n \
-\t \t \t <model name=\"Sign\">\n \
-\t \t \t \t <include>\n \
-\t \t \t \t \t <static>1</static>\n \
-\t \t \t \t \t <uri>model://Sign</uri>\n \
-\t \t \t \t </include>\n \
-\t \t \t </model>\n \
+\t \t <include>\n \
+\t \t \t <uri>model://Sign</uri>\n \
 \t \t \t <pose>12 1 0 0 0 0</pose>\n \
-\t \t \t <box>\n \
-\t \t \t \t <size>0.01 0.01 0.01</size>\n \
-\t \t \t </box>\n \
-\t \t \t <model_count>1</model_count>\n \
-\t \t \t \t <distribution>\n \
-\t \t \t \t <type>random</type>\n \
-\t \t \t </distribution>\n \
-\t \t </population>\n \
+\t \t \t <static>1</static>\n \
+\t \t </include>\n \
 \n \
-\t \t <population name=\"Sign2\">\n \
-\t \t \t <model name=\"Sign\">\n \
-\t \t \t \t <include>\n \
-\t \t \t \t \t <static>1</static>\n \
-\t \t \t \t \t <uri>model://Sign</uri>\n \
-\t \t \t \t </include>\n \
-\t \t \t </model>\n \
+\t \t <include>\n \
+\t \t \t <uri>model://Sign</uri>\n \
 \t \t \t <pose>-4 1 0 0 0 0</pose>\n \
-\t \t \t <box>\n \
-\t \t \t \t <size>0.01 0.01 0.01</size>\n \
-\t \t \t </box>\n \
-\t \t \t <model_count>1</model_count>\n \
-\t \t \t \t <distribution>\n \
-\t \t \t \t <type>random</type>\n \
-\t \t \t </distribution>\n \
-\t \t </population>\n \n ")
+\t \t \t <static>1</static>\n \
+\t \t </include>")
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -352,13 +330,13 @@ else :
     while row < N+1:
         num = 1
         while num < L * F + 1 :
-            Ran = ( random.random() - 0.5 )/ 10
+            Ran = ( random.random() - 0.5 )/ 20
             file.write("\t \t<include> \n \
 \t \t \t <uri>model://%s</uri> \n \
 \t \t \t <pose>%f %f 0.15 0 0 %f</pose> \n \
 \t \t \t <static>%d</static> \n \
 \t \t </include> \n \n" \
-%(V, 1.2 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 60.0, static ))
+%(V, 1.2 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 180.0, static ))
             num += 1
         row += 1
 
@@ -402,6 +380,24 @@ while again == 1:
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
 %(i, 1.0 + L/2.0, -(float(i)-0.5)*w + w/2, L+4, w-0.1, L*6.0))
+
+            file.write("\t \t<population name=\"Big_rocks%d\">\n \
+\t \t \t <model name=\"Big_rock\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Big_rock</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d 0.2 0.001</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(i, 1.0 + L/2.0, -(float(i)-1)*w + w/2-0.15, L, L*3.0))
             i += 1
 
     elif R == 0 :
