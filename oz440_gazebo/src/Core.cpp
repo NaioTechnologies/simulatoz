@@ -335,6 +335,7 @@ void Core::client_read_thread_function( )
                             else
                             {
                                 command.x = actuator_position_+0.0001;
+                                std::this_thread::sleep_for(5ms);
                             }
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
