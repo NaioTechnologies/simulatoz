@@ -253,6 +253,7 @@ void Core::client_read_thread_function( )
     uint8_t received_buffer[ 4096 ];
     bool packet_header_detected = false;
     bool at_least_one_packet_decoded = false;
+    bool last_order_down = 0;
 
     Naio01Codec naio_01_codec;
     std::vector< BaseNaio01PacketPtr > received_packet_list;
@@ -324,6 +325,7 @@ void Core::client_read_thread_function( )
                                 command.x = actuator_position_ +0.005;
                                 ROS_ERROR("MONTE : %f", actuator_position_ +0.005);
 //                                actuator_pub_.publish(command);
+                                last_order_down = 0;
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
@@ -331,11 +333,19 @@ void Core::client_read_thread_function( )
                                 command.x = actuator_position_ -0.005;
                                 ROS_ERROR("DESCEND : %f", actuator_position_ -0.005);
 //                                actuator_pub_.publish(command);
+                                last_order_down = 1;
                             }
                             else
                             {
-                                command.x = actuator_position_+0.0001;
-                                std::this_thread::sleep_for(5ms);
+                                if (last_order_down == 1) {
+                                    command.x = actuator_position_ - 0.0001;
+                                    std::this_thread::sleep_for(10ms);
+                                }
+                                else
+                                {
+                                    command.x = actuator_position_ + 0.0001;
+                                    std::this_thread::sleep_for(10ms);
+                                }
                             }
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
