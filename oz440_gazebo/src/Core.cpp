@@ -334,7 +334,7 @@ void Core::client_read_thread_function( )
                             }
                             else
                             {
-                                command.x = actuator_position_;
+                                command.x = actuator_position_+0.0001;
                             }
 
                             ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
