@@ -26,11 +26,11 @@
           </cylinder>
         </geometry>
         <material>
-         <script>
-           <uri>model://ground_plane/materials/scripts/my_ground_plane.material</uri>
-           <uri>model://ground_plane/materials/textures</uri>
-           <name>my_ground_plane/BigGrass</name>
-         </script>
+          <script>
+            <uri>model://ground_plane/materials/scripts/my_ground_plane.material</uri>
+            <uri>model://ground_plane/materials/textures</uri>
+            <name>my_ground_plane/BigGrass</name>
+          </script>
           <shader type='vertex'>
             <normal_map>__default__</normal_map>
           </shader>
@@ -52,8 +52,8 @@
         <surface>
           <friction>
             <ode>
-              <mu>1</mu>
-              <mu2>1</mu2>
+              <mu>0.99</mu>
+              <mu2>0.99</mu2>
               <fdir1>0 0 0</fdir1>
               <slip1>0</slip1>
               <slip2>0</slip2>
