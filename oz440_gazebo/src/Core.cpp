@@ -715,10 +715,13 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
     try
     {
         actuator_position_ = joint_states_msg->position[0] ;
+        uint8_t position_percent = std::round(actuator_position_  * ( -100.0 / 0.15 ));
 
-        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( (uint8_t) actuator_position_  * ( -100.0 / 0.15 ) );
+        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( position_percent );
 
         packet_to_send_list_access_.lock();
+
+        ROS_ERROR( "Send position : %d",position_percent);
 
         packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
 

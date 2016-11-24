@@ -346,21 +346,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <link name="tool1">
 
             <inertial>
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0" />
                 <mass value="4"/>
                 <sphere_inertia m="${4}" r="${0.04}"/>
             </inertial>
             <gravity>1</gravity>
 
             <collision name="sphere">
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
             </collision>
 
             <visual>
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
@@ -369,14 +369,14 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             <visual>
                 <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
                 <geometry>
-                    <cylinder radius="0.007" length="0.29"/>
+                    <cylinder radius="0.007" length="0.30"/>
                 </geometry>
             </visual>
 
             <visual>
-                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
                 <geometry>
-                    <cylinder radius="0.007" length="0.055"/>
+                    <cylinder radius="0.007" length="0.065"/>
                 </geometry>
             </visual>
 
@@ -385,21 +385,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <link name="tool2">
 
             <inertial>
-                <origin xyz="-0.25 -0.2 -0.21" rpy="0 0 0" />
+                <origin xyz="-0.25 -0.2 -0.22" rpy="0 0 0" />
                 <mass value="4"/>
                 <sphere_inertia m="${4}" r="${0.04}"/>
             </inertial>
             <gravity>1</gravity>
 
             <collision name="sphere">
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
             </collision>
 
             <visual>
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
@@ -413,9 +413,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             </visual>
 
             <visual>
-                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
                 <geometry>
-                    <cylinder radius="0.007" length="0.055"/>
+                    <cylinder radius="0.007" length="0.065"/>
                 </geometry>
             </visual>
 
@@ -424,21 +424,21 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <link name="tool3">
 
             <inertial>
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0" />
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0" />
                 <mass value="4"/>
                 <sphere_inertia m="${4}" r="${0.04}"/>
             </inertial>
             <gravity>1</gravity>
 
             <collision name="sphere">
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
             </collision>
 
             <visual>
-                <origin xyz="-0.25 0 -0.21" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
                 <geometry>
                     <sphere radius="0.03"/>
                 </geometry>
@@ -452,9 +452,9 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             </visual>
 
             <visual>
-                <origin xyz="-0.25 0 -0.175" rpy="0 0 0"/>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
                 <geometry>
-                    <cylinder radius="0.007" length="0.055"/>
+                    <cylinder radius="0.007" length="0.065"/>
                 </geometry>
             </visual>
 
