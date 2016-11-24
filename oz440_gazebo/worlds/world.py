@@ -442,7 +442,7 @@ while again == 1:
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.0 + L/2.0, -w*(N-1)/2 + w/2, L+1, w*(N-1), L*N*5))
+%(1.0 + L/2.0, -w*(N-1)/2 + w/2, L+1, w*(N-1), L*N*3))
 
         i = 1
         while i < N+1:
