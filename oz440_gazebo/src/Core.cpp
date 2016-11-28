@@ -24,6 +24,9 @@
 #include <vector>
 #include <stdlib.h>
 
+#include "Metric.hpp"
+#include "Test.hpp"
+
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
 
@@ -35,7 +38,7 @@ int main( int argc, char **argv )
 {
     Core core( argc, argv );
 
-    core.run( );
+    core.run(argc, argv);
 
     return 0;
 }
@@ -80,7 +83,7 @@ Core::~Core( )
 
 // *********************************************************************************************************************
 
-void Core::run( )
+void Core::run( int argc, char **argv )
 {
     using namespace std::chrono_literals;
 
@@ -128,6 +131,9 @@ void Core::run( )
 
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
+
+    // creates test thread
+    test_thread_ = std::thread( &Core::test_thread_function, argc, argv, this );
 
     // creates ozcore_image thread
     ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
@@ -323,16 +329,14 @@ void Core::client_read_thread_function( )
                             if ( ActuatorPacketPtr->position == 1 )
                             {
                                 command.x = actuator_position_ +0.005;
-                                ROS_ERROR("MONTE : %f", actuator_position_ +0.005);
-//                                actuator_pub_.publish(command);
+                                ROS_INFO("MONTE : %f", actuator_position_ +0.005);
                                 last_order_down = 0;
 
                             }
                             else if ( ActuatorPacketPtr->position == 2 )
                             {
                                 command.x = actuator_position_ -0.005;
-                                ROS_ERROR("DESCEND : %f", actuator_position_ -0.005);
-//                                actuator_pub_.publish(command);
+                                ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
                                 last_order_down = 1;
                             }
                             else
@@ -667,6 +671,33 @@ void Core::ozcore_image_thread_function( )
 
 }
 
+//**********************************************************************************************************************
+
+void Core::test_thread_function( int argc, char **argv )
+{
+    using namespace std::chrono_literals;
+
+    test_thread_started_ = true;
+
+    Test test();
+
+    Metric metric( argc, argv, test);
+
+    bool followed_trajectory = metric.followed_trajectory();
+    bool pushed_object = metric.pushed_object();
+
+    if(pushed_object){
+        ROS_ERROR( "object was pushed" );
+    }
+
+    if(!followed_trajectory){
+        ROS_ERROR( "left trajectory" );
+    }
+
+    test_thread_started_ = false;
+
+}
+
 // *********************************************************************************************************************
 
 void Core::join_client_read_thread()
@@ -691,7 +722,7 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
         {
             if( i >= 45 and i < 226 )
             {
-                distance[ i ] = lidar_msg->ranges[ 270- i ] * 1000; //Convert meters to millimeters
+                distance[ i ] = lidar_msg->ranges[ 270 - i ] * 1000; //Convert meters to millimeters
             }
             else
             {
