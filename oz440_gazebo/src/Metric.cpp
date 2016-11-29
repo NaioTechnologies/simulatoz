@@ -5,6 +5,7 @@
 #include "Metric.hpp"
 
 #include <chrono>
+#include <cmath>
 #include <stdlib.h>
 
 #include "std_msgs/Float64.h"
@@ -19,19 +20,15 @@ using namespace std::chrono;
 
 Metric::Metric( int argc, char **argv, Test test )
 {
-    ros::init( argc, argv, "metric");
-
-    ros::NodeHandle n;
-
     object_down_ = false;
 
     followed_trajectory_ = true;
 
     test_ = test;
 
-    make_trajectory();;
+    make_trajectory();
 
-    run();
+    run(argc, argv);
 
 }
 
@@ -41,12 +38,12 @@ Metric::~Metric(){}
 
 // *********************************************************************************************************************
 
-void Metric::run() {
+void Metric::run(int argc, char **argv) {
 
-    ros::NodeHandle n;
+    ros::init( argc, argv, "core", ros::init_options::AnonymousName);
 
-    // subscribe to link_states topic
-    ros::Subscriber link_states_sub = n.subscribe( "/gazebo/link_states", 500000, &Metric::link_states_callback, this );
+    //creates main thread
+    main_thread_ = std::thread( &Metric::main_thread_function, this );
 
     // creates collision thread
     collision_thread_ = std::thread( &Metric::collision_thread_function, this );
@@ -54,12 +51,19 @@ void Metric::run() {
     // creates trajectory thread
     trajectory_thread_ = std::thread( &Metric::trajectory_thread_function, this );
 
-    while( ros::ok())
-    {
-        std::this_thread::sleep_for(250ms);
+}
 
-        ros::spinOnce();
-    }
+// *********************************************************************************************************************
+
+void Metric::initialize(Test test)
+{
+    object_down_ = false;
+
+    followed_trajectory_ = true;
+
+    test_ = test;
+
+    make_trajectory();
 
 }
 
@@ -81,28 +85,55 @@ bool Metric::pushed_object() {
 
 // *********************************************************************************************************************
 
+void Metric::main_thread_function(){
+
+    using namespace std::chrono_literals;
+
+    main_thread_started_ = true;
+
+    ros::NodeHandle n;
+
+    // subscribe to link_states topic
+    ros::Subscriber link_states_sub = n.subscribe( "/gazebo/link_states", 50000, &Metric::link_states_callback, this );
+
+    while( ros::ok())
+    {
+        std::this_thread::sleep_for(250ms);
+
+        ros::spinOnce();
+    }
+
+    main_thread_started_ = false;
+}
+
+// *********************************************************************************************************************
+
 void Metric::collision_thread_function(){
 
     using namespace std::chrono_literals;
-    std::string type_vegetable = test_.get_type_vegetable();
 
     collision_thread_started_ = true;
 
-    while ( ros::ok() and !object_down_)
+    std::this_thread::sleep_for(1000ms);
+
+    while ( ros::ok())
     {
-//        link_states_access_.lock();
-//
-//        for(int i = 0; i < sizeof(link_states_.name)/sizeof(link_states_.name[0]) ; i++)
-//        {
-//            std::size_t found = link_states_.name[i].find(type_vegetable);
-//
-//            if (found!=std::string::npos)
-//            {
-//                is_fallen(i);
-//            }
-//        }
-//
-//        link_states_access_.unlock();
+        if(!object_down_)
+        {
+            link_states_access_.lock();
+
+            for(int i = 0; i < vegetable_orientation_.size() ; i++)
+            {
+                if (vegetable_orientation_[i] > 0.0001)
+                {
+                    ROS_INFO( "object_down" );
+
+                    object_down_=1;
+                }
+            }
+
+            link_states_access_.unlock();
+        }
 
         std::this_thread::sleep_for(500ms);
     }
@@ -116,46 +147,59 @@ void Metric::trajectory_thread_function(){
 
     using namespace std::chrono_literals;
 
-    geometry_msgs::Pose pose;
-    geometry_msgs::Point point_position;
-    int position [3] ;
+    std::this_thread::sleep_for(1000ms);
 
     trajectory_thread_started_ = true;
 
-    while ( ros::ok() and followed_trajectory_)
+    while ( ros::ok())
     {
-//        link_states_access_.lock();
-//
-//        for(int i = 0; i < sizeof(link_states_.name)/sizeof(link_states_.name[0]) ; i++)
-//        {
-//            std::size_t found = link_states_.name[i].find("footprint");
-//
-//            if (found!=std::string::npos)
-//            {
-//                pose = link_states_.pose[index];
-//                point_position = pose.position;
-//                position[0] = point_position.x;
-//                position[1] = point_position.y;
-//                position[2] = point_position.z;
-//
-//                followed_trajectory_ = belong_to_trajectory();
-//            }
-//
-//        }
-//
-//        link_states_access_.unlock();
+        if(followed_trajectory_)
+        {
+            link_states_access_.lock();
+
+            belong_to_trajectory(position_x_, position_y_, position_z_);
+
+            link_states_access_.unlock();
+        }
+
+        std::this_thread::sleep_for(500ms);
     }
 
-    trajectory_thread_started_ =false;
+    trajectory_thread_started_ = false;
 }
 
 // *********************************************************************************************************************
 
-void Metric::link_states_callback(const gazebo_msgs::LinkStates::ConstPtr &link_states_msg) {
+void Metric::link_states_callback(const gazebo_msgs::LinkStates::ConstPtr &link_states_msg)
+{
+    std::string type_vegetable = test_.get_type_vegetable();
 
     link_states_access_.lock();
 
-    link_states_ = link_states_msg;
+    vegetable_orientation_.clear();
+
+    for(int i = 0; i < link_states_msg->name.size() ; i++)
+    {
+
+        std::size_t found = link_states_msg->name[i].find(type_vegetable);
+
+        if (found!=std::string::npos)
+        {
+            vegetable_orientation_.push_back(link_states_msg->pose[i].orientation.x);
+        }
+        else
+        {
+            std::size_t found_oz = link_states_msg->name[i].find("footprint");
+
+            if (found_oz != std::string::npos) {
+
+                position_x_ = link_states_msg->pose[i].position.x;
+                position_y_ = link_states_msg->pose[i].position.y;
+                position_z_ = link_states_msg->pose[i].position.z;
+
+            }
+        }
+    }
 
     link_states_access_.unlock();
 
@@ -163,54 +207,41 @@ void Metric::link_states_callback(const gazebo_msgs::LinkStates::ConstPtr &link_
 
 // *********************************************************************************************************************
 
-bool Metric::is_fallen( int index_link ) {
+void Metric::belong_to_trajectory( float pose_x, float pose_y, float pose_z ) {
 
-    geometry_msgs::Pose pose = link_states.pose[index];
-
-    if(pose.orientation.x > 0.0001)
-    {
-        object_down_ = 1;
-    }
-}
-
-// *********************************************************************************************************************
-
-bool Metric::belong_to_trajectory( float* pose ) {
-
-    bool belong_to_trajectory = false;
     int distance = 0;
     int distance_x = 0;
     int distance_y = 0;
     float width = test_.get_width();
 
+    followed_trajectory_ = false;
+
     // On suit les lignes
-    for (int i = 0; i < size(trajectory_) / 3 ; i++)
+    for (int i = 0; i <  trajectory_.size() / 3 ; i++)
     {
-        distance = math.sqrt( math.pow((pose[0] - trajectory_[3 * i]) , 2.0) + math.pow((pose[1] - trajectory_[3 * i + 1]) , 2.0) + math.pow((pose[2] - trajectory_[3 * i + 2]) , 2.0));
+        distance = std::sqrt( std::pow((pose_x - trajectory_[3 * i]) , 2.0) + std::pow((pose_y - trajectory_[3 * i + 1]) , 2.0) + std::pow((pose_z - trajectory_[3 * i + 2]) , 2.0));
 
         if (distance < width / 2.0 )
         {
-            belong_to_trajectory = true;
+            followed_trajectory_ = true;
         }
     }
 
     // On ne dépasse pas dans les virages
-    if (belong_to_trajectory == false)
+    if (followed_trajectory_ == false)
     {
-        for (int i = 0; i < size(center_turns_) / 3 ; i++)
+        for (int i = 0; i < center_turns_.size() / 3 ; i++)
         {
-            distance_x = abs(pose[0] - center_turns[3 * i]);
-            distance_y = abs(pose[1] - center_turns[3 * i + 1]);
+            distance_x = abs(pose_x - center_turns_[3 * i]);
+            distance_y = abs(pose_y - center_turns_[3 * i + 1]);
 
             if (distance_x < 2.0 + width / 2.0 and distance_y < 1.0 )
             {
-                belong_to_trajectory = true;
+                followed_trajectory_ = true;
+
             }
         }
     }
-
-    return (belong_to_trajectory);
-
 }
 
 // *********************************************************************************************************************
@@ -220,6 +251,9 @@ void Metric::make_trajectory(){
     int number_rows = test_.get_number_rows();
     int length_rows = test_.get_length_rows();
     float width = test_.get_width();
+
+    trajectory_.clear();
+    center_turns_.clear();
 
     for(int i = 0; i < number_rows ; i++)
     {

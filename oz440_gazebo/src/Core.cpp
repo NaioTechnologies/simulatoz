@@ -47,7 +47,7 @@ int main( int argc, char **argv )
 
 Core::Core( int argc, char **argv )
 {
-    ros::init( argc, argv, "core");
+    ros::init( argc, argv, "core", ros::init_options::AnonymousName);
 
     ros::NodeHandle n;
 
@@ -132,11 +132,11 @@ void Core::run( int argc, char **argv )
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
-    // creates test thread
-    test_thread_ = std::thread( &Core::test_thread_function, argc, argv, this );
-
     // creates ozcore_image thread
     ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
+
+    // creates test thread
+    test_thread_ = std::thread( &Core::test_thread_function, this, argc, argv );
 
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
@@ -163,6 +163,7 @@ void Core::run( int argc, char **argv )
 
                 milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
+
             }
         }
 
@@ -677,24 +678,45 @@ void Core::test_thread_function( int argc, char **argv )
 {
     using namespace std::chrono_literals;
 
+    std::this_thread::sleep_for(5000ms);
+    
     test_thread_started_ = true;
 
-    Test test();
+    Test test;
 
     Metric metric( argc, argv, test);
 
-    bool followed_trajectory = metric.followed_trajectory();
-    bool pushed_object = metric.pushed_object();
+    while(ros::ok()){
 
-    if(pushed_object){
-        ROS_ERROR( "object was pushed" );
-    }
+        if(client_socket_connected_)
+        {
+            bool followed_trajectory = metric.followed_trajectory();
 
-    if(!followed_trajectory){
-        ROS_ERROR( "left trajectory" );
+            bool pushed_object = metric.pushed_object();
+
+            if(pushed_object){
+                ROS_ERROR( "object was pushed" );
+            }
+
+            if(!followed_trajectory){
+                ROS_ERROR( "left trajectory" );
+            }
+
+            std::this_thread::sleep_for(500ms);
+        }
+        else
+        {
+            metric.initialize(test);
+
+            std::this_thread::sleep_for(1000ms);
+
+        }
+
     }
 
     test_thread_started_ = false;
+
+    ROS_ERROR( "end of thread" );
 
 }
 

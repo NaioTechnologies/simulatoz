@@ -81,7 +81,7 @@ private:
     std::thread ozcore_image_thread_;
 
     bool test_thread_started_;
-    std::thread test_read_thread_;
+    std::thread test_thread_;
 
     std::mutex socket_access_;
 
