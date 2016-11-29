@@ -53,8 +53,6 @@ private:
     void image_read_thread_function( );
     void image_thread_function( );
 
-    void test_thread_function( int argc, char **argv );
-
     void disconnected();
     void image_disconnected();
 
@@ -79,9 +77,6 @@ private:
     bool ozcore_image_thread_started_;
     std::thread ozcore_image_read_thread_;
     std::thread ozcore_image_thread_;
-
-    bool test_thread_started_;
-    std::thread test_thread_;
 
     std::mutex socket_access_;
 

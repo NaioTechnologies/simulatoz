@@ -37,7 +37,7 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 find_library(${OZ_API} liboz440_api)
 find_library(${OZ_SOCKET} liboz440_socket)
 
-add_executable(Core src/Test.cpp src/Metric.cpp src/Core.cpp  )
+add_executable(Core src/Core.cpp  )
 target_link_libraries(Core ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET})
 add_dependencies(Core oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})
 

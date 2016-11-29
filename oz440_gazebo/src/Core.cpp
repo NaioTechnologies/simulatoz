@@ -24,9 +24,6 @@
 #include <vector>
 #include <stdlib.h>
 
-#include "Metric.hpp"
-#include "Test.hpp"
-
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
 
@@ -134,9 +131,6 @@ void Core::run( int argc, char **argv )
 
     // creates ozcore_image thread
     ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
-
-    // creates test thread
-    test_thread_ = std::thread( &Core::test_thread_function, this, argc, argv );
 
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
@@ -669,54 +663,6 @@ void Core::ozcore_image_thread_function( )
     close( ozcore_image_server_socket_desc_ );
 
     ozcore_image_thread_started_ = false;
-
-}
-
-//**********************************************************************************************************************
-
-void Core::test_thread_function( int argc, char **argv )
-{
-    using namespace std::chrono_literals;
-
-    std::this_thread::sleep_for(5000ms);
-    
-    test_thread_started_ = true;
-
-    Test test;
-
-    Metric metric( argc, argv, test);
-
-    while(ros::ok()){
-
-        if(client_socket_connected_)
-        {
-            bool followed_trajectory = metric.followed_trajectory();
-
-            bool pushed_object = metric.pushed_object();
-
-            if(pushed_object){
-                ROS_ERROR( "object was pushed" );
-            }
-
-            if(!followed_trajectory){
-                ROS_ERROR( "left trajectory" );
-            }
-
-            std::this_thread::sleep_for(500ms);
-        }
-        else
-        {
-            metric.initialize(test);
-
-            std::this_thread::sleep_for(1000ms);
-
-        }
-
-    }
-
-    test_thread_started_ = false;
-
-    ROS_ERROR( "end of thread" );
 
 }
 
