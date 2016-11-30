@@ -694,12 +694,18 @@ void Core::test_thread_function( int argc, char **argv )
 
             bool pushed_object = metric.pushed_object();
 
+            bool arrived = metric.is_arrived();
+
             if(pushed_object){
                 ROS_ERROR( "object was pushed" );
             }
 
             if(!followed_trajectory){
                 ROS_ERROR( "left trajectory" );
+            }
+
+            if(arrived){
+                ROS_ERROR( "Arrived" );
             }
 
             std::this_thread::sleep_for(500ms);

@@ -83,6 +83,39 @@ bool Metric::pushed_object() {
 
 }
 
+
+// *********************************************************************************************************************
+
+bool Metric::is_arrived() {
+
+    int number_rows = test_.get_number_rows();
+    int length_rows = test_.get_length_rows();
+    float width = test_.get_width();
+
+    float goal_x = 1.0 + length_rows;
+
+    if( number_rows % 2 == 0 ){
+        goal_x =  1.0;
+
+    }
+
+    float goal_y = -(number_rows - 1) * width ;
+
+    float distance = std::sqrt( std::pow((position_x_ - goal_x) , 2.0) + std::pow((position_y_ - goal_y) , 2.0));
+
+    ROS_ERROR( "x = %f, y = %f, distance = %f", goal_x, goal_y, distance);
+
+    if (distance < width)
+    {
+        return(true);
+    }
+    else
+    {
+        return(false);
+    }
+
+}
+
 // *********************************************************************************************************************
 
 void Metric::main_thread_function(){

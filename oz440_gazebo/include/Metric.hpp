@@ -31,6 +31,7 @@ public:
     // Getters
     bool followed_trajectory( );
     bool pushed_object();
+    bool is_arrived();
 
     //Setter
     void initialize(Test test);
