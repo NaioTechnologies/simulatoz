@@ -1,0 +1,448 @@
+<sdf version='1.6'> 
+ 	 <world name='default'> 
+ 	 	 <light name='sun' type='directional'> 
+ 	 	 	 <cast_shadows>1</cast_shadows> 
+ 	 	 	 <pose frame=''>0 0 10 0 -0 0</pose> 
+ 	 	 	 <diffuse>0.8 0.8 0.8 1</diffuse> 
+ 	 	 	 <specular>0.1 0.1 0.1 1</specular> 
+ 	 	 	 <attenuation> 
+ 	 	 	 	 <range>1000</range> 
+ 	 	 	 	 <constant>0.9</constant> 
+ 	 	 	 	 <linear>0.01</linear> 
+ 	 	 	 	 <quadratic>0.001</quadratic> 
+ 	 	 	 </attenuation> 
+ 	 	 	 <direction>0.9 0.5 -1</direction> 
+ 	 	 </light>
+ 
+ 	 	 <include>
+ 	 	 	 <uri>model://Sign</uri>
+ 	 	 	 <pose>12 1 0 0 0 0</pose>
+ 	 	 	 <static>1</static>
+ 	 	 </include>
+ 
+ 	 	 <include>
+ 	 	 	 <uri>model://Sign</uri>
+ 	 	 	 <pose>-4 1 0 0 0 0</pose>
+ 	 	 	 <static>1</static>
+ 	 	 </include>	 	 <include> 
+ 	 	 	 <uri>model://heightmap</uri> 
+ 	 	 </include>
+ 
+	 	<scene> 
+ 	 	 	 <sky> 
+ 	 	 	 	 <clouds> 
+ 	 	 	 	 	 <speed>0</speed> 
+ 	 	 	 	 </clouds> 
+ 	 	 	 </sky> 
+ 	 	 </scene> 
+ 
+ 	 	 <population name="sticks"> 
+ 	 	 	 <model name="Red_stick">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>0</static>
+ 	 	 	 	 	 <uri>model://Red_stick</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	<pose>4.100000 -0.350000 0.1 0 0 0</pose>
+ 	 	 	<distribution> 
+ 	 	 	 	 <type>grid</type> 
+ 	 	 	 	 <rows>3</rows>
+ 	 	 	 	 <cols>2</cols>
+ 	 	 	 	 <step>6.200000 0.700000 0</step>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.200000 0.368908 0.15 0 0 3.403497</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.533333 0.354174 0.15 0 0 0.751337</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.866667 0.339969 0.15 0 0 -1.805510</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.200000 0.338169 0.15 0 0 -2.129593</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.533333 0.335533 0.15 0 0 -2.604124</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.866667 0.358283 0.15 0 0 1.490925</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.200000 0.362887 0.15 0 0 2.319574</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.533333 0.360972 0.15 0 0 1.974992</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.866667 0.369354 0.15 0 0 3.483742</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.200000 0.356653 0.15 0 0 1.197469</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.533333 0.373020 0.15 0 0 4.143621</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.866667 0.371753 0.15 0 0 3.915617</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.200000 0.341953 0.15 0 0 -1.448530</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.533333 0.346281 0.15 0 0 -0.669334</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.866667 0.345732 0.15 0 0 -0.768229</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.200000 0.347923 0.15 0 0 -0.373810</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.533333 0.351958 0.15 0 0 0.352470</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.866667 0.347346 0.15 0 0 -0.477776</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.200000 -0.356633 0.15 0 0 -1.194011</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.533333 -0.343426 0.15 0 0 1.183363</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.866667 -0.362273 0.15 0 0 -2.209130</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.200000 -0.339404 0.15 0 0 1.907298</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.533333 -0.363067 0.15 0 0 -2.352029</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.866667 -0.336479 0.15 0 0 2.433845</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.200000 -0.372447 0.15 0 0 -4.040483</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.533333 -0.365898 0.15 0 0 -2.861673</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.866667 -0.338610 0.15 0 0 2.050173</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.200000 -0.335984 0.15 0 0 2.522938</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.533333 -0.339452 0.15 0 0 1.898641</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.866667 -0.362379 0.15 0 0 -2.228159</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.200000 -0.343894 0.15 0 0 1.099129</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.533333 -0.346411 0.15 0 0 0.646035</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.866667 -0.369153 0.15 0 0 -3.447555</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.200000 -0.333486 0.15 0 0 2.972443</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.533333 -0.351758 0.15 0 0 -0.316390</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.866667 -0.327159 0.15 0 0 4.111311</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.200000 -1.069940 0.15 0 0 -3.589126</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.533333 -1.068369 0.15 0 0 -3.306484</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>1.866667 -1.074722 0.15 0 0 -4.450004</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.200000 -1.039871 0.15 0 0 1.823177</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.533333 -1.028019 0.15 0 0 3.956556</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>2.866667 -1.032416 0.15 0 0 3.165126</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.200000 -1.045151 0.15 0 0 0.872883</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.533333 -1.026787 0.15 0 0 4.178418</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>3.866667 -1.050741 0.15 0 0 -0.133449</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.200000 -1.064533 0.15 0 0 -2.616001</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.533333 -1.041713 0.15 0 0 1.491597</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>4.866667 -1.060643 0.15 0 0 -1.915823</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.200000 -1.060238 0.15 0 0 -1.842875</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.533333 -1.030315 0.15 0 0 3.543211</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>5.866667 -1.047005 0.15 0 0 0.539113</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.200000 -1.045310 0.15 0 0 0.844183</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.533333 -1.063948 0.15 0 0 -2.510633</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Cabbage</uri> 
+ 	 	 	 <pose>6.866667 -1.035040 0.15 0 0 2.692827</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	 <population name="Trees1"> 
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>17 0 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>5 20 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>5</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 	 	 
+ 	 	 <population name="Trees2">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>0 -17 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>30 6 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>5</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 
+ 	 	 <population name="Trees3">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>0 15 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>30 6 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>7</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 	 </population>
+ 
+ 	 	 <population name="Trees4">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>-15 0 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>10 30 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>8</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 
+	 </world> 
+ </sdf>
