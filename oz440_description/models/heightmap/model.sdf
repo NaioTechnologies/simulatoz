@@ -1,57 +1,57 @@
 <?xml version="1.0" ?>
 <sdf version="1.2">
 
-    <model name="heightmap">
-      <static>true</static>
-      <link name="link">
-        <collision name="collision">
-          <geometry>
-            <heightmap>
-              <uri>model://heightmap/materials/textures/heightmap2.jpg</uri>
-              <size>30 30 1</size>
-              <pos>0 0 0</pos>
-            </heightmap>
-          </geometry>
-          <surface>
-            <friction>
-              <ode>
-                <mu>0.99</mu>
-                <mu2>0.99</mu2>
-              </ode>
-            </friction>
-          </surface>
-        </collision>
+  <model name="heightmap">
+    <static>true</static>
+    <link name="link">
+      <collision name="collision">
+        <geometry>
+          <heightmap>
+            <uri>model://heightmap/materials/textures/heightmap3.jpg</uri>
+            <size>40 40 2</size>
+            <pos>0 0 0</pos>
+          </heightmap>
+        </geometry>
+        <surface>
+          <friction>
+            <ode>
+              <mu>0.99</mu>
+              <mu2>0.99</mu2>
+            </ode>
+          </friction>
+        </surface>
+      </collision>
 
-        <visual name="visual">
-          <cast_shadows>1</cast_shadows>
-          <geometry>
-            <heightmap>
-              <use_terrain_paging>false</use_terrain_paging>
+      <visual name="visual">
+        <cast_shadows>1</cast_shadows>
+        <geometry>
+          <heightmap>
+            <use_terrain_paging>false</use_terrain_paging>
 
-              <texture>
-                <diffuse>model://heightmap/materials/textures/dirt2.jpg</diffuse>
-                <normal>file://media/materials/textures/flat_normal.png</normal>
-                <size>4</size>
-              </texture>
+            <texture>
+              <diffuse>model://heightmap/materials/textures/dirt2.jpg</diffuse>
+              <normal>file://media/materials/textures/flat_normal.png</normal>
+              <size>1</size>
+            </texture>
 
-              <texture>
-                <diffuse>model://heightmap/materials/textures/grass3.jpg</diffuse>
-                <normal>file://media/materials/textures/flat_normal.png</normal>
-                <size>4</size>
-              </texture>
+            <texture>
+              <diffuse>model://heightmap/materials/textures/grass3.jpg</diffuse>
+              <normal>file://media/materials/textures/flat_normal.png</normal>
+              <size>4</size>
+            </texture>
 
-              <blend>
-                <min_height>0.05</min_height>
-                <fade_dist>0.5</fade_dist>
-              </blend>
+            <blend>
+              <min_height>0.05</min_height>
+              <fade_dist>0.5</fade_dist>
+            </blend>
 
-              <uri>model://heightmap/materials/textures/heightmap2.jpg</uri>
-              <size>30 30 1</size>
-              <pos>0 0 0</pos>
-            </heightmap>
-          </geometry>
-        </visual>
-      </link>
-    </model>
+            <uri>model://heightmap/materials/textures/heightmap3.jpg</uri>
+            <size>40 40 2</size>
+            <pos>0 0 0</pos>
+          </heightmap>
+        </geometry>
+      </visual>
+    </link>
+  </model>
 
 </sdf>
