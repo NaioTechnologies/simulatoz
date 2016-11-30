@@ -3,7 +3,7 @@
  	 	 <light name='sun' type='directional'> 
  	 	 	 <cast_shadows>1</cast_shadows> 
  	 	 	 <pose frame=''>0 0 10 0 -0 0</pose> 
- 	 	 	 <diffuse>0.8 0.8 0.8 1</diffuse> 
+ 	 	 	 <diffuse>0.5 0.5 0.5 1</diffuse>
  	 	 	 <specular>0.1 0.1 0.1 1</specular> 
  	 	 	 <attenuation> 
  	 	 	 	 <range>1000</range> 
@@ -24,12 +24,17 @@
  	 	 	 <uri>model://Sign</uri>
  	 	 	 <pose>-4 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
- 	 	 </include>	 	 <include> 
- 	 	 	 <uri>model://heightmap</uri> 
+ 	 	 </include>
+ 
+	 	 <include> 
+ 	 	 	 <uri>model://grass_plane</uri> 
  	 	 </include>
  
 	 	<scene> 
  	 	 	 <sky> 
+ 	 	 	 	 <time>21</time>
+ 	 	 	 	 <sunset_time>19</sunset_time>
+ 	 	 	 	 <sunrise_time>8</sunrise_time>
  	 	 	 	 <clouds> 
  	 	 	 	 	 <speed>0</speed> 
  	 	 	 	 </clouds> 
@@ -43,12 +48,12 @@
  	 	 	 	 	 <uri>model://Red_stick</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	<pose>4.100000 -0.350000 0.1 0 0 0</pose>
+ 	 	 	<pose>3.600000 0.000000 0.1 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>3</rows>
+ 	 	 	 	 <rows>2</rows>
  	 	 	 	 <cols>2</cols>
- 	 	 	 	 <step>6.200000 0.700000 0</step>
+ 	 	 	 	 <step>5.200000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population>
  
@@ -59,12 +64,12 @@
  	 	 	 	 	 <uri>model://Mound</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	<pose>4.100000 -0.350000 -0.245 0 0 0</pose>
+ 	 	 	<pose>3.600000 0.000000 -0.245 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>3</rows>
+ 	 	 	 	 <rows>2</rows>
  	 	 	 	 <cols>2</cols>
- 	 	 	 	 <step>6.200000 0.700000 0</step>
+ 	 	 	 	 <step>5.200000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population>
  
@@ -75,11 +80,11 @@
  	 	 	 	 	 <uri>model://Mound_cyl</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>4.100000 -0.350000 -0.2 0 0 0</pose>
+ 	 	 	 <pose>3.600000 0.000000 -0.2 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>3</rows>
- 	 	 	 	 <cols>24</cols>
+ 	 	 	 	 <rows>2</rows>
+ 	 	 	 	 <cols>20</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population> 
@@ -91,114 +96,12 @@
  	 	 	 	 	 <uri>model://Leek</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>4.100000 -0.350000 0.2 0 0 0</pose>
+ 	 	 	 <pose>3.600000 0.000000 0.2 0 0 0</pose>
  	 	 	<distribution> 
  	 	 	 	 <type>grid</type> 
- 	 	 	 	 <rows>3</rows>
- 	 	 	 	 <cols>24</cols>
+ 	 	 	 	 <rows>2</rows>
+ 	 	 	 	 <cols>20</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Rocks1">
- 	 	 	 <model name="Rock">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Rock</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.000000 0.000000 -0.01 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>10 0.600000 0.01</size>
- 	 	 	 </box>
- 	 	 	 <model_count>36</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Rocks2">
- 	 	 	 <model name="Rock">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Rock</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.000000 -0.700000 -0.01 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>10 0.600000 0.01</size>
- 	 	 	 </box>
- 	 	 	 <model_count>36</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Grass">
- 	 	 	 <model name="Grass">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Grass</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.000000 -0.350000 -0.01 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>7 1.400000 0.05</size>
- 	 	 	 </box>
- 	 	 	 <model_count>54</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Grass1">
- 	 	 	 <model name="Grass">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Grass</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.100000 0.350000 -0.02 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>5.800000 0.2 0.05</size>
- 	 	 	 </box>
- 	 	 	 <model_count>36</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Grass2">
- 	 	 	 <model name="Grass">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Grass</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.100000 -0.350000 -0.02 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>5.800000 0.2 0.05</size>
- 	 	 	 </box>
- 	 	 	 <model_count>36</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
- 	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	<population name="Grass3">
- 	 	 	 <model name="Grass">
- 	 	 	 	 <include>
- 	 	 	 	 	 <static>1</static>
- 	 	 	 	 	 <uri>model://Grass</uri>
- 	 	 	 	 </include>
- 	 	 	 </model>
- 	 	 	 <pose>4.100000 -1.050000 -0.02 0 0 0</pose>
- 	 	 	 <box>
- 	 	 	 	 <size>5.800000 0.2 0.05</size>
- 	 	 	 </box>
- 	 	 	 <model_count>36</model_count>
- 	 	 	 <distribution>
- 	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 </population> 
  

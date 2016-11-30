@@ -103,9 +103,9 @@ bool Metric::is_arrived() {
 
     float distance = std::sqrt( std::pow((position_x_ - goal_x) , 2.0) + std::pow((position_y_ - goal_y) , 2.0));
 
-    ROS_ERROR( "x = %f, y = %f, distance = %f", goal_x, goal_y, distance);
+//    ROS_ERROR( "x = %f, y = %f, distance = %f", goal_x, goal_y, distance);
 
-    if (distance < width)
+    if (distance < width/2)
     {
         return(true);
     }
