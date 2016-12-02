@@ -118,7 +118,7 @@ void Core::run( int argc, char **argv )
     sync.registerCallback ( boost::bind(&Core::send_camera_packet_callback, this, _1, _2) );
 
     // initialize server naio
-    int naio01_server_port = 5555;
+    int naio01_server_port = 5559;
 
     // creates main thread
     client_read_thread_ = std::thread( &Core::client_read_thread_function, this );
