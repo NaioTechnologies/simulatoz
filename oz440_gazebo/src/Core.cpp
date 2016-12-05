@@ -355,7 +355,7 @@ void Core::client_read_thread_function( )
                     received_packet_list.clear();
                 }
             }
-            std::this_thread::sleep_for(1ms);
+            std::this_thread::sleep_for(5ms);
 
             ros::spinOnce();
         }
@@ -416,8 +416,6 @@ void Core::image_thread_function( )
 
     using namespace std::chrono_literals;
     int naio01_image_server_port = 5557;
-
-//    uint8_t buffer_to_send[ 4000000 ];
 
     image_thread_started_ = true;
 

@@ -103,30 +103,28 @@ namespace gazebo {
         ROS_INFO("Starting GazeboRosActuator Plugin (ns = %s)!", this->robot_namespace_.c_str());
 
         // ROS: Subscribe to the velocity command topic (usually "cmd_vel")
-        cmd_subscriber_ = rosnode_->subscribe(this->command_topic_, 50, &GazeboRosActuator::cmdCallback, this);
+    cmd_subscriber_ = rosnode_->subscribe(this->command_topic_, 50, &GazeboRosActuator::cmdCallback, this);
 
-        this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboRosActuator::OnUpdate, this));
-    }
+    this->updateConnection = event::Events::ConnectWorldUpdateBegin(boost::bind(&GazeboRosActuator::OnUpdate, this));
+}
 
-    void GazeboRosActuator::OnUpdate()
+void GazeboRosActuator::OnUpdate()
+{
+    if (connection_==1)
     {
-        if (connection_==1)
-        {
-            joints->SetPosition( 0, position_ );
-            connection_ = 0;
-        }
-
-//        joints->SetPosition( 0, position_ );
-
+        joints->SetPosition( 0, position_ );
+        connection_ = 0;
     }
 
-    void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
+}
+
+void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
 
         connection_ = 1;
         position_ = cmd_msg->x;
 
-        std::this_thread::sleep_for( std::chrono::milliseconds(5) );
+        std::this_thread::sleep_for( std::chrono::milliseconds(20) );
 
     }
 
