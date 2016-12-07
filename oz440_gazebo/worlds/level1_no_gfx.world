@@ -24,7 +24,9 @@
  	 	 	 <uri>model://Sign</uri>
  	 	 	 <pose>-4 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
- 	 	 </include>	 	 <include> 
+ 	 	 </include>	 	 
+
+		<include> 
  	 	 	 <uri>model://heightmap</uri> 
  	 	 </include>
  

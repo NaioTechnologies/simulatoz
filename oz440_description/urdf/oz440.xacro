@@ -79,10 +79,10 @@
 	<wheel fb="back" lr="left" tX="-1" tY="1"/>
 
 	<!-- inclusion des roues -->
-	<center fb="front" lr="right" tX="1" tY="-1"/>
-	<center fb="front" lr="left" tX="1" tY="1"/>
-	<center fb="back" lr="right" tX="-1" tY="-1"/>
-	<center fb="back" lr="left" tX="-1" tY="1"/>
+	<centers fb="front" lr="right" tX="1" tY="-1"/>
+	<centers fb="front" lr="left" tX="1" tY="1"/>
+	<centers fb="back" lr="right" tX="-1" tY="-1"/>
+	<centers fb="back" lr="left" tX="-1" tY="1"/>
 
 	<!-- inclusion de la camera stereo -->
 	<camera_stereo parent="chassis_bottom"/>
