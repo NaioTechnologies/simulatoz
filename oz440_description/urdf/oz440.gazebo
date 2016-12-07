@@ -92,11 +92,11 @@
                     <far>300</far>
                 </clip>
                 <distortion>
-                    <k1>-0.25</k1>
-                    <k2>0.12</k2>
-                    <k3>0.0</k3>
-                    <p1>-0.00028</p1>
-                    <p2>-0.00005</p2>
+                    <k1>>0.000023</k1>
+                    <k2>0.025979</k2>
+                    <k3>0.039371</k3>
+                    <p1>0.001139</p1>
+                    <p2>-0.002029</p2>
                     <center>0.5 0.5</center>
                 </distortion>
 
@@ -108,7 +108,13 @@
                 <imageTopicName>image_raw</imageTopicName>
                 <cameraInfoTopicName>camera_info</cameraInfoTopicName>
                 <frameName>camera_stereo_link</frameName>
-
+                <!--<rightFrameName>right_camera_optical_frame</rightFrameName>-->
+                <!--<hackBaseline>0.1</hackBaseline>-->
+                <!--<distortionK1>0.000023</distortionK1>-->
+                <!--<distortionK2>0.025979</distortionK2>-->
+                <!--<distortionK3>0.039371</distortionK3>-->
+                <!--<distortionT1>0.001139</distortionT1>-->
+                <!--<distortionT2>-0.002029</distortionT2>-->
             </plugin>
         </sensor>
     </gazebo>
