@@ -577,7 +577,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
         <joint name="chassis_bottom_to_lidar" type="fixed">
             <parent link="${parent}"/>
             <child link="lidar_link"/>
-            <origin xyz="${chassis_bottom_length/2+lidar_Lenght/2} 0 ${-chassis_bottom_height/2-lidar_chassis_bottom_spacing+lidar_Height/2}" rpy="0 0 0"/>
+            <origin xyz="${chassis_bottom_length/2+lidar_Lenght/2} 0 ${-chassis_bottom_height/2-lidar_chassis_bottom_spacing+lidar_Height/2 -0.06}" rpy="0 0 0"/>
         </joint>
 
     </xacro:macro>

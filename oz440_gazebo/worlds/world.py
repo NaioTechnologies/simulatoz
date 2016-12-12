@@ -8,7 +8,7 @@ import random
 
 # World configuration
 
-print("\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n \nNew world Setup\n")
+print("\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n \nNew world Setup\n \n")
 again = 1
 
 name = raw_input("Enter the name of your world file (Example : my_world_1) and press enter \n")
@@ -144,7 +144,7 @@ while again == 1:
 
     while 1 :
         try :
-            veggie = int(raw_input("Which vegetable do you want ? Press : \n - 1 for leek \n - 2 for cabbage \n To confirm, press enter. \n"))
+            veggie = int(raw_input("Which vegetable do you want ? Press : \n - 1 for leek \n - 2 for cabbage \n - 3 for pine trees (fir) \n To confirm, press enter. \n"))
             break
         except ValueError:
             print "This is not a number !"
@@ -157,6 +157,10 @@ while again == 1:
         print("You chose cabbages\n")
         V = "Cabbage"
         F = 3 # Number of vegetable per meter
+    elif veggie == 3 :
+        print("You chose pine trees\n")
+        V = "Small_Tree"
+        F = 1 # Number of vegetable per meter
     else :
         print("You did not enter a correct answer \n")
         again = 1

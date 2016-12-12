@@ -117,6 +117,8 @@ void Core::run( int argc, char **argv )
     // initialize server naio
     int naio01_server_port = 5559;
 
+    ROS_ERROR("START MAIN THREADS");
+
     // creates main thread
     client_read_thread_ = std::thread( &Core::client_read_thread_function, this );
 
@@ -145,6 +147,9 @@ void Core::run( int argc, char **argv )
         {
             socket_access_.lock();
 
+            ROS_ERROR("WAITS FOR CONNEXION");
+
+
             client_socket_desc_ = DriverSocket::waitConnect(server_socket_desc_);
 
             socket_access_.unlock();
@@ -153,7 +158,7 @@ void Core::run( int argc, char **argv )
             {
                 client_socket_connected_ = true;
 
-                ROS_INFO( "Connexion Socket");
+                ROS_ERROR( "Connexion Socket");
 
                 milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
@@ -235,6 +240,8 @@ void Core::disconnected()
 
     client_socket_connected_ = false;
 
+    ROS_ERROR("DISCONNECTED");
+
     packet_to_send_list_access_.lock();
 
     packet_to_send_list_.clear();
@@ -314,43 +321,43 @@ void Core::client_read_thread_function( )
                             velocity_pub_.publish(command);
                         }
 
-                        if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr))
-                        {
-                            //  When receiving an actuator order
-                            ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
-
-                            geometry_msgs::Vector3 command;
-
-                            if ( ActuatorPacketPtr->position == 1 )
-                            {
-                                command.x = actuator_position_ +0.005;
-                                ROS_INFO("MONTE : %f", actuator_position_ +0.005);
-                                last_order_down = 0;
-
-                            }
-                            else if ( ActuatorPacketPtr->position == 2 )
-                            {
-                                command.x = actuator_position_ -0.005;
-                                ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
-                                last_order_down = 1;
-                            }
-                            else
-                            {
-                                if (last_order_down == 1) {
-                                    command.x = actuator_position_ - 0.0001;
-                                    std::this_thread::sleep_for(10ms);
-                                }
-                                else
-                                {
-                                    command.x = actuator_position_ + 0.0001;
-                                    std::this_thread::sleep_for(10ms);
-                                }
-                            }
-
-                            ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
-
-                            actuator_pub_.publish(command);
-                        }
+//                        if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr))
+//                        {
+//                            //  When receiving an actuator order
+//                            ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(basePacketPtr);
+//
+//                            geometry_msgs::Vector3 command;
+//
+//                            if ( ActuatorPacketPtr->position == 1 )
+//                            {
+//                                command.x = actuator_position_ +0.005;
+//                                ROS_INFO("MONTE : %f", actuator_position_ +0.005);
+//                                last_order_down = 0;
+//
+//                            }
+//                            else if ( ActuatorPacketPtr->position == 2 )
+//                            {
+//                                command.x = actuator_position_ -0.005;
+//                                ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
+//                                last_order_down = 1;
+//                            }
+//                            else
+//                            {
+//                                if (last_order_down == 1) {
+//                                    command.x = actuator_position_ - 0.0001;
+//                                    std::this_thread::sleep_for(10ms);
+//                                }
+//                                else
+//                                {
+//                                    command.x = actuator_position_ + 0.0001;
+//                                    std::this_thread::sleep_for(10ms);
+//                                }
+//                            }
+//
+//                            ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
+//
+//                            actuator_pub_.publish(command);
+//                        }
                     }
                     received_packet_list.clear();
                 }
@@ -729,8 +736,6 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
 
         packet_to_send_list_access_.lock();
 
-//        ROS_ERROR( "Send position : %d",position_percent);
-
         packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
 
         packet_to_send_list_access_.unlock();
@@ -749,6 +754,7 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 {
     try
     {
+
         cl::BufferUPtr dataBuffer = cl::unique_buffer( static_cast<size_t>( 721920 ) );
 
         ozcore_image_packet_to_send_access_.lock();
@@ -758,6 +764,31 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
         std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
         std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
+
+//        uint8_t left_image_buffer[ 360960 ];
+//        uint8_t right_image_buffer[ 360960 ];
+
+
+//        std::memcpy( left_image_buffer, &image_left->data[ 0 ], 360960 );
+//        std::memcpy( right_image_buffer, &image_right->data[ 0 ], 360960 );
+
+//        std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
+//        std::memcpy( image_buffer_to_send_ +360960, &image_right->data[ 0 ], 360960 );
+
+//        uint idx = 0;
+
+//        for( int y = 0 ; y < 480 ; y++ )
+//        {
+//            for( int x = 0 ; x < 752 ; x++ )
+//            {
+//                    image_buffer_to_send_[ idx ] = left_image_buffer[ ( y * 752) + x ];
+//                    image_buffer_to_send_[ idx + 360960 ] = right_image_buffer[ ( y * 752 ) + x ];
+//                    idx++;
+//            }
+//        }
+
+//        std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
+//        std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
 
 
         milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());

@@ -27,14 +27,14 @@
         </plugin>
     </gazebo>
 
-    <gazebo>
-        <plugin name="actuator_controller" filename="libgazebo_ros_actuator.so">
-            <robotNamespace>/oz440</robotNamespace>
-            <Joint>actuator_base_link_to_actuator_part1_joint</Joint>
-            <commandTopic>/oz440/cmd_act</commandTopic>
-            <torque>500</torque>
-        </plugin>
-    </gazebo>
+    <!--<gazebo>-->
+        <!--<plugin name="actuator_controller" filename="libgazebo_ros_actuator.so">-->
+            <!--<robotNamespace>/oz440</robotNamespace>-->
+            <!--<Joint>actuator_base_link_to_actuator_part1_joint</Joint>-->
+            <!--<commandTopic>/oz440/cmd_act</commandTopic>-->
+            <!--<torque>500</torque>-->
+        <!--</plugin>-->
+    <!--</gazebo>-->
 
     <!-- attribution de la couleur pour le porte outils -->
     <gazebo reference="actuator">
@@ -56,49 +56,55 @@
         <sensor type="multicamera" name="stereo_camera">
             <update_rate>20</update_rate>
             <camera name="left">
-                <pose>0 0.05 0 0 0 0</pose>
-                <horizontal_fov>1.63555623712896 </horizontal_fov>
+                <pose>0.0 0.05 0 0 0 0</pose>
+                <horizontal_fov>1.64</horizontal_fov>
                 <image>
                     <width>752</width>
                     <height>480</height>
                     <format>BAYER_GBRG8</format>
-
                 </image>
                 <clip>
                     <near>0.02</near>
                     <far>300</far>
                 </clip>
-                <distortion>
-                    <k1>-0.4</k1>
-                    <k2>0.15</k2>
-                    <k3>0.0</k3>
-                    <p1>-0.001139</p1>
-                    <p2>-0.002029</p2>
-                    <center>0.5 0.5</center>
-                </distortion>
+                <!--<distortion>-->
+                    <!--<k1>-0.99</k1>-->
+                    <!--<k2>0.0</k2>-->
+                    <!--<k3>0.0</k3>-->
+                    <!--<p1>-0.0</p1>-->
+                    <!--<p2>-0.0</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
 
             </camera>
             <camera name="right">
-                <pose>0 -0.05 0 0 0 0</pose>
-                <horizontal_fov>1.63555623712896 </horizontal_fov>
+                <pose>0.0 -0.05 0 0 0 0</pose>
+                <horizontal_fov>1.64</horizontal_fov>
                 <image>
                     <width>752</width>
                     <height>480</height>
-
                     <format>BAYER_GBRG8</format>
                 </image>
                 <clip>
                     <near>0.02</near>
                     <far>300</far>
                 </clip>
-                <distortion>
-                    <k1>>0.000023</k1>
-                    <k2>0.025979</k2>
-                    <k3>0.039371</k3>
-                    <p1>0.001139</p1>
-                    <p2>-0.002029</p2>
-                    <center>0.5 0.5</center>
-                </distortion>
+                <!--<distortion>-->
+                    <!--<k1>-0.8</k1>-->
+                    <!--<k2>0.12</k2>-->
+                    <!--<k3>0.0</k3>-->
+                    <!--<p1>-0.00028</p1>-->
+                    <!--<p2>-0.00005</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
+                <!--<distortion>-->
+                    <!--<k1>0.0</k1>-->
+                    <!--<k2>0.0</k2>-->
+                    <!--<k3>0.0</k3>-->
+                    <!--<p1>-0.0</p1>-->
+                    <!--<p2>-0.0</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
 
             </camera>
             <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
@@ -108,13 +114,6 @@
                 <imageTopicName>image_raw</imageTopicName>
                 <cameraInfoTopicName>camera_info</cameraInfoTopicName>
                 <frameName>camera_stereo_link</frameName>
-                <!--<rightFrameName>right_camera_optical_frame</rightFrameName>-->
-                <!--<hackBaseline>0.1</hackBaseline>-->
-                <!--<distortionK1>0.000023</distortionK1>-->
-                <!--<distortionK2>0.025979</distortionK2>-->
-                <!--<distortionK3>0.039371</distortionK3>-->
-                <!--<distortionT1>0.001139</distortionT1>-->
-                <!--<distortionT2>-0.002029</distortionT2>-->
             </plugin>
         </sensor>
     </gazebo>
