@@ -248,7 +248,7 @@ if M == 1:
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\n \
 \t \t </population>\n \n" \
-%( 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+%( 1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.4, w))
 
 else:
 
@@ -289,7 +289,7 @@ if M == 1:
 \t \t \t \t <step>%f %f 0</step>\n \
 \t \t \t </distribution>\n \
 \t \t </population>\n \n" \
-%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.2, w))
+%(1.1 + L/2.0, -(N-1)*w/2 + w/2, N, 2, L+0.4, w))
 
     file.write("\t \t<population name=\"Mound_cyl\">\n \
 \t \t \t <model name=\"Mound_cyl\">\n \

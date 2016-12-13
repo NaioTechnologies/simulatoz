@@ -7,7 +7,6 @@
  	 <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> 
  	 <include file="$(find gazebo_ros)/launch/empty_world.launch">
  	 	 <arg name="world_name" value="$(find oz440_gazebo)/worlds/small_no_gfx.world"/> 
- 	 	 <arg name="gui" value="false" /> 
  
  </include> 
  
