@@ -117,8 +117,6 @@ void Core::run( int argc, char **argv )
     // initialize server naio
     int naio01_server_port = 5559;
 
-    ROS_ERROR("START MAIN THREADS");
-
     // creates main thread
     client_read_thread_ = std::thread( &Core::client_read_thread_function, this );
 
@@ -146,8 +144,6 @@ void Core::run( int argc, char **argv )
         if( not client_socket_connected_ and server_socket_desc_ > 0 )
         {
             socket_access_.lock();
-
-            ROS_ERROR("WAITS FOR CONNEXION");
 
 
             client_socket_desc_ = DriverSocket::waitConnect(server_socket_desc_);
@@ -239,8 +235,6 @@ void Core::disconnected()
     close( client_socket_desc_ );
 
     client_socket_connected_ = false;
-
-    ROS_ERROR("DISCONNECTED");
 
     packet_to_send_list_access_.lock();
 
@@ -764,32 +758,6 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
         std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
         std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
-
-//        uint8_t left_image_buffer[ 360960 ];
-//        uint8_t right_image_buffer[ 360960 ];
-
-
-//        std::memcpy( left_image_buffer, &image_left->data[ 0 ], 360960 );
-//        std::memcpy( right_image_buffer, &image_right->data[ 0 ], 360960 );
-
-//        std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
-//        std::memcpy( image_buffer_to_send_ +360960, &image_right->data[ 0 ], 360960 );
-
-//        uint idx = 0;
-
-//        for( int y = 0 ; y < 480 ; y++ )
-//        {
-//            for( int x = 0 ; x < 752 ; x++ )
-//            {
-//                    image_buffer_to_send_[ idx ] = left_image_buffer[ ( y * 752) + x ];
-//                    image_buffer_to_send_[ idx + 360960 ] = right_image_buffer[ ( y * 752 ) + x ];
-//                    idx++;
-//            }
-//        }
-
-//        std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
-//        std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
-
 
         milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
         last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());
