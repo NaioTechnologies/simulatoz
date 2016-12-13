@@ -22,7 +22,7 @@
         <geometry>
           <mesh>
             <uri>model://Red_stick/PiquetRouge.dae</uri>
-            <scale>1.5 1.5 1.5</scale>
+            <scale>1.8 1.8 1.8</scale>
           </mesh>
         </geometry>
         <material>
