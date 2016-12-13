@@ -8,7 +8,7 @@ import random
 
 # World configuration
 
-print("\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n \nNew world Setup\n \n")
+print("\n\n%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%\n\nNew world Setup\n\n")
 again = 1
 
 name = raw_input("Enter the name of your world file (Example : my_world_1) and press enter \n")
@@ -66,7 +66,7 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t <uri>model://Sign</uri>\n \
 \t \t \t <pose>-4 1 0 0 0 0</pose>\n \
 \t \t \t <static>1</static>\n \
-\t \t </include>")
+\t \t </include>\n \n")
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -137,6 +137,8 @@ again = 1
 
 print("Culture configuration\n")
 
+static = 0;
+
 
 # Type of vegetable
 while again == 1:
@@ -161,6 +163,7 @@ while again == 1:
         print("You chose pine trees\n")
         V = "Small_Tree"
         F = 1 # Number of vegetable per meter
+        static=1;
     else :
         print("You did not enter a correct answer \n")
         again = 1
@@ -332,14 +335,15 @@ else :
     row = 1
     while row < N+1:
         num = 1
+        RanX = ( random.random()-0.5)/ F
         while num < L * F + 1 :
             Ran = ( random.random() - 0.5 )/ 20
             file.write("\t \t<include> \n \
 \t \t \t <uri>model://%s</uri> \n \
 \t \t \t <pose>%f %f 0.15 0 0 %f</pose> \n \
-\t \t \t <static>0</static> \n \
+\t \t \t <static>%d</static> \n \
 \t \t </include> \n \n" \
-%(V, 1.2 + (num - 1.0) / F, w/2 - (row - 1.0) * w + Ran, Ran * 180.0))
+%(V, 1.2 + (num - 1.0) / F + RanX, w/2 - (row - 1.0) * w + Ran, Ran * 180.0, static))
             num += 1
         row += 1
 

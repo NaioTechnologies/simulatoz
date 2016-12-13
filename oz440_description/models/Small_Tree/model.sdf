@@ -1,6 +1,6 @@
 <?xml version='1.0'?>
 <sdf version='1.6'>
-  <model name='Red_stick'>
+  <model name='Small_Tree'>
     <link name='link'>
       <pose frame=''>0 0 0 0 -0 0</pose>
       <inertial>
@@ -13,16 +13,16 @@
           <iyz>0</iyz>
           <izz>0.125</izz>
         </inertia>
-        <pose frame=''>0 0 0 0 -0 0</pose>
+        <pose frame=''>0 0 0.35 0 -0 0</pose>
       </inertial>
       <self_collide>0</self_collide>
       <kinematic>0</kinematic>
       <gravity>1</gravity>
-      <visual name='visual'>
+      <visual name='ModelPreview_1::link::visual_1'>
         <geometry>
           <mesh>
-            <uri>model://Red_stick/PiquetRouge.dae</uri>
-            <scale>2 2 1</scale>
+            <uri>model://Tree/lowpolytree.dae</uri>
+            <scale>0.2 0.2 0.2</scale>
           </mesh>
         </geometry>
         <material>
@@ -30,26 +30,51 @@
             <name>Gazebo/Grey</name>
             <uri>file://media/materials/scripts/gazebo.material</uri>
           </script>
-          <ambient>0.7 0.1 0.1 1</ambient>
-          <diffuse>1 0.3 0.3 1</diffuse>
+          <ambient>0.2 0.4 0.2 1</ambient>
+          <diffuse>0.2 0.3 0.2 1</diffuse>
           <specular>0.01 0.01 0.01 1</specular>
           <emissive>0 0 0 1</emissive>
           <shader type='vertex'>
             <normal_map>__default__</normal_map>
           </shader>
         </material>
-        <pose frame=''>0 0 -0.08 0 -0 0</pose>
+        <pose frame=''>0 0 0.25 0 -0 0</pose>
+        <cast_shadows>1</cast_shadows>
+        <transparency>0</transparency>
+      </visual>
+
+      <visual name='visual'>
+        <geometry>
+          <cylinder>
+            <radius>0.02</radius>
+            <length>0.7</length>
+          </cylinder>
+        </geometry>
+        <material>
+          <script>
+            <name>Gazebo/Grey</name>
+            <uri>file://media/materials/scripts/gazebo.material</uri>
+          </script>
+          <ambient>0.4 0.2 0.0 1</ambient>
+          <diffuse>0.2 0.1 0.0 1</diffuse>
+          <specular>0.01 0.01 0.01 1</specular>
+          <emissive>0 0 0 1</emissive>
+          <shader type='vertex'>
+            <normal_map>__default__</normal_map>
+          </shader>
+        </material>
+        <pose frame=''>0 0 0.15 0 -0 0</pose>
         <cast_shadows>1</cast_shadows>
         <transparency>0</transparency>
       </visual>
       <collision name='collision'>
         <laser_retro>0</laser_retro>
         <max_contacts>10</max_contacts>
-        <pose frame=''>0 0 0 0 -0 0</pose>
+        <pose frame=''>0 0 0.15 0 -0 0</pose>
         <geometry>
           <cylinder>
-            <radius>0.01108</radius>
-            <length>0.278243</length>
+            <radius>0.08</radius>
+            <length>0.7</length>
           </cylinder>
         </geometry>
         <surface>
