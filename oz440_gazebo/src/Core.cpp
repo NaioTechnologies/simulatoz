@@ -416,7 +416,7 @@ void Core::image_thread_function( )
 {
 
     using namespace std::chrono_literals;
-    int naio01_image_server_port = 5557;
+    int naio01_image_server_port = 5554;
 
     image_thread_started_ = true;
 

@@ -16,7 +16,7 @@
 
  	 	 <include>
  	 	 	 <uri>model://Sign</uri>
- 	 	 	 <pose>12 1 0 0 0 0</pose>
+ 	 	 	 <pose>15 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 

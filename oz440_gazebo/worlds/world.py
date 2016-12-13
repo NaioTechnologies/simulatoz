@@ -154,7 +154,7 @@ while again == 1:
     if veggie == 1 :
         print("You chose leeks \n")
         V = "Leek"
-        F = 4 # Number of vegetable per meter
+        F = 8 # Number of vegetable per meter
     elif veggie == 2 :
         print("You chose cabbages\n")
         V = "Cabbage"
