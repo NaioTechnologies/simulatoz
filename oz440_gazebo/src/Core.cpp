@@ -614,9 +614,6 @@ void Core::ozcore_image_thread_function( )
                     std::memcpy( image_buffer_to_send, image_buffer_to_send_, 721920 );
                     new_image_received = true;
 
-                    float f = 349.215;
-                    distort_image(image_buffer_to_send, 0.001964, 0.003291, 0.002938, -0.00088, 0.023518, -0.00187, 0.013284, 0.022527, f, 376, 240);
-
                     last_ozcore_image_sent_ms = last_ozcore_image_ms_;
                 }
 
@@ -987,45 +984,5 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     }
 
     return tic;
-
-}
-
-// *********************************************************************************************************************
-
-void Core::distort_image(uint8_t image[ 721920 ], float k1, float k2, float k3, float k4, float k5, float k6, float p1, float p2, float f, int cx, int cy)
-{
-//    uint8_t image_to_distort[ 721920 ];
-//
-//    std::memcpy( image_to_distort, image, 721920 );
-//
-//    float x;
-//    float y;
-//    float r;
-//    float x_p;
-//    float y_p;
-//    int u_p;
-//    int v_p;
-//
-//    for( int v = 0 ; v < 480 ; v++ )
-//    {
-//        for( int u = 0 ; u < 752 ; u++ )
-//        {
-//            x = ( u - cx) / f;
-//            y = ( v - cy) / f;
-//
-//            r = sqrt( x * x + y * y ) ;
-//
-//            x_p = x*(1 + k1*r*r + k2*r*r*r*r + k3*r*r*r*r*r*r ) / (1 + k4*r*r + k5*r*r*r*r + k6*r*r*r*r*r*r ) + 2*p1*y*x + p2*(r*r + 2*x*x);
-//            y_p = y*(1 + k1*r*r + k2*r*r*r*r + k3*r*r*r*r*r*r ) / (1 + k4*r*r + k5*r*r*r*r + k6*r*r*r*r*r*r ) + 2*p2*y*x + p1*(r*r + 2*y*y);
-//
-//            u_p = floor(f * x_p + cx) ;
-//            v_p = floor(f * y_p + cy) ;
-//
-//            if ( u_p <= 752 and u_p >= 0 and v_p <= 480 and v_p >= 0 )
-//            {
-//                image[ ( v_p * 752 ) + u_p ] = image_to_distort [ (v * 752) + u];
-//            }
-//        }
-//    }
 
 }
