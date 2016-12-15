@@ -42,6 +42,7 @@ public:
     void send_odo_packet();
     double getPitch( std::string wheel);
     bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
+    void distort_image(uint8_t image_ptr[ 721920 ], float k1, float k2, float k3, float k4, float k5, float k6, float p1, float p2, float f, int cx, int cy);
 
     // wait for core end.
     void join_client_read_thread();

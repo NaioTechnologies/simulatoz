@@ -97,14 +97,6 @@
                     <!--<p2>-0.00005</p2>-->
                     <!--<center>0.5 0.5</center>-->
                 <!--</distortion>-->
-                <!--<distortion>-->
-                    <!--<k1>0.0</k1>-->
-                    <!--<k2>0.0</k2>-->
-                    <!--<k3>0.0</k3>-->
-                    <!--<p1>-0.0</p1>-->
-                    <!--<p2>-0.0</p2>-->
-                    <!--<center>0.5 0.5</center>-->
-                <!--</distortion>-->
 
             </camera>
             <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">

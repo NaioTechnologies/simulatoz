@@ -161,7 +161,7 @@ while again == 1:
         F = 3 # Number of vegetable per meter
     elif veggie == 3 :
         print("You chose pine trees\n")
-        V = "Small_Tree"
+        V = "Pine"
         F = 1 # Number of vegetable per meter
         static=1;
     else :
@@ -335,7 +335,7 @@ else :
     row = 1
     while row < N+1:
         num = 1
-        RanX = ( random.random()-0.5)/ F
+        RanX = ( random.random())/ (2*F)
         while num < L * F + 1 :
             Ran = ( random.random() - 0.5 )/ 20
             file.write("\t \t<include> \n \

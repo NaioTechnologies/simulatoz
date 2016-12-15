@@ -16,7 +16,7 @@
 
  	 	 <include>
  	 	 	 <uri>model://Sign</uri>
- 	 	 	 <pose>15 1 0 0 0 0</pose>
+ 	 	 	 <pose>12 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
@@ -27,16 +27,13 @@
  	 	 </include>
 
 	 	 <include>
- 	 	 	 <uri>model://grass_plane</uri>
+ 	 	 	 <uri>model://dirt_plane</uri>
  	 	 </include>
 
-	 	<scene>
- 	 	 	 <sky>
- 	 	 	 	 <clouds>
- 	 	 	 	 	 <speed>0</speed>
- 	 	 	 	 </clouds>
- 	 	 	 </sky>
- 	 	 </scene>
+     <scene>
+        <background>160 210 255 1 </background>
+        <ambient>100 100 100 1</ambient>
+      </scene>
 
  	 	 <population name="sticks">
  	 	 	 <model name="Red_stick">
@@ -45,192 +42,192 @@
  	 	 	 	 	 <uri>model://Red_stick</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	<pose>6.00000 -0.475000 0.1 0 0 0</pose>
+ 	 	 	<pose>6.100000 -0.450000 0.1 0 0 0</pose>
  	 	 	<distribution>
  	 	 	 	 <type>grid</type>
  	 	 	 	 <rows>3</rows>
  	 	 	 	 <cols>2</cols>
- 	 	 	 	 <step>10.300000 0.950000 0</step>
+ 	 	 	 	 <step>10.200000 0.900000 0</step>
  	 	 	 </distribution>
  	 	 </population>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>1.123126 0.475119 0.15 0 0 0.021435</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>1.439823 0.468386 0.15 0 0 3.309442</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>2.123126 0.451008 0.15 0 0 -4.318553</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>2.439823 0.432007 0.15 0 0 -3.238676</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>3.123126 0.494845 0.15 0 0 3.572035</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>3.439823 0.471082 0.15 0 0 3.794788</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>4.123126 0.492503 0.15 0 0 3.150456</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>4.439823 0.472471 0.15 0 0 4.044797</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>5.123126 0.483275 0.15 0 0 1.489469</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>5.439823 0.462688 0.15 0 0 2.283879</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>6.123126 0.486198 0.15 0 0 2.015718</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>6.439823 0.467186 0.15 0 0 3.093554</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>7.123126 0.498195 0.15 0 0 4.175183</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>7.439823 0.440761 0.15 0 0 -1.662970</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>8.123126 0.492914 0.15 0 0 3.224526</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>8.439823 0.472361 0.15 0 0 4.024905</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>9.123126 0.479671 0.15 0 0 0.840824</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>9.439823 0.469211 0.15 0 0 3.457914</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>10.123126 0.477208 0.15 0 0 0.397503</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>10.439823 0.456973 0.15 0 0 1.255164</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>1.696256 -0.470884 0.15 0 0 0.740959</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>1.265473 -0.446760 0.15 0 0 0.583252</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>2.696256 -0.450678 0.15 0 0 4.378018</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>2.265473 -0.472692 0.15 0 0 -4.084489</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>3.696256 -0.455234 0.15 0 0 3.557802</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>3.265473 -0.446592 0.15 0 0 0.613380</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>4.696256 -0.492086 0.15 0 0 -3.075486</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>4.265473 -0.462513 0.15 0 0 -2.252255</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>5.696256 -0.474829 0.15 0 0 0.030706</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>5.265473 -0.456385 0.15 0 0 -1.149383</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>6.696256 -0.477812 0.15 0 0 -0.506209</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>6.265473 -0.439726 0.15 0 0 1.849325</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>7.696256 -0.459228 0.15 0 0 2.838942</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>7.265473 -0.433430 0.15 0 0 2.982615</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>8.696256 -0.463451 0.15 0 0 2.078760</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>8.265473 -0.468052 0.15 0 0 -3.249381</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>9.696256 -0.454081 0.15 0 0 3.765463</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>9.265473 -0.461791 0.15 0 0 -2.122426</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>10.696256 -0.468756 0.15 0 0 1.123837</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>10.265473 -0.431430 0.15 0 0 3.342512</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>1.158661 -1.421663 0.15 0 0 0.600682</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>1.534955 -1.325248 0.15 0 0 4.455416</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>2.158661 -1.401723 0.15 0 0 4.189821</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>2.534955 -1.331743 0.15 0 0 3.286296</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>3.158661 -1.404808 0.15 0 0 3.634574</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>3.534955 -1.359951 0.15 0 0 -1.791166</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>4.158661 -1.401192 0.15 0 0 4.285441</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>4.534955 -1.361255 0.15 0 0 -2.025967</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>5.158661 -1.421265 0.15 0 0 0.672231</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>5.534955 -1.367133 0.15 0 0 -3.083871</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>6.158661 -1.446161 0.15 0 0 -3.808961</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>6.534955 -1.343280 0.15 0 0 1.209600</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>7.158661 -1.418705 0.15 0 0 1.133034</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>7.534955 -1.329307 0.15 0 0 3.724720</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>8.158661 -1.426035 0.15 0 0 -0.186362</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>8.534955 -1.332452 0.15 0 0 3.158569</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>9.158661 -1.422026 0.15 0 0 0.535311</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>9.534955 -1.345597 0.15 0 0 0.792612</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
 	 	<include>
- 	 	 	 <uri>model://Small_Tree</uri>
- 	 	 	 <pose>10.158661 -1.404026 0.15 0 0 3.775268</pose>
+ 	 	 	 <uri>model://Pine</uri>
+ 	 	 	 <pose>10.534955 -1.343281 0.15 0 0 1.209410</pose>
  	 	 	 <static>1</static>
  	 	 </include>
 
@@ -241,9 +238,9 @@
  	 	 	 	 	 <uri>model://Grass</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>6.000000 -0.475000 -0.01 0 0 0</pose>
+ 	 	 	 <pose>6.000000 -0.450000 -0.01 0 0 0</pose>
  	 	 	 <box>
- 	 	 	 	 <size>11 1.900000 0.05</size>
+ 	 	 	 	 <size>11 1.800000 0.05</size>
  	 	 	 </box>
  	 	 	 <model_count>90</model_count>
  	 	 	 <distribution>
@@ -258,7 +255,7 @@
  	 	 	 	 	 <uri>model://Grass</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>6.100000 0.475000 -0.02 0 0 0</pose>
+ 	 	 	 <pose>6.100000 0.450000 -0.02 0 0 0</pose>
  	 	 	 <box>
  	 	 	 	 <size>9.800000 0.2 0.05</size>
  	 	 	 </box>
@@ -275,7 +272,7 @@
  	 	 	 	 	 <uri>model://Grass</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>6.100000 -0.475000 -0.02 0 0 0</pose>
+ 	 	 	 <pose>6.100000 -0.450000 -0.02 0 0 0</pose>
  	 	 	 <box>
  	 	 	 	 <size>9.800000 0.2 0.05</size>
  	 	 	 </box>
@@ -292,7 +289,7 @@
  	 	 	 	 	 <uri>model://Grass</uri>
  	 	 	 	 </include>
  	 	 	 </model>
- 	 	 	 <pose>6.100000 -1.425000 -0.02 0 0 0</pose>
+ 	 	 	 <pose>6.100000 -1.350000 -0.02 0 0 0</pose>
  	 	 	 <box>
  	 	 	 	 <size>9.800000 0.2 0.05</size>
  	 	 	 </box>

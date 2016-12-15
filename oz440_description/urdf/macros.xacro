@@ -99,7 +99,7 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             <gravity>true</gravity>
             <mu1 value="0.99"/>
             <mu2 value="0.99"/>
-            <kp  value="1e+7" />
+            <kp  value="1e+60" />
             <kd  value="1.0" />
             <material>Gazebo/DarkGrey</material>
         </gazebo>
@@ -340,170 +340,170 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
     </xacro:macro>
 
-    <!-- macro pour l'outils -->
-    <!--<xacro:macro name="tool_macro" params="parent">-->
+     <!--macro pour l'outils-->
+    <xacro:macro name="tool_macro" params="parent">
 
-        <!--<link name="tool1">-->
+        <link name="tool1">
 
-            <!--<inertial>-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0" />-->
-                <!--<mass value="4"/>-->
-                <!--<sphere_inertia m="${4}" r="${0.04}"/>-->
-            <!--</inertial>-->
-            <!--<gravity>1</gravity>-->
+            <inertial>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
 
-            <!--<collision name="sphere">-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</collision>-->
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.30"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.30"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.065"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.065"/>
+                </geometry>
+            </visual>
 
-        <!--</link>-->
+        </link>
 
-        <!--<link name="tool2">-->
+        <link name="tool2">
 
-            <!--<inertial>-->
-                <!--<origin xyz="-0.25 -0.2 -0.22" rpy="0 0 0" />-->
-                <!--<mass value="4"/>-->
-                <!--<sphere_inertia m="${4}" r="${0.04}"/>-->
-            <!--</inertial>-->
-            <!--<gravity>1</gravity>-->
+            <inertial>
+                <origin xyz="-0.25 -0.2 -0.22" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
 
-            <!--<collision name="sphere">-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</collision>-->
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.29"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.29"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.065"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.065"/>
+                </geometry>
+            </visual>
 
-        <!--</link>-->
+        </link>
 
-        <!--<link name="tool3">-->
+        <link name="tool3">
 
-            <!--<inertial>-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0" />-->
-                <!--<mass value="4"/>-->
-                <!--<sphere_inertia m="${4}" r="${0.04}"/>-->
-            <!--</inertial>-->
-            <!--<gravity>1</gravity>-->
+            <inertial>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0" />
+                <mass value="4"/>
+                <sphere_inertia m="${4}" r="${0.04}"/>
+            </inertial>
+            <gravity>1</gravity>
 
-            <!--<collision name="sphere">-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</collision>-->
+            <collision name="sphere">
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </collision>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<sphere radius="0.03"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.22" rpy="0 0 0"/>
+                <geometry>
+                    <sphere radius="0.03"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.29"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.125 0 -0.075" rpy="0 1.03 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.29"/>
+                </geometry>
+            </visual>
 
-            <!--<visual>-->
-                <!--<origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>-->
-                <!--<geometry>-->
-                    <!--<cylinder radius="0.007" length="0.065"/>-->
-                <!--</geometry>-->
-            <!--</visual>-->
+            <visual>
+                <origin xyz="-0.25 0 -0.18" rpy="0 0 0"/>
+                <geometry>
+                    <cylinder radius="0.007" length="0.065"/>
+                </geometry>
+            </visual>
 
-        <!--</link>-->
+        </link>
 
-        <!--<gazebo reference="tool1">-->
-            <!--<mu1 value="0.99"/>-->
-            <!--<mu2 value="0.99"/>-->
-            <!--<kp  value="1e+6" />-->
-            <!--<kd  value="1.0" />-->
-            <!--<fdir1 value="0 0 0"/>-->
-            <!--<material> Gazebo/Grey </material>-->
-        <!--</gazebo>-->
-        <!--<gazebo reference="tool2">-->
-            <!--<mu1 value="0.99"/>-->
-            <!--<mu2 value="0.99"/>-->
-            <!--<kp  value="1e+6" />-->
-            <!--<kd  value="1.0" />-->
-            <!--<fdir1 value="0 0 0"/>-->
-            <!--<material> Gazebo/Grey </material>-->
-        <!--</gazebo>-->
-        <!--<gazebo reference="tool3">-->
-            <!--<mu1 value="0.99"/>-->
-            <!--<mu2 value="0.99"/>-->
-            <!--<kp  value="1e+6" />-->
-            <!--<kd  value="1.0" />-->
-            <!--<fdir1 value="0 0 0"/>-->
-            <!--<material> Gazebo/Grey </material>-->
-        <!--</gazebo>-->
+        <gazebo reference="tool1">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
+        <gazebo reference="tool2">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
+        <gazebo reference="tool3">
+            <mu1 value="0.99"/>
+            <mu2 value="0.99"/>
+            <kp  value="1e+6" />
+            <kd  value="1.0" />
+            <fdir1 value="0 0 0"/>
+            <material> Gazebo/Grey </material>
+        </gazebo>
 
-        <!--<joint name="tool1_to_actuator_part_21" type="fixed">-->
-            <!--<parent link="actuator_part21_link"/>-->
-            <!--<child link="tool1"/>-->
-            <!--<origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>-->
-        <!--</joint>-->
+        <joint name="tool1_to_actuator_part_21" type="fixed">
+            <parent link="actuator_part21_link"/>
+            <child link="tool1"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
 
-        <!--<joint name="tool2_to_actuator_part_22" type="fixed">-->
-            <!--<parent link="actuator_part22_link"/>-->
-            <!--<child link="tool2"/>-->
-            <!--<origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>-->
-        <!--</joint>-->
+        <joint name="tool2_to_actuator_part_22" type="fixed">
+            <parent link="actuator_part22_link"/>
+            <child link="tool2"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
 
-        <!--<joint name="tool3_to_actuator_part_23" type="fixed">-->
-            <!--<parent link="actuator_part23_link"/>-->
-            <!--<child link="tool3"/>-->
-            <!--<origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>-->
-        <!--</joint>-->
+        <joint name="tool3_to_actuator_part_23" type="fixed">
+            <parent link="actuator_part23_link"/>
+            <child link="tool3"/>
+            <origin rpy="0 0 ${-actuator_part2_Height/2}" xyz="0 0 0"/>
+        </joint>
 
-    <!--</xacro:macro>-->
+    </xacro:macro>
 
     <!-- macro pour la camera stereo -->
     <xacro:macro name="camera_stereo" params="parent">

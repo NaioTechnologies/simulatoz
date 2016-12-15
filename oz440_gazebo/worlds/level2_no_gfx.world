@@ -1,42 +1,39 @@
-<sdf version='1.6'> 
- 	 <world name='default'> 
- 	 	 <light name='sun' type='directional'> 
- 	 	 	 <cast_shadows>1</cast_shadows> 
- 	 	 	 <pose frame=''>0 0 10 0 -0 0</pose> 
- 	 	 	 <diffuse>0.8 0.8 0.8 1</diffuse> 
- 	 	 	 <specular>0.1 0.1 0.1 1</specular> 
- 	 	 	 <attenuation> 
- 	 	 	 	 <range>1000</range> 
- 	 	 	 	 <constant>0.9</constant> 
- 	 	 	 	 <linear>0.01</linear> 
- 	 	 	 	 <quadratic>0.001</quadratic> 
- 	 	 	 </attenuation> 
- 	 	 	 <direction>0.9 0.5 -1</direction> 
+<sdf version='1.6'>
+ 	 <world name='default'>
+ 	 	 <light name='sun' type='directional'>
+ 	 	 	 <cast_shadows>1</cast_shadows>
+ 	 	 	 <pose frame=''>0 0 10 0 -0 0</pose>
+ 	 	 	 <diffuse>0.8 0.8 0.8 1</diffuse>
+ 	 	 	 <specular>0.1 0.1 0.1 1</specular>
+ 	 	 	 <attenuation>
+ 	 	 	 	 <range>1000</range>
+ 	 	 	 	 <constant>0.9</constant>
+ 	 	 	 	 <linear>0.01</linear>
+ 	 	 	 	 <quadratic>0.001</quadratic>
+ 	 	 	 </attenuation>
+ 	 	 	 <direction>0.9 0.5 -1</direction>
  	 	 </light>
- 
+
  	 	 <include>
  	 	 	 <uri>model://Sign</uri>
  	 	 	 <pose>12 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
  	 	 </include>
- 
+
  	 	 <include>
  	 	 	 <uri>model://Sign</uri>
  	 	 	 <pose>-4 1 0 0 0 0</pose>
  	 	 	 <static>1</static>
- 	 	 </include>	 	 <include> 
- 	 	 	 <uri>model://heightmap</uri> 
+ 	 	 </include>	 	 <include>
+ 	 	 	 <uri>model://heightmap</uri>
  	 	 </include>
- 
-	 	<scene> 
- 	 	 	 <sky> 
- 	 	 	 	 <clouds> 
- 	 	 	 	 	 <speed>0</speed> 
- 	 	 	 	 </clouds> 
- 	 	 	 </sky> 
- 	 	 </scene> 
- 
- 	 	 <population name="sticks"> 
+
+     <scene>
+  	 	 	 <background>160 210 255 1 </background>
+        <ambient>100 100 100 1</ambient>
+  	 	 </scene>
+
+ 	 	 <population name="sticks">
  	 	 	 <model name="Red_stick">
  	 	 	 	 <include>
  	 	 	 	 	 <static>0</static>
@@ -44,15 +41,15 @@
  	 	 	 	 </include>
  	 	 	 </model>
  	 	 	<pose>4.100000 -0.350000 0.1 0 0 0</pose>
- 	 	 	<distribution> 
- 	 	 	 	 <type>grid</type> 
+ 	 	 	<distribution>
+ 	 	 	 	 <type>grid</type>
  	 	 	 	 <rows>3</rows>
  	 	 	 	 <cols>2</cols>
  	 	 	 	 <step>6.200000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population>
- 
-	 	 <population name="Mound"> 
+
+	 	 <population name="Mound">
  	 	 	 <model name="Mound">
  	 	 	 	 <include>
  	 	 	 	 	 <static>1</static>
@@ -60,14 +57,14 @@
  	 	 	 	 </include>
  	 	 	 </model>
  	 	 	<pose>4.100000 -0.350000 -0.245 0 0 0</pose>
- 	 	 	<distribution> 
- 	 	 	 	 <type>grid</type> 
+ 	 	 	<distribution>
+ 	 	 	 	 <type>grid</type>
  	 	 	 	 <rows>3</rows>
  	 	 	 	 <cols>2</cols>
  	 	 	 	 <step>6.200000 0.700000 0</step>
  	 	 	 </distribution>
  	 	 </population>
- 
+
 	 	<population name="Mound_cyl">
  	 	 	 <model name="Mound_cyl">
  	 	 	 	 <include>
@@ -76,14 +73,14 @@
  	 	 	 	 </include>
  	 	 	 </model>
  	 	 	 <pose>4.100000 -0.350000 -0.2 0 0 0</pose>
- 	 	 	<distribution> 
- 	 	 	 	 <type>grid</type> 
+ 	 	 	<distribution>
+ 	 	 	 	 <type>grid</type>
  	 	 	 	 <rows>3</rows>
  	 	 	 	 <cols>24</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Vegetable">
  	 	 	 <model name="Leek">
  	 	 	 	 <include>
@@ -92,14 +89,14 @@
  	 	 	 	 </include>
  	 	 	 </model>
  	 	 	 <pose>4.100000 -0.350000 0.2 0 0 0</pose>
- 	 	 	<distribution> 
- 	 	 	 	 <type>grid</type> 
+ 	 	 	<distribution>
+ 	 	 	 	 <type>grid</type>
  	 	 	 	 <rows>3</rows>
  	 	 	 	 <cols>24</cols>
  	 	 	 	 <step>0.250000 0.700000 0</step>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Rocks1">
  	 	 	 <model name="Rock">
  	 	 	 	 <include>
@@ -115,8 +112,8 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Rocks2">
  	 	 	 <model name="Rock">
  	 	 	 	 <include>
@@ -132,8 +129,8 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Grass">
  	 	 	 <model name="Grass">
  	 	 	 	 <include>
@@ -149,8 +146,8 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Grass1">
  	 	 	 <model name="Grass">
  	 	 	 	 <include>
@@ -166,8 +163,8 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Grass2">
  	 	 	 <model name="Grass">
  	 	 	 	 <include>
@@ -183,8 +180,8 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
+ 	 	 </population>
+
 	 	<population name="Grass3">
  	 	 	 <model name="Grass">
  	 	 	 	 <include>
@@ -200,9 +197,9 @@
  	 	 	 <distribution>
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
- 	 	 </population> 
- 
-	 	 <population name="Trees1"> 
+ 	 	 </population>
+
+	 	 <population name="Trees1">
  	 	 	 <model name="Tree">
  	 	 	 	 <include>
  	 	 	 	 	 <static>1</static>
@@ -218,7 +215,7 @@
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 </population>
- 	 	 
+
  	 	 <population name="Trees2">
  	 	 	 <model name="Tree">
  	 	 	 	 <include>
@@ -235,7 +232,7 @@
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 </population>
- 
+
  	 	 <population name="Trees3">
  	 	 	 <model name="Tree">
  	 	 	 	 <include>
@@ -252,7 +249,7 @@
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 	 </population>
- 
+
  	 	 <population name="Trees4">
  	 	 	 <model name="Tree">
  	 	 	 	 <include>
@@ -269,6 +266,6 @@
  	 	 	 	 <type>random</type>
  	 	 	 </distribution>
  	 	 </population>
- 
-	 </world> 
+
+	 </world>
  </sdf>

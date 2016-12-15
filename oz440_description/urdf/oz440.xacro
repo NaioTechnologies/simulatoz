@@ -70,6 +70,7 @@
 	<!-- inclusion du porte outils -->
     <actuator_macro parent="chassis_bottom"/>
 
+	<!-- inclusion de l'outil -->
 	<!--<tool_macro parent="actuator_part2_link"/>-->
 
     <!-- inclusion des roues -->
