@@ -14,7 +14,7 @@ else()
 endif()
 
 set(MY_LIB_DIR ${CMAKE_SOURCE_DIR}/../devel/lib/)
-set(OZ_API ${MY_LIB_DIR}liboz440_api.so)
+set(API_CODEC ${MY_LIB_DIR}libApiCodec.so)
 set(OZ_SOCKET ${MY_LIB_DIR}liboz440_socket.so)
 
 catkin_package()
@@ -27,20 +27,20 @@ find_package(catkin REQUIRED COMPONENTS
   std_msgs
   sensor_msgs
   oz440_msgs
-  oz440_api
+  ApiCodec
   oz440_socket
   gazebo_msgs
 )
 
 include_directories(include ${catkin_INCLUDE_DIRS})
 
-find_library(${OZ_API} liboz440_api)
+find_library(${OZ_API} libApiCodec)
 find_library(${OZ_SOCKET} liboz440_socket)
 
-add_executable(Core src/Test.cpp src/Metric.cpp src/Core.cpp  )
+add_executable(Core src/Core.cpp )
 target_link_libraries(Core ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET})
-add_dependencies(Core oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})
+add_dependencies(Core ApiCodec a*oz440_socket ${catkin_EXPORTED_TARGETS})
 
 add_executable(Naio01JoyClient  src/Naio01JoyClient.cpp)
 target_link_libraries(Naio01JoyClient ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET})
-add_dependencies(Naio01JoyClient oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})
+add_dependencies(Naio01JoyClient ApiCodec oz440_socket ${catkin_EXPORTED_TARGETS})

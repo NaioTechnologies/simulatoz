@@ -3,9 +3,9 @@
 #include "geometry_msgs/Twist.h"
 #include "sensor_msgs/Joy.h"
 
-#include "../include/oz440_api/HaMotorsPacket.hpp"
-#include "../include/oz440_api/HaActuatorPacket.hpp"
-#include "../include/oz440_api/CLBuffer.hpp"
+#include "ApiCodec/HaMotorsPacket.hpp"
+#include "ApiCodec/HaActuatorPacket.hpp"
+#include "vitals/CLBuffer.hpp"
 
 #include "../include/oz440_socket/ClientSocket.h"
 #include "../include/oz440_socket/SocketException.h"
