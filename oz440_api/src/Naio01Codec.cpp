@@ -1,41 +1,41 @@
-#include "../include/oz440_api/CLArray.h"
-#include "../include/oz440_api/CLByteConversion.h"
-#include "../include/oz440_api/Naio01Codec.hpp"
-#include "../include/oz440_api/ApiPostPacket.hpp"
-#include "../include/oz440_api/ApiGpsPacket.hpp"
-#include "../include/oz440_api/ApiSmsPacket.hpp"
-#include "../include/oz440_api/ApiGprsPacket.hpp"
-#include "../include/oz440_api/ApiStatusPacket.hpp"
-#include "../include/oz440_api/ApiCommandPacket.hpp"
-#include "../include/oz440_api/ApiMotorsPacket.hpp"
-#include "../include/oz440_api/ApiMoveActuatorPacket.hpp"
-#include "../include/oz440_api/ApiLidarPacket.hpp"
-#include "../include/oz440_api/ApiIhmDisplayPacket.hpp"
-#include "../include/oz440_api/ApiIhmAskEnumPacket.hpp"
-#include "../include/oz440_api/ApiIhmAskValuePacket.hpp"
-#include "../include/oz440_api/ApiRunPlotPacket.hpp"
-#include "../include/oz440_api/HaAcceleroPacket.hpp"
-#include "../include/oz440_api/HaLidarPacket.hpp"
-#include "../include/oz440_api/HaActuatorPacket.hpp"
-#include "../include/oz440_api/HaGpsPacket.hpp"
-#include "../include/oz440_api/HaStereoCameraPacket.hpp"
-#include "../include/oz440_api/HaGyroPacket.hpp"
-#include "../include/oz440_api/HaMagnetoPacket.hpp"
-#include "../include/oz440_api/HaMotorsPacket.hpp"
-#include "../include/oz440_api/HaOdoPacket.hpp"
-#include "../include/oz440_api/HaDS4RemotePacket.hpp"
-#include "../include/oz440_api/HaScreenPacket.hpp"
-#include "../include/oz440_api/HaSpeakerPacket.hpp"
-#include "../include/oz440_api/HaKeypadPacket.hpp"
-#include "../include/oz440_api/HaLedPacket.hpp"
-#include "../include/oz440_api/ApiEnumResponsePacket.hpp"
-#include "../include/oz440_api/ApiValueResponsePacket.hpp"
-#include "../include/oz440_api/HaCanPacket.hpp"
-#include "../include/oz440_api/ApiAutoStatusPacket.hpp"
-#include "../include/oz440_api/ApiPressedIhmButtonPacket.hpp"
-#include "../include/oz440_api/ApiMessagePacket.hpp"
-#include "../include/oz440_api/ApiLogToRobotPacket.hpp"
-#include "../include/oz440_api/ApiWatchdogPacket.hpp"
+#include <vitals/CLArray.h>
+#include <vitals/CLByteConversion.h>
+#include "Naio01Codec.hpp"
+#include "ApiPostPacket.hpp"
+#include "ApiGpsPacket.hpp"
+#include "ApiSmsPacket.hpp"
+#include "ApiGprsPacket.hpp"
+#include "ApiStatusPacket.hpp"
+#include "ApiCommandPacket.hpp"
+#include "ApiMotorsPacket.hpp"
+#include "ApiMoveActuatorPacket.hpp"
+#include "ApiLidarPacket.hpp"
+#include "ApiIhmDisplayPacket.hpp"
+#include "ApiIhmAskEnumPacket.hpp"
+#include "ApiIhmAskValuePacket.hpp"
+#include "ApiRunPlotPacket.hpp"
+#include "HaAcceleroPacket.hpp"
+#include "HaLidarPacket.hpp"
+#include "HaActuatorPacket.hpp"
+#include "HaGpsPacket.hpp"
+#include "HaGyroPacket.hpp"
+#include "HaMagnetoPacket.hpp"
+#include "HaMotorsPacket.hpp"
+#include "HaOdoPacket.hpp"
+#include "HaDS4RemotePacket.hpp"
+#include "HaScreenPacket.hpp"
+#include "HaSpeakerPacket.hpp"
+#include "HaKeypadPacket.hpp"
+#include "HaLedPacket.hpp"
+#include "ApiEnumResponsePacket.hpp"
+#include "ApiValueResponsePacket.hpp"
+#include "HaCanPacket.hpp"
+#include "ApiAutoStatusPacket.hpp"
+#include "ApiPressedIhmButtonPacket.hpp"
+#include "ApiMessagePacket.hpp"
+#include "ApiLogToRobotPacket.hpp"
+#include "ApiWatchdogPacket.hpp"
+#include "ApiStereoCameraPacket.hpp"
 
 //=============================================================================
 //
@@ -43,7 +43,7 @@ Naio01Codec::Naio01Codec() :
 		currentBasePacketList{ },
 		maxCapacity{ 1000000 },
 		currentBufferPos{0},
-		currentMaxPacketSize{ 550000 },
+		currentMaxPacketSize{ 5000000 },
 		currentPayloadSize{ 0 }
 {
 
@@ -131,8 +131,6 @@ BaseNaio01PacketPtr Naio01Codec::decodeOneWholePacket( uint8_t *buffer, uint buf
 					case Naio01CodecPacketType::HA_LED:
 						packet = std::make_shared<HaLedPacket>();
 						break;
-					case Naio01CodecPacketType::HA_RAW_STEREO_CAMERA:
-						break;
 
 					case Naio01CodecPacketType::API_WATCHDOG:
 						packet = std::make_shared<ApiWatchdogPacket>();
@@ -153,6 +151,7 @@ BaseNaio01PacketPtr Naio01Codec::decodeOneWholePacket( uint8_t *buffer, uint buf
 						packet = std::make_shared<ApiPostPacket>();
 						break;
 					case Naio01CodecPacketType::API_RAW_STEREO_CAMERA:
+						packet = std::make_shared<ApiStereoCameraPacket>();
 						break;
 					case Naio01CodecPacketType::API_GPS:
 						packet = std::make_shared<ApiGpsPacket>();

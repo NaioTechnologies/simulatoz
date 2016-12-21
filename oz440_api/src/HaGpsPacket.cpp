@@ -1,5 +1,5 @@
-#include "../include/oz440_api/HaGpsPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "HaGpsPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -32,17 +32,17 @@ HaGpsPacket::~HaGpsPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr HaGpsPacket::encode()
+cl_copy::BufferUPtr HaGpsPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 8 + 8 + 8 + 8 + 1 + 1 + 1 + 8 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 8 + 8 + 8 + 8 + 1 + 1 + 1 + 8 );
 
 	cl::u8Array< 8 > encodedTime = cl::u64_to_u8Array( time );
-	cl::u8Array< 8 > encodedLat = cl::float64_to_u8Array( lat );
-	cl::u8Array< 8 > encodedLon = cl::float64_to_u8Array( lon );
-	cl::u8Array< 8 > encodedAlt = cl::float64_to_u8Array( alt );
-	cl::u8Array< 8 > encodedGroundSpeed = cl::float64_to_u8Array( groundSpeed );
+	cl::u8Array< 8 > encodedLat = cl::double_to_u8Array( lat );
+	cl::u8Array< 8 > encodedLon = cl::double_to_u8Array( lon );
+	cl::u8Array< 8 > encodedAlt = cl::double_to_u8Array( alt );
+	cl::u8Array< 8 > encodedGroundSpeed = cl::double_to_u8Array( groundSpeed );
 
 	for( uint i = 0; i < 8 ; i++ )
 	{
@@ -80,7 +80,7 @@ cl::BufferUPtr HaGpsPacket::encode()
 //
 void HaGpsPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -108,7 +108,7 @@ void HaGpsPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedLat[ i ] =  buffer[ cpt++ ];
 	}
 
-	lat = cl::u8Array_to_float64( encodedLat );
+	lat = cl::u8Array_to_double( encodedLat );
 
 	// #######################
 
@@ -117,7 +117,7 @@ void HaGpsPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedLon[ i ] =  buffer[ cpt++ ];
 	}
 
-	lon = cl::u8Array_to_float64( encodedLon );
+	lon = cl::u8Array_to_double( encodedLon );
 
 	// #######################
 
@@ -126,7 +126,7 @@ void HaGpsPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedAlt[ i ] =  buffer[ cpt++ ];
 	}
 
-	alt = cl::u8Array_to_float64( encodedAlt );
+	alt = cl::u8Array_to_double( encodedAlt );
 
 	// #######################
 
@@ -141,5 +141,5 @@ void HaGpsPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedGroundSpeed[ i ] =  buffer[ cpt++ ];
 	}
 
-	groundSpeed = cl::u8Array_to_float64( encodedGroundSpeed );
+	groundSpeed = cl::u8Array_to_double( encodedGroundSpeed );
 }

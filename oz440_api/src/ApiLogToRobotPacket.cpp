@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiLogToRobotPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiLogToRobotPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -25,11 +25,11 @@ ApiLogToRobotPacket::~ApiLogToRobotPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiLogToRobotPacket::encode()
+cl_copy::BufferUPtr ApiLogToRobotPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 127 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 127 );
 
 	for( uint i = 0; i < 127 ; i++ )
 	{
@@ -50,7 +50,7 @@ cl::BufferUPtr ApiLogToRobotPacket::encode()
 //
 void ApiLogToRobotPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

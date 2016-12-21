@@ -12,14 +12,14 @@
 
 #include "oz440_socket/SocketException.h"
 
-#include "ApiCodec/HaLidarPacket.hpp"
-#include "ApiCodec/HaMotorsPacket.hpp"
-#include "ApiCodec/HaGpsPacket.hpp"
-#include "ApiCodec/HaGyroPacket.hpp"
-#include "ApiCodec/HaAcceleroPacket.hpp"
-#include "ApiCodec/ApiStereoCameraPacket.hpp"
-#include "ApiCodec/HaOdoPacket.hpp"
-#include "ApiCodec/ApiMoveActuatorPacket.hpp"
+#include "oz440_api/HaLidarPacket.hpp"
+#include "oz440_api/HaMotorsPacket.hpp"
+#include "oz440_api/HaGpsPacket.hpp"
+#include "oz440_api/HaGyroPacket.hpp"
+#include "oz440_api/HaAcceleroPacket.hpp"
+#include "oz440_api/ApiStereoCameraPacket.hpp"
+#include "oz440_api/HaOdoPacket.hpp"
+#include "oz440_api/ApiMoveActuatorPacket.hpp"
 
 #include <vector>
 #include <stdlib.h>
@@ -54,19 +54,15 @@ Core::Core( int argc, char **argv )
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
 
-    client_read_thread_started_ = false;
-
-    client_socket_connected_ = false;
+    read_thread_started_ = false;
 
     image_thread_started_ = false;
-
-    image_socket_connected_ = false;
 
     ozcore_image_thread_started_ = false;
 
     ozcore_image_socket_connected_ = false;
 
-    image_packet_to_send_ = nullptr;
+    image_to_send_ = nullptr;
 
     last_image_ms_ = 0;
 
@@ -75,7 +71,7 @@ Core::Core( int argc, char **argv )
     actuator_position_ = 0.0;
 
     // Bridge initialisation
-    bridge_ptr_ = std::make_shared(Bridge);
+//    bridge_ptr_ = std::make_shared<Bridge>();
 
 }
 
@@ -90,29 +86,6 @@ Core::~Core( )
 void Core::run( int argc, char **argv )
 {
     using namespace std::chrono_literals;
-
-    bool graphical_display_on = true;
-    std::string can = "vcan";
-
-    for( int i = 0 ; i < argc ; i++ )
-    {
-        std::string arg = argv[ i ];
-
-        if( arg == "nogui" )
-        {
-            std::cout << "Starting Simulatoz Bridge in no gui mode." << std::endl;
-
-            graphical_display_on = false;
-        }
-        else if(arg == "pcan") {
-
-            can = "pcan";
-        }
-    }
-
-    bridge_ptr_->init( graphical_display_on, can );
-
-    std::cout << "Simulatoz Bridge Started" << std::endl;
 
     ros::NodeHandle n;
 
@@ -142,13 +115,10 @@ void Core::run( int argc, char **argv )
     sync.registerCallback ( boost::bind(&Core::send_camera_packet_callback, this, _1, _2) );
 
     // creates main thread
-    client_read_thread_ = std::thread( &Core::client_read_thread_function, this );
+    read_thread_ = std::thread( &Core::read_thread_function, this );
 
     // creates image thread
     image_thread_ = std::thread( &Core::image_thread_function, this );
-
-    // creates image thread
-    image_read_thread_ = std::thread( &Core::image_read_thread_function, this );
 
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
@@ -159,28 +129,36 @@ void Core::run( int argc, char **argv )
     // creates test thread
     test_thread_ = std::thread( &Core::test_thread_function, this, argc, argv );
 
+    std::this_thread::sleep_for(1000ms);
+
     // create_odo_thread
-    send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
+//    send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
+
+    std::this_thread::sleep_for(1000ms);
+
+    // create_bridge_thread
+//    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
     while (ros :: ok())
     {
-        if(!get_com_simu_can_connected_())
-        {
-            disconnected();
-        }
+//        if(!bridge_ptr_->get_com_simu_can_connected_())
+//        {
+//            disconnected();
+//        }
 
         packet_to_send_list_access_.lock();
 
-        bridge_ptr_->set_received_packet(packet_to_send_list_);
+        for ( auto packetPtr : packet_to_send_list_ )
+        {
+//            bridge_ptr_->add_received_packet(packetPtr);
+        }
 
         packet_to_send_list_.clear();
 
         packet_to_send_list_access_.unlock();
 
-        std::this_thread::sleep_for(10ms);
+        std::this_thread::sleep_for(100ms);
     }
-
-    close( server_socket_desc_ );
 }
 
 // *********************************************************************************************************************
@@ -224,16 +202,16 @@ void Core::read_thread_function( )
         while ( ros::ok() )
         {
 
-            received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
-            bridge_ptr_->clear_packet_list_to_send();
+//            received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
+//            bridge_ptr_->clear_packet_list_to_send();
 
             for ( auto &&packetPtr : received_packet_list_) // For every packet decoded
             {
 
-                if (std::dynamic_pointer_cast<HaMotorsPacket>(PacketPtr))
+                if (std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr))
                 {
                     //  When receiving a motor order
-                    HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(PacketPtr);
+                    HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr);
 
                     double rightspeed = static_cast<double>(motorsPacketPtr->right);
                     double leftspeed = static_cast<double>(motorsPacketPtr->left);
@@ -247,10 +225,10 @@ void Core::read_thread_function( )
 
                     velocity_pub_.publish(command);
                 }
-                else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(PacketPtr))
+                else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr))
                 {
                     //  When receiving an actuator order
-                    ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(PacketPtr);
+                    ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr);
 
                     geometry_msgs::Vector3 command;
 
@@ -305,10 +283,11 @@ void Core::read_thread_function( )
 
 void Core::image_thread_function( )
 {
-
     using namespace std::chrono_literals;
 
     image_thread_started_ = true;
+
+    int last_image_sent_ms;
 
     while (ros::ok())
     {
@@ -324,7 +303,7 @@ void Core::image_thread_function( )
 
         if (new_image_received)
         {
-            bridge_ptr_->set_received_image(image_to_send_);
+//            bridge_ptr_->set_received_image(image_to_send_);
         }
 
         image_to_send_access_.unlock();
@@ -351,7 +330,7 @@ void Core::ozcore_image_read_thread_function()
         while ( ros::ok() )
         {
 
-            if( ozcore_image_socket_connected_ == true )
+            if( ozcore_image_socket_connected_ )
             {
                 ozcore_image_socket_access_.lock();
 
@@ -437,7 +416,7 @@ void Core::ozcore_image_thread_function( )
 
                 ozcore_image_packet_to_send_access_.unlock();
 
-                if ( new_image_received == true )
+                if ( new_image_received )
                 {
                     int total_written_bytes = 0;
                     ssize_t write_size = 0;
@@ -487,54 +466,47 @@ void Core::ozcore_image_thread_function( )
 
 void Core::test_thread_function( int argc, char **argv )
 {
-    using namespace std::chrono_literals;
 
-    std::this_thread::sleep_for(5000ms);
+}
 
-    test_thread_started_ = true;
+//**********************************************************************************************************************
 
-    Test test;
+void Core::bridge_thread_function()
+{
+//void Core::bridge_thread_function( int argc, char **argv )
+//{
+//    using namespace std::chrono_literals;
+//
+//    bool graphical_display_on = true;
+//    std::string can = "vcan";
+//
+//    for( int i = 0 ; i < argc ; i++ )
+//    {
+//        std::string arg = argv[ i ];
+//
+//        if( arg == "nogui" )
+//        {
+//            std::cout << "Starting Simulatoz Bridge in no gui mode." << std::endl;
+//
+//            graphical_display_on = false;
+//        }
+//        else if(arg == "pcan") {
+//
+//            can = "pcan";
+//        }
+//    }
 
-    Metric metric( argc, argv, test);
+    std::this_thread::sleep_for( 10000ms );
 
-    while(ros::ok()){
 
-        if(client_socket_connected_)
-        {
-            bool followed_trajectory = metric.followed_trajectory();
+//    bridge_ptr_->init( false, "vcan" );
 
-            bool pushed_object = metric.pushed_object();
+    std::cout << "Simulatoz Bridge Started" << std::endl;
 
-            bool arrived = metric.is_arrived();
-
-            if(pushed_object){
-                ROS_ERROR( "object was pushed" );
-            }
-
-            if(!followed_trajectory){
-                ROS_ERROR( "left trajectory" );
-            }
-
-            if(arrived){
-                ROS_ERROR( "Arrived" );
-            }
-
-            std::this_thread::sleep_for(500ms);
-        }
-        else
-        {
-            metric.initialize(test);
-
-            std::this_thread::sleep_for(1000ms);
-
-        }
-
+    while(ros::ok())
+    {
+        std::this_thread::sleep_for( 100ms );
     }
-
-    test_thread_started_ = false;
-
-    ROS_ERROR( "end of thread" );
-
 }
 
 // *********************************************************************************************************************
@@ -609,7 +581,7 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 {
     try
     {
-        cl::BufferUPtr dataBuffer = cl::unique_buffer( static_cast<size_t>( 721920 ) );
+        cl_copy::BufferUPtr dataBuffer = cl_copy::unique_buffer( static_cast<size_t>( 721920 ) );
 
         ozcore_image_packet_to_send_access_.lock();
 
@@ -719,6 +691,9 @@ void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_
 void Core::send_odo_packet()
 {
 
+    std::this_thread::sleep_for( 30000ms );
+
+
     using namespace std::chrono_literals;
     uint8_t fr = 0;
     uint8_t br = 0;
@@ -727,7 +702,8 @@ void Core::send_odo_packet()
 
     while (ros::ok()) {
 
-        if (client_socket_connected_) {
+//        bridge_ptr_->get_com_simu_can_connected_()
+        if (ros::ok()) {
 
             // Initialisation
             double pitch_bl = getPitch("/back_left_wheel");

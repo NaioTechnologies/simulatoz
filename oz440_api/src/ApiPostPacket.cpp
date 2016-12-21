@@ -1,10 +1,10 @@
-#include "../include/oz440_api/ApiPostPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiPostPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
 ApiPostPacket::ApiPostPacket( )
-: postList{ }
+	: postList{ }
 {
 
 }
@@ -18,9 +18,9 @@ ApiPostPacket::~ApiPostPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiPostPacket::encode()
+cl_copy::BufferUPtr ApiPostPacket::encode()
 {
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + ( postList.size() * ( 1 + 4 + 4 ) ) ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + (postList.size() * (1 + 1 + 4 + 4)) );
 
 	uint cpt = 0;
 
@@ -28,10 +28,12 @@ cl::BufferUPtr ApiPostPacket::encode()
 
 	for( auto&& post: postList )
 	{
+		(*buffer)[cpt++] = static_cast<uint8_t>( post.sourceCamera );
+
 		(*buffer)[cpt++] = static_cast<uint8_t>( post.postType );
 
-		cl::u8Array< 4 > encodedX = cl::float32_to_u8Array( post.x ) ;
-		cl::u8Array< 4 > encodedY = cl::float32_to_u8Array( post.y ) ;
+		cl::u8Array< 4 > encodedX = cl::float_to_u8Array( post.x ) ;
+		cl::u8Array< 4 > encodedY = cl::float_to_u8Array( post.y ) ;
 
 		(*buffer)[cpt++] = encodedX[0];
 		(*buffer)[cpt++] = encodedX[1];
@@ -51,7 +53,7 @@ cl::BufferUPtr ApiPostPacket::encode()
 //
 void ApiPostPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -61,6 +63,7 @@ void ApiPostPacket::decode( uint8_t *buffer, uint bufferSize )
 
 	for( int i = 0 ; i < postCount ; i++ )
 	{
+		SourceCamera sourceCamera = static_cast<SourceCamera>( buffer[cpt++] );
 		PostType postType = static_cast<PostType>( buffer[cpt++] );
 
 		cl::u8Array< 4 > encodedX;
@@ -69,7 +72,7 @@ void ApiPostPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedX[2] = buffer[cpt++];
 		encodedX[3] = buffer[cpt++];
 
-		float x = cl::u8Array_to_float32( encodedX );
+		float x = cl::u8Array_to_float( encodedX );
 
 		cl::u8Array< 4 > encodedY;
 		encodedY[0] = buffer[cpt++];
@@ -77,8 +80,8 @@ void ApiPostPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedY[2] = buffer[cpt++];
 		encodedY[3] = buffer[cpt++];
 
-		float y = cl::u8Array_to_float32( encodedY );
+		float y = cl::u8Array_to_float( encodedY );
 
-		postList.push_back( Post( postType, x, y ) );
+		postList.push_back( Post( sourceCamera, postType, x, y ) );
 	}
 }

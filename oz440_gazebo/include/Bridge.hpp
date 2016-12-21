@@ -24,20 +24,18 @@
 #include <SDL2/SDL_system.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <HaLidarPacket.hpp>
-#include <ApiLidarPacket.hpp>
-#include <HaOdoPacket.hpp>
-#include <ApiPostPacket.hpp>
-#include <ApiGpsPacket.hpp>
-#include <HaGpsPacket.hpp>
-#include <ApiStereoCameraPacket.hpp>
-
-#include "ApiCodec/Naio01Codec.hpp"
-#include "ApiCodec/ApiMotorsPacket.hpp"
-#include "ApiCodec/ApiStatusPacket.hpp"
-#include "ApiCodec/HaMotorsPacket.hpp"
-#include "ApiCodec/HaGyroPacket.hpp"
-#include "ApiCodec/HaAcceleroPacket.hpp"
+#include <oz440_api/HaLidarPacket.hpp>
+#include <oz440_api/ApiLidarPacket.hpp>
+#include <oz440_api/HaOdoPacket.hpp>
+#include <oz440_api/ApiPostPacket.hpp>
+#include <oz440_api/ApiGpsPacket.hpp>
+#include <oz440_api/HaGpsPacket.hpp>
+#include <oz440_api/ApiStereoCameraPacket.hpp>
+#include "oz440_api/ApiMotorsPacket.hpp"
+#include "oz440_api/ApiStatusPacket.hpp"
+#include "oz440_api/HaMotorsPacket.hpp"
+#include "oz440_api/HaGyroPacket.hpp"
+#include "oz440_api/HaAcceleroPacket.hpp"
 #include "DriverSocket.hpp"
 
 
@@ -127,12 +125,12 @@ public:
 
 public:
 
-    Bridge( );
+    Bridge();
     ~Bridge( );
 
     // launch core
     void init( bool graphical_display_on, std::string can );
-    void set_received_packet(BaseNaio01PacketPtr packetPtr);
+    void add_received_packet(BaseNaio01PacketPtr packetPtr);
     void set_received_image(BaseNaio01PacketPtr packetPtr);
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
     void clear_packet_list_to_send();
@@ -221,7 +219,7 @@ private:
 
     bool stop_read_thread_asked_;
     bool read_thread_started_;
-    std::thread ReadThread_;
+    std::thread read_thread_;
 
     bool stop_write_thread_asked_;
     bool write_thread_started_;

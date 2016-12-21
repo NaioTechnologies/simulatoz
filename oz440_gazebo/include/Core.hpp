@@ -19,9 +19,8 @@
 
 #include <tf/transform_listener.h>
 
-#include "ApiCodec/Naio01Codec.hpp"
 #include "oz440_socket/ServerSocket.h"
-#include "ApiCodec/ApiStereoCameraPacket.hpp"
+#include "oz440_api/ApiStereoCameraPacket.hpp"
 #include "Bridge.hpp"
 
 class Core
@@ -52,6 +51,8 @@ private:
 
     void test_thread_function( int argc, char **argv );
 
+    void bridge_thread_function();
+
     void disconnected();
 
     void ozcore_image_read_thread_function( );
@@ -79,6 +80,9 @@ private:
 
     bool test_thread_started_;
     std::thread test_thread_;
+
+    bool bridge_thread_started_;
+    std::thread bridge_thread_;
 
     std::mutex ozcore_image_socket_access_;
     int ozcore_image_server_socket_desc_;

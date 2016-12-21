@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiStatusPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiStatusPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -10,7 +10,7 @@ ApiStatusPacket::ApiStatusPacket( )
 
 //=============================================================================
 //
-ApiStatusPacket::ApiStatusPacket( bool imuReseted_, double theta_, int32_t odoFR_, int32_t odoRR_, int32_t odoRL_, int32_t odoFL_, double positionX_, double positionY_, double distance_, uint8_t actuatorPosition_, uint8_t battery_ )
+ApiStatusPacket::ApiStatusPacket( bool imuReseted_, double theta_, int32_t odoFR_, int32_t odoRR_, int32_t odoRL_, int32_t odoFL_, double positionX_, double positionY_, double distance_, uint8_t actuatorPosition_, uint8_t battery_, int16_t magX_, int16_t magY_, int16_t magZ_ )
 	: 	imuReseted{ imuReseted_ },
 		theta{ theta_ },
 		odoFR{ odoFR_ },
@@ -21,7 +21,10 @@ ApiStatusPacket::ApiStatusPacket( bool imuReseted_, double theta_, int32_t odoFR
 		positionY{ positionY_ },
 		distance{ distance_ },
 		actuatorPosition{ actuatorPosition_ },
-		battery{ battery_ }
+		battery{ battery_ },
+		magX{ magX_ },
+		magY{ magY_ },
+		magZ{ magZ_ }
 {
 
 }
@@ -35,15 +38,15 @@ ApiStatusPacket::~ApiStatusPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiStatusPacket::encode()
+cl_copy::BufferUPtr ApiStatusPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 8 + 16 + 16 + 8 + 1 + 1 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 8 + 16 + 16 + 8 + 1 + 1 + 2 + 2 + 2 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( imuReseted );
 
-	cl::u8Array< 8 > encodedHeading = cl::float64_to_u8Array( theta );
+	cl::u8Array< 8 > encodedHeading = cl::double_to_u8Array( theta );
 
 	for( uint i = 0; i < 8 ; i++ )
 	{
@@ -75,8 +78,8 @@ cl::BufferUPtr ApiStatusPacket::encode()
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedFL[ i ] );
 	}
 
-	cl::u8Array< 8 > encodedPositionX = cl::float64_to_u8Array( positionX );
-	cl::u8Array< 8 > encodedPositionY = cl::float64_to_u8Array( positionY );
+	cl::u8Array< 8 > encodedPositionX = cl::double_to_u8Array( positionX );
+	cl::u8Array< 8 > encodedPositionY = cl::double_to_u8Array( positionY );
 
 	for( uint i = 0; i < 8 ; i++ )
 	{
@@ -88,7 +91,7 @@ cl::BufferUPtr ApiStatusPacket::encode()
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedPositionY[ i ] );
 	}
 
-	cl::u8Array< 8 > encodedDistance = cl::float64_to_u8Array( distance );
+	cl::u8Array< 8 > encodedDistance = cl::double_to_u8Array( distance );
 
 	for( uint i = 0; i < 8 ; i++ )
 	{
@@ -99,6 +102,24 @@ cl::BufferUPtr ApiStatusPacket::encode()
 
 	(*buffer)[cpt++] = battery;
 
+	cl::u8Array< 2 > encodedMagX = cl::i16_to_u8Array( magX );
+	cl::u8Array< 2 > encodedMagY = cl::i16_to_u8Array( magY );
+	cl::u8Array< 2 > encodedMagZ = cl::i16_to_u8Array( magZ );
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		(*buffer)[cpt++] = static_cast<uint8_t>( encodedMagX[ i ] );
+	}
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		(*buffer)[cpt++] = static_cast<uint8_t>( encodedMagY[ i ] );
+	}
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		(*buffer)[cpt++] = static_cast<uint8_t>( encodedMagZ[ i ] );
+	}
 
 	return std::move( getPreparedBuffer( std::move( buffer ), getPacketId() ) );
 }
@@ -107,7 +128,7 @@ cl::BufferUPtr ApiStatusPacket::encode()
 //
 void ApiStatusPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -120,7 +141,7 @@ void ApiStatusPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedHeading[ i ] =  buffer[ cpt++ ];
 	}
 
-	theta = cl::u8Array_to_float64( encodedHeading );
+	theta = cl::u8Array_to_double( encodedHeading );
 
 	cl::u8Array< 4 > encodedFR;
 	cl::u8Array< 4 > encodedRR;
@@ -165,8 +186,8 @@ void ApiStatusPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedPositionY[ i ] =  buffer[ cpt++ ];
 	}
 
-	positionX = cl::u8Array_to_float64( encodedPositionX );
-	positionY = cl::u8Array_to_float64( encodedPositionY );
+	positionX = cl::u8Array_to_double( encodedPositionX );
+	positionY = cl::u8Array_to_double( encodedPositionY );
 
 	cl::u8Array< 8 > encodedDistance;
 
@@ -175,10 +196,33 @@ void ApiStatusPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedDistance[ i ] =  buffer[ cpt++ ];
 	}
 
-	distance = cl::u8Array_to_float64( encodedDistance );
+	distance = cl::u8Array_to_double( encodedDistance );
 
 
 	actuatorPosition = buffer[ cpt++ ];
 
 	battery = buffer[ cpt++ ];
+
+	cl::u8Array< 2 > encodedMagX;
+	cl::u8Array< 2 > encodedMagY;
+	cl::u8Array< 2 > encodedMagZ;
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		encodedMagX[ i ] =  buffer[ cpt++ ];
+	}
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		encodedMagY[ i ] =  buffer[ cpt++ ];
+	}
+
+	for( uint i = 0; i < 2 ; i++ )
+	{
+		encodedMagZ[ i ] =  buffer[ cpt++ ];
+	}
+
+	magX = cl::u8Array_to_i16( encodedMagX );
+	magY = cl::u8Array_to_i16( encodedMagY );
+	magZ = cl::u8Array_to_i16( encodedMagZ );
 }

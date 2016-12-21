@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiIhmDisplayPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiIhmDisplayPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -32,11 +32,11 @@ ApiIhmDisplayPacket::~ApiIhmDisplayPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiIhmDisplayPacket::encode()
+cl_copy::BufferUPtr ApiIhmDisplayPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 20 + 20 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 20 + 20 );
 
 	for( uint i = 0 ; i < 20 ; i++ )
 	{
@@ -55,7 +55,7 @@ cl::BufferUPtr ApiIhmDisplayPacket::encode()
 //
 void ApiIhmDisplayPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

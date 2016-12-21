@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiIhmAskEnumPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiIhmAskEnumPacket.hpp"
+#include "vitals/CLByteConversion.h"
 #include <string.h>
 
 //=============================================================================
@@ -40,11 +40,11 @@ ApiIhmAskEnumPacket::~ApiIhmAskEnumPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiIhmAskEnumPacket::encode()
+cl_copy::BufferUPtr ApiIhmAskEnumPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 20 + 20 + 1 + (20*20) + 1 + 20 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 20 + 20 + 1 + (20*20) + 1 + 20 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( id );
 
@@ -82,7 +82,7 @@ cl::BufferUPtr ApiIhmAskEnumPacket::encode()
 //
 void ApiIhmAskEnumPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

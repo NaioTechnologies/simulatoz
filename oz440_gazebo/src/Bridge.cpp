@@ -1,29 +1,31 @@
+
+#include "../include/Bridge.hpp"
+
+#include "ros/ros.h"
+
+
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <chrono>
 #include <unistd.h>
-#include <ApiCodec/ApiMotorsPacket.hpp>
-#include <HaGyroPacket.hpp>
-#include <HaAcceleroPacket.hpp>
-#include <ApiCommandPacket.hpp>
-#include <zlib.h>
-#include <ApiWatchdogPacket.hpp>
-#include "../include/Bridge.hpp"
-#include <ApiCodec/ApiMoveActuatorPacket.hpp>
-
-// com_simu
-#include "DriverSerial.hpp"
-#include "DriverSocket.hpp"
-#include "createLidarTrame.hpp"
 #include <net/if.h>
 #include <sys/fcntl.h>
 #include <linux/can.h>
 #include <linux/can/raw.h>
-#include "DriverSocket.hpp"
 #include <cstring>
 
-#include "GeoAngle.hpp"
+#include <../include/oz440_api/ApiMoveActuatorPacket.hpp>
+#include <../include/oz440_api/ApiCommandPacket.hpp>
+#include <../include/oz440_api/HaAcceleroPacket.hpp>
+#include <../include/oz440_api/ApiWatchdogPacket.hpp>
+#include <zlib.h>
+
+// com_ozcore
+#include "../include/DriverSerial.hpp"
+#include "../include/DriverSocket.hpp"
+#include "../include/createLidarTrame.hpp"
+#include "../include/GeoAngle.hpp"
 
 using namespace std;
 using namespace std::chrono;
@@ -89,21 +91,20 @@ Bridge::Bridge( ) :
         use_virtual_can_{ true },
         main_thread_started_{ false },
         main_thread_{ },
-        socket_connected_{false},
-        send_packet_list_{ },
+        packet_list_to_send_{ },
         ha_lidar_packet_ptr_{ nullptr },
         ha_odo_packet_ptr_{ nullptr },
         api_post_packet_ptr_{nullptr },
         ha_gps_packet_ptr_{ nullptr },
         control_type_{ ControlType::CONTROL_TYPE_MANUAL },
         last_motor_time_{ 0L },
-        image_naio_codec_{ },
         last_image_received_time_{ 0 },
         com_simu_can_connected_{ false },
         com_simu_serial_connected_{ false },
         display_simuloz_camera_{ false },
         last_image_displayer_action_time_ms_{ 0 },
-        asked_image_displayer_start_{ false }
+        asked_image_displayer_start_{ false },
+        received_packets_{}
 {
     uint8_t fake = 0;
 
@@ -156,14 +157,14 @@ Bridge::Bridge( ) :
     com_simu_ihm_button_status_.left = false;
     com_simu_ihm_button_status_.right = false;
 
-    image_server_read_thread_started_ = false;
-    stop_image_server_read_thread_asked_ = false;
-
-    image_server_write_thread_started_ = false;
-    stop_image_server_write_thread_asked_ = false;
+    image_thread_started_ = false;
+    stop_image_thread_asked_ = false;
 
     image_prepared_thread_started_ = false;
     stop_image_preparer_thread_asked_ = false;
+
+
+
 }
 
 // ##################################################################################################
@@ -181,6 +182,8 @@ void Bridge::init( bool graphical_display_on, std::string can )
 {
     try
     {
+        ROS_ERROR("Ici 0");
+
         can_ = can;
 
         if( can_ == "pcan" )
@@ -191,6 +194,7 @@ void Bridge::init( bool graphical_display_on, std::string can )
         }
         else
         {
+            ROS_ERROR("vcan");
             std::cout << "using virtual can" << std::endl;
         }
 
@@ -199,36 +203,55 @@ void Bridge::init( bool graphical_display_on, std::string can )
         stop_main_thread_asked_ = false;
         main_thread_started_ = false;
 
-        server_read_thread_started_ = false;
-        stop_server_write_thread_asked_ = false;
+        read_thread_started_ = false;
+        write_thread_started_ = false;
 
-        main_thread_ = std::thread(&Core::main_thread, this);
+        stop_read_thread_asked_ = false;
+        stop_write_thread_asked_ = false;
 
-        ReadThread_ = std::thread(&Core::read_thread, this);
-        WriteThread_ = std::thread(&Core::write_thread, this);
+        main_thread_ = std::thread(&Bridge::main_thread, this);
+
+        read_thread_ = std::thread(&Bridge::read_thread, this);
+        write_thread_ = std::thread(&Bridge::write_thread, this);
+
+        ROS_ERROR("Ici 1");
 
 
         if (graphical_display_on_) {
-            image_displayer_starter_thread_ = std::thread(&Core::image_displayer_starter_thread_function, this);
+            image_displayer_starter_thread_ = std::thread(&Bridge::image_displayer_starter_thread_function, this);
         }
+
+        ROS_ERROR("Ici 2");
+
 
         com_simu_create_virtual_can();
 
-        com_simu_create_serial_thread_ = std::thread(&Core::com_simu_create_serial_thread_function, this);
+        ROS_ERROR("Ici 3");
+
+
+        com_simu_create_serial_thread_ = std::thread(&Bridge::com_simu_create_serial_thread_function, this);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-        com_simu_read_serial_thread_ = std::thread(&Core::com_simu_read_serial_thread_function, this);
+        ROS_ERROR("Ici 4");
 
-        com_simu_lidar_to_core_thread_ = std::thread(&Core::com_simu_lidar_to_core_thread_function, this);
+
+        com_simu_read_serial_thread_ = std::thread(&Bridge::com_simu_read_serial_thread_function, this);
+
+        ROS_ERROR("Ici 5");
+
+
+        com_simu_lidar_to_core_thread_ = std::thread(&Bridge::com_simu_lidar_to_core_thread_function, this);
 
         com_simu_connect_can();
 
-        com_simu_read_can_thread_ = std::thread(&Core::com_simu_read_can_thread_function, this);
+        com_simu_read_can_thread_ = std::thread(&Bridge::com_simu_read_can_thread_function, this);
 
-        com_simu_remote_thread_ = std::thread(&Core::com_simu_remote_thread_function, this);
+        com_simu_remote_thread_ = std::thread(&Bridge::com_simu_remote_thread_function, this);
 
-        gps_manager_thread_ = std::thread(&Core::gps_manager_thread_function, this);
+        gps_manager_thread_ = std::thread(&Bridge::gps_manager_thread_function, this);
+
+        ROS_ERROR("Ici 1");
 
     }
     catch ( std::exception e ) {
@@ -240,7 +263,7 @@ void Bridge::init( bool graphical_display_on, std::string can )
 
 // Enables Core to add a received packet
 
-void Bridge::set_received_packet(BaseNaio01PacketPtr packetPtr)
+void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 {
     received_packets_.push_back(packetPtr);
 }
@@ -261,7 +284,7 @@ void Bridge::set_received_image(BaseNaio01PacketPtr packetPtr)
 
 std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
 {
-    return(std::vector< BaseNaio01PacketPtr >);
+    return( packet_list_to_send_ );
 }
 
 // ##################################################################################################
@@ -297,7 +320,7 @@ void Bridge::main_thread( )
         uint64_t last_screen_output_time = 0;
         uint64_t last_key_time = 0;
 
-        text_keyboard_reader_thread_ = std::thread(&Core::text_keyboard_reader_thread_function, this);
+        text_keyboard_reader_thread_ = std::thread(&Bridge::text_keyboard_reader_thread_function, this);
 
         // creates graphic thread
         if (graphical_display_on_)
@@ -370,16 +393,16 @@ void Bridge::read_thread( )
 
         while( !stop_read_thread_asked_ )
         {
-            received_packets_access_.lock;
+            received_packets_access_.lock();
 
             for ( auto &&packetPtr : received_packets_ )
             {
                 manage_received_packet(packetPtr);
             }
 
-            receivedPackets_.clear();
+            received_packets_.clear();
 
-            received_packets_access_.unlock;
+            received_packets_access_.unlock();
 
             std::this_thread::sleep_for(10ms);
 
@@ -418,7 +441,7 @@ void Bridge::write_thread( )
                 packet_list_to_send_.push_back( motor_packet );
             }
 
-            send_packet_list_access_.unlock();
+            packet_list_to_send_access_.unlock();
 
             std::this_thread::sleep_for( 10ms );
         }
@@ -550,10 +573,10 @@ void Bridge::graphic_thread( )
                     ApiCommandPacketPtr api_command_packet_zlib_off = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_OFF_IMAGE_ZLIB_COMPRESSION );
                     ApiCommandPacketPtr api_command_packet_stereo_on = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_ON_API_RAW_STEREO_CAMERA_PACKET );
 
-                    send_packet_list_access_.lock();
-                    send_packet_list_.emplace_back( api_command_packet_zlib_off );
-                    send_packet_list_.emplace_back( api_command_packet_stereo_on );
-                    send_packet_list_access_.unlock();
+                    packet_list_to_send_access_.lock();
+                    packet_list_to_send_.emplace_back( api_command_packet_zlib_off );
+                    packet_list_to_send_.emplace_back( api_command_packet_stereo_on );
+                    packet_list_to_send_access_.unlock();
 
                     start_image_display( );
 
@@ -565,9 +588,9 @@ void Bridge::graphic_thread( )
                 {
                     ApiCommandPacketPtr api_command_packet_stereo_off = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_OFF_API_RAW_STEREO_CAMERA_PACKET );
 
-                    send_packet_list_access_.lock();
-                    send_packet_list_.emplace_back( api_command_packet_stereo_off );
-                    send_packet_list_access_.unlock();
+                    packet_list_to_send_access_.lock();
+                    packet_list_to_send_.emplace_back( api_command_packet_stereo_off );
+                    packet_list_to_send_access_.unlock();
 
                     stop_image_display( );
 
@@ -693,24 +716,6 @@ void Bridge::graphic_thread( )
             draw_text( com_simu_ihm_line_top_, 500, 410 );
             draw_text( com_simu_ihm_line_bottom_, 500, 420 );
 
-            // ##############################################
-            ApiPostPacketPtr api_post_packet_ptr = nullptr;
-
-            api_post_packet_ptr_access_.lock();
-            api_post_packet_ptr = api_post_packet_ptr_;
-            api_post_packet_ptr_access_.unlock();
-
-            if( api_post_packet_ptr != nullptr )
-            {
-
-                for( uint i = 0 ; i < api_post_packet_ptr->postList.size() ; i++ )
-                {
-                    if( api_post_packet_ptr->postList[ i ].postType == ApiPostPacket::PostType::RED )
-                    {
-                        draw_red_post( static_cast<int>( api_post_packet_ptr->postList[ i ].x * 100.0 ), static_cast<int>( api_post_packet_ptr->postList[ i ].y * 100.0 ) );
-                    }
-                }
-            }
 
             // ##############################################
 
@@ -1387,30 +1392,22 @@ void Bridge::image_thread()
 
         std::cout << "Starting image_server_thread." << std::endl;
 
-        stop_image_read_thread_asked_ = false;
-        image_read_thread_started_ = false;
-
         stop_image_thread_asked_ = false;
         image_thread_started_ = true;
 
-        image_prepared_thread_ = std::thread(&Core::image_preparer_thread, this);
+        image_prepared_thread_ = std::thread(&Bridge::image_preparer_thread, this);
 
         std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 50 )));
 
         while (not stop_image_thread_asked_) {
 
-            received_image_access_.lock;
+            received_image_access_.lock();
 
-            for ( auto &&packetPtr : received_image_ )
-            {
-                manage_received_packet(packetPtr);
-            }
+            manage_received_packet(received_image_);
 
-            receivedPackets_.clear();
+            received_image_access_.unlock();
 
-            received_packets_access_.unlock;
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 10 )));
+            std::this_thread::sleep_for(10ms);
         }
 
         image_thread_started_ = false;
@@ -1513,7 +1510,7 @@ void Bridge::image_displayer_starter_thread_function() {
             if (asked_image_displayer_start_) {
                 std::cout << "Starting image displayer." << std::endl;
 
-                image_server_thread_ = std::thread(&Core::image_server_thread, this);
+                image_thread_ = std::thread(&Bridge::image_thread, this);
 
                 asked_image_displayer_start_ = false;
             }
@@ -1544,7 +1541,7 @@ void Bridge::start_image_display()
         {
             last_image_displayer_action_time_ms_ = now;
 
-            if(!image_server_thread_started_ or !image_server_read_thread_started_ and !image_server_write_thread_started_ and !image_prepared_thread_started_)
+            if(!image_thread_started_ and !image_prepared_thread_started_)
             {
                 asked_image_displayer_start_ = true;
             }
@@ -1577,23 +1574,18 @@ void Bridge::stop_image_display()
 
             std::cout << "Stopping image displayer" << std::endl;
 
-            if( image_server_thread_started_ and image_server_read_thread_started_ and image_server_write_thread_started_ and image_prepared_thread_started_ )
+            if( image_thread_started_  and image_prepared_thread_started_ )
             {
-                stop_image_server_read_thread_asked_ = true;
-                stop_image_server_write_thread_asked_ = true;
                 stop_image_preparer_thread_asked_ = true;
-                stop_image_server_thread_asked_ = true;
+                stop_image_thread_asked_ = true;
 
                 int cpt = 0;
 
-                while( ( image_server_thread_started_ or image_server_read_thread_started_ or image_server_write_thread_started_ or image_prepared_thread_started_ ) and cpt < 100  )
+                while( ( image_thread_started_ or image_prepared_thread_started_ ) and cpt < 100  )
                 {
                     std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 1 ) ) );
                     cpt++;
                 }
-
-                close( image_socket_desc_ );
-
                 uint8_t fake = 0;
 
                 for ( int i = 0 ; i < 4000000 ; i++ )
@@ -1612,25 +1604,13 @@ void Bridge::stop_image_display()
 
                 std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
 
-                image_server_read_thread_.join();
-
-                std::cout << ".";
-
-                std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
-
                 image_prepared_thread_.join();
 
                 std::cout << ".";
 
                 std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
 
-                image_server_write_thread_.join();
-
-                std::cout << ".";
-
-                std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
-
-                image_server_thread_.join();
+                image_thread_.join();
 
                 std::cout << std::endl;
             }
@@ -1654,7 +1634,7 @@ void Bridge::com_simu_create_virtual_can( )
 {
     (void)( system( "ifconfig can0 down"));
 
-    if ( use_virtual_can_ == true )
+    if ( use_virtual_can_  )
     {
         (void)( system( "modprobe can" ) + 1 );
         (void)( system( "modprobe can_raw" ) + 1 );
@@ -1676,7 +1656,7 @@ void Bridge::com_simu_create_virtual_can( )
 
 void Bridge::com_simu_create_serial_thread_function( )
 {
-    (void)( system( "socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
+    (void)( system( "sudo socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
 }
 
 // ##################################################################################################
@@ -1771,9 +1751,9 @@ void Bridge::com_simu_read_serial_thread_function( )
 void Bridge::com_simu_lidar_to_core_thread_function( )
 {
     try{
-        SOCKET sockLidarRobot = openSocketServer( OZCORE_LIDAR_PORT );
+        SOCKET sockLidarRobot = DriverSocket::openSocketServer( OZCORE_LIDAR_PORT );
 
-        sockLidarRobot = waitConnect( sockLidarRobot );
+        sockLidarRobot = DriverSocket::waitConnect( sockLidarRobot );
 
         printf( "Bridge connected to OzCore Lidar Port \n" );
 

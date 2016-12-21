@@ -1,8 +1,5 @@
-#include "../include/oz440_api/ApiStereoCameraPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
-
-#include <cstring>
-//using namespace std;
+#include "ApiStereoCameraPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -13,7 +10,7 @@ ApiStereoCameraPacket::ApiStereoCameraPacket( )
 
 //=============================================================================
 //
-ApiStereoCameraPacket::ApiStereoCameraPacket(  ImageType imageType_, cl::BufferUPtr dataBuffer_ )
+ApiStereoCameraPacket::ApiStereoCameraPacket( ImageType imageType_, cl_copy::BufferUPtr dataBuffer_ )
 {
 	imageType = imageType_;
 	dataBuffer = std::move( dataBuffer_ );
@@ -28,11 +25,11 @@ ApiStereoCameraPacket::~ApiStereoCameraPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiStereoCameraPacket::encode()
+cl_copy::BufferUPtr ApiStereoCameraPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 4 + dataBuffer->size() ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 4 + dataBuffer->size() );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( imageType );
 
@@ -43,13 +40,10 @@ cl::BufferUPtr ApiStereoCameraPacket::encode()
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedSize[2] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedSize[3] );
 
-//	for ( uint i = 0; i < dataBuffer->size(); i++ )
-//	{
-//		(*buffer)[cpt++] = static_cast<uint8_t>( dataBuffer->at(i) );
-//	}
-
-	std::memcpy( &(*buffer)[cpt++], &(*dataBuffer)[ 0 ], dataBuffer->size() );
-
+	for ( uint i = 0; i < dataBuffer->size(); i++ )
+	{
+		(*buffer)[cpt++] = static_cast<uint8_t>( dataBuffer->at(i) );
+	}
 
 	return std::move( getPreparedBuffer( std::move( buffer ), getPacketId() ) );
 }
@@ -58,7 +52,7 @@ cl::BufferUPtr ApiStereoCameraPacket::encode()
 //
 void ApiStereoCameraPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -73,7 +67,7 @@ void ApiStereoCameraPacket::decode( uint8_t *buffer, uint bufferSize )
 
 	uint32_t dataSize = cl::u8Array_to_u32( encodedSize );
 
-	dataBuffer = cl::unique_buffer( static_cast<size_t>( dataSize ) );
+	dataBuffer = cl_copy::unique_buffer( dataSize );
 
 	for( uint i = 0 ; i < dataSize ; i++ )
 	{

@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiSmsPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiSmsPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -27,22 +27,36 @@ ApiSmsPacket::~ApiSmsPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiSmsPacket::encode()
+cl_copy::BufferUPtr ApiSmsPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 20 + 200 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 20 + 200 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( smsType );
 
 	for( uint i = 0; i < 20 ; i++ )
 	{
-		(*buffer)[cpt++] = static_cast<uint8_t>( recipient[ i ] );
+		if( i < recipient.length() )
+		{
+			(*buffer)[cpt++] = static_cast<uint8_t>( recipient[i] );
+		}
+		else
+		{
+			(*buffer)[cpt++] = static_cast<uint8_t>( '\0' );
+		}
 	}
 
 	for( uint i = 0; i < 200 ; i++ )
 	{
-		(*buffer)[cpt++] = static_cast<uint8_t>( message[ i ] );
+		if( i < message.length() )
+		{
+			(*buffer)[cpt++] = static_cast<uint8_t>( message[i] );
+		}
+		else
+		{
+			(*buffer)[cpt++] = static_cast<uint8_t>( '\0' );
+		}
 	}
 
 	return std::move( getPreparedBuffer( std::move( buffer ), getPacketId() ) );
@@ -52,7 +66,7 @@ cl::BufferUPtr ApiSmsPacket::encode()
 //
 void ApiSmsPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

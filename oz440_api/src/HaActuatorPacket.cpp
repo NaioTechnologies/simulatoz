@@ -1,6 +1,5 @@
-#include "../include/oz440_api/HaActuatorPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
-#include "/usr/include/stdint.h"
+#include "HaActuatorPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -28,11 +27,11 @@ HaActuatorPacket::~HaActuatorPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr HaActuatorPacket::encode()
+cl_copy::BufferUPtr HaActuatorPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 1 + 1 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 1 + 1 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( isRequest );
 	(*buffer)[cpt++] = static_cast<uint8_t>( isPosition );
@@ -45,7 +44,7 @@ cl::BufferUPtr HaActuatorPacket::encode()
 //
 void HaActuatorPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

@@ -1,5 +1,5 @@
-#include "../include/oz440_api/HaScreenPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "HaScreenPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -32,11 +32,11 @@ HaScreenPacket::~HaScreenPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr HaScreenPacket::encode()
+cl_copy::BufferUPtr HaScreenPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 16 + 16 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 16 + 16 );
 
 	for( uint i = 0 ; i < 16 ; i++ )
 	{
@@ -55,7 +55,7 @@ cl::BufferUPtr HaScreenPacket::encode()
 //
 void HaScreenPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

@@ -1,5 +1,5 @@
-#include "../include/oz440_api/HaOdoPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "HaOdoPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -28,11 +28,11 @@ HaOdoPacket::~HaOdoPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr HaOdoPacket::encode()
+cl_copy::BufferUPtr HaOdoPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 1 + 1 + 1 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 1 + 1 + 1 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( fr );
 	(*buffer)[cpt++] = static_cast<uint8_t>( rr );
@@ -46,7 +46,7 @@ cl::BufferUPtr HaOdoPacket::encode()
 //
 void HaOdoPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

@@ -30,7 +30,6 @@ set(MY_LIB_SOURCES
    src/HaLedPacket.cpp
    src/ApiGpsPacket.cpp           
    src/ApiStereoCameraPacket.cpp      
-   src/HaStereoCameraPacket.cpp
    src/HaLidarPacket.cpp
    src/ApiIhmAskEnumPacket.cpp    
    src/ApiValueResponsePacket.cpp     
@@ -56,7 +55,10 @@ set(MY_LIB_SOURCES
    src/HaCanPacket.cpp
    src/ApiPostPacket.cpp          
    src/HaDS4RemotePacket.cpp          
-   src/Utils.cpp)
+   src/Utils.cpp
+   src/CLException.cpp
+   src/CLBaseException.cpp
+        )
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
@@ -66,10 +68,10 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 
 add_library(${PROJECT_NAME} ${MY_LIB_SOURCES})
 
-catkin_package(INCLUDE_DIRS include/${PROJECT_NAME}/
+catkin_package(INCLUDE_DIRS include/
                LIBRARIES ${PROJECT_NAME})
                
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/
         DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION})
                
 install(TARGETS ${PROJECT_NAME}

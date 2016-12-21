@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiLidarPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiLidarPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -27,11 +27,11 @@ ApiLidarPacket::~ApiLidarPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiLidarPacket::encode()
+cl_copy::BufferUPtr ApiLidarPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 271 * 2 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 271 * 2 );
 
 	for( uint i = 0 ; i < 271 ; i++ )
 	{
@@ -48,7 +48,7 @@ cl::BufferUPtr ApiLidarPacket::encode()
 //
 void ApiLidarPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

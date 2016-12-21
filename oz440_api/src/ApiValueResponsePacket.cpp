@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiValueResponsePacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiValueResponsePacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -26,11 +26,11 @@ ApiValueResponsePacket::~ApiValueResponsePacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiValueResponsePacket::encode()
+cl_copy::BufferUPtr ApiValueResponsePacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 1 + 2 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 1 + 2 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( id );
 	(*buffer)[cpt++] = static_cast<uint8_t>( keyPressedType );
@@ -46,7 +46,7 @@ cl::BufferUPtr ApiValueResponsePacket::encode()
 //
 void ApiValueResponsePacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

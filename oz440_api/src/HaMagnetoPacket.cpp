@@ -1,5 +1,5 @@
-#include "../include/oz440_api/HaMagnetoPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "HaMagnetoPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -27,11 +27,11 @@ HaMagnetoPacket::~HaMagnetoPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr HaMagnetoPacket::encode()
+cl_copy::BufferUPtr HaMagnetoPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 2 + 2 + 2 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 2 + 2 + 2 );
 
 	cl::u8Array< 2 > encodedX = cl::i16_to_u8Array( x );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedX[ 0 ] );
@@ -53,7 +53,7 @@ cl::BufferUPtr HaMagnetoPacket::encode()
 //
 void HaMagnetoPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 

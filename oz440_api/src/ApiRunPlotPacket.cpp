@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiRunPlotPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiRunPlotPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -71,12 +71,11 @@ ApiRunPlotPacket::~ApiRunPlotPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiRunPlotPacket::encode()
+cl_copy::BufferUPtr ApiRunPlotPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer(
-			static_cast<size_t>( 2 + ( ( 4 + 4 + 2 ) * rowCount ) + 1 + 1 + 4 + 2 + 2 + 4 + 1 + 1 + 1 + 1 ));
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 2 + ( ( 4 + 4 + 2 ) * rowCount ) + 1 + 1 + 4 + 2 + 2 + 4 + 1 + 1 + 1 + 1 );
 
 	cl::u8Array< 2 > encodedRowCount = cl::u16_to_u8Array( rowCount );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowCount[ 0 ] );
@@ -84,7 +83,7 @@ cl::BufferUPtr ApiRunPlotPacket::encode()
 
 	for( uint i = 0 ; i < rowCount ; i++ )
 	{
-		cl::u8Array< 4 > encodedRowWidth = cl::float32_to_u8Array( rowWidth[i] );
+		cl::u8Array< 4 > encodedRowWidth = cl::float_to_u8Array( rowWidth[i] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowWidth[ 0 ] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowWidth[ 1 ] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowWidth[ 2 ] );
@@ -93,7 +92,7 @@ cl::BufferUPtr ApiRunPlotPacket::encode()
 
 	for( uint i = 0 ; i < rowCount ; i++ )
 	{
-		cl::u8Array< 4 > encodedRowDistance = cl::float32_to_u8Array( nextRowDistance[i] );
+		cl::u8Array< 4 > encodedRowDistance = cl::float_to_u8Array( nextRowDistance[i] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowDistance[ 0 ] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowDistance[ 1 ] );
 		(*buffer)[cpt++] = static_cast<uint8_t>( encodedRowDistance[ 2 ] );
@@ -111,7 +110,7 @@ cl::BufferUPtr ApiRunPlotPacket::encode()
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( firstNextRowDirection );
 
-	cl::u8Array< 4 > encodedShiftDistance = cl::float32_to_u8Array( shiftDistance );
+	cl::u8Array< 4 > encodedShiftDistance = cl::float_to_u8Array( shiftDistance );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedShiftDistance[ 0 ] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedShiftDistance[ 1 ] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedShiftDistance[ 2 ] );
@@ -124,7 +123,7 @@ cl::BufferUPtr ApiRunPlotPacket::encode()
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedMaxSpeed[ 0 ] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedMaxSpeed[ 1 ] );
 
-	cl::u8Array< 4 > encodedCultureWidth = cl::float32_to_u8Array( cultureWidth );
+	cl::u8Array< 4 > encodedCultureWidth = cl::float_to_u8Array( cultureWidth );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedCultureWidth[ 0 ] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedCultureWidth[ 1 ] );
 	(*buffer)[cpt++] = static_cast<uint8_t>( encodedCultureWidth[ 2 ] );
@@ -145,7 +144,7 @@ cl::BufferUPtr ApiRunPlotPacket::encode()
 //
 void ApiRunPlotPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -161,7 +160,7 @@ void ApiRunPlotPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedRowWidth[1] = buffer[cpt++];
 		encodedRowWidth[2] = buffer[cpt++];
 		encodedRowWidth[3] = buffer[cpt++];
-		rowWidth[i] = cl::u8Array_to_float32( encodedRowWidth );
+		rowWidth[i] = cl::u8Array_to_float( encodedRowWidth );
 	}
 
 	for( uint i = 0 ; i < rowCount ; i++ )
@@ -171,7 +170,7 @@ void ApiRunPlotPacket::decode( uint8_t *buffer, uint bufferSize )
 		encodedNextRowDistance[1] = buffer[cpt++];
 		encodedNextRowDistance[2] = buffer[cpt++];
 		encodedNextRowDistance[3] = buffer[cpt++];
-		nextRowDistance[i] = cl::u8Array_to_float32( encodedNextRowDistance );
+		nextRowDistance[i] = cl::u8Array_to_float( encodedNextRowDistance );
 	}
 
 	for( uint i = 0 ; i < rowCount ; i++ )
@@ -191,7 +190,7 @@ void ApiRunPlotPacket::decode( uint8_t *buffer, uint bufferSize )
 	encodedShiftDistance[1] = buffer[cpt++];
 	encodedShiftDistance[2] = buffer[cpt++];
 	encodedShiftDistance[3] = buffer[cpt++];
-	shiftDistance = cl::u8Array_to_float32( encodedShiftDistance );
+	shiftDistance = cl::u8Array_to_float( encodedShiftDistance );
 
 	exteriorLines[0] = static_cast<bool>( buffer[cpt++] );
 	exteriorLines[1] = static_cast<bool>( buffer[cpt++] );
@@ -206,7 +205,7 @@ void ApiRunPlotPacket::decode( uint8_t *buffer, uint bufferSize )
 	encodedCultureWidth[1] = buffer[cpt++];
 	encodedCultureWidth[2] = buffer[cpt++];
 	encodedCultureWidth[3] = buffer[cpt++];
-	cultureWidth = cl::u8Array_to_float32( encodedCultureWidth );
+	cultureWidth = cl::u8Array_to_float( encodedCultureWidth );
 
 	postOption = static_cast<PostOption>( buffer[cpt++] );
 

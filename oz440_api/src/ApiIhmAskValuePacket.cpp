@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiIhmAskValuePacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiIhmAskValuePacket.hpp"
+#include "vitals/CLByteConversion.h"
 #include <string.h>
 
 //=============================================================================
@@ -36,11 +36,11 @@ ApiIhmAskValuePacket::~ApiIhmAskValuePacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiIhmAskValuePacket::encode()
+cl_copy::BufferUPtr ApiIhmAskValuePacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 + 20 + 20 + 2 + 2 + 2 + 2 + 20 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 + 20 + 20 + 2 + 2 + 2 + 2 + 20 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( id );
 
@@ -82,7 +82,7 @@ cl::BufferUPtr ApiIhmAskValuePacket::encode()
 //
 void ApiIhmAskValuePacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
@@ -123,3 +123,4 @@ void ApiIhmAskValuePacket::decode( uint8_t *buffer, uint bufferSize )
 		unit[ i ] = static_cast<char>( buffer[ cpt++ ] );
 	}
 }
+

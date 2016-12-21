@@ -1,5 +1,5 @@
-#include "../include/oz440_api/ApiPressedIhmButtonPacket.hpp"
-#include "../include/oz440_api/CLByteConversion.h"
+#include "ApiPressedIhmButtonPacket.hpp"
+#include "vitals/CLByteConversion.h"
 
 //=============================================================================
 //
@@ -25,11 +25,11 @@ ApiPressedIhmButtonPacket::~ApiPressedIhmButtonPacket( )
 
 //=============================================================================
 //
-cl::BufferUPtr ApiPressedIhmButtonPacket::encode()
+cl_copy::BufferUPtr ApiPressedIhmButtonPacket::encode()
 {
 	uint cpt = 0;
 
-	cl::BufferUPtr buffer = cl::unique_buffer( static_cast<size_t>( 1 ) );
+	cl_copy::BufferUPtr buffer = cl_copy::unique_buffer( 1 );
 
 	(*buffer)[cpt++] = static_cast<uint8_t>( pressedIhmButton );
 
@@ -40,7 +40,7 @@ cl::BufferUPtr ApiPressedIhmButtonPacket::encode()
 //
 void ApiPressedIhmButtonPacket::decode( uint8_t *buffer, uint bufferSize )
 {
-	ignore( bufferSize );
+	util_copy::ignore( bufferSize );
 
 	uint cpt = getStartPayloadIndex();
 
