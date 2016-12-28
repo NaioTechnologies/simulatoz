@@ -34,6 +34,7 @@ public:
 
     //Attend qu'un joueur se connecte
     static SOCKET waitConnect(SOCKET sockfd);
+    static SOCKET waitConnectTimer(SOCKET sockfd);
 
 
     //Lit une entrée joueur. Retourne 1 si lecture OK, 0 si rien

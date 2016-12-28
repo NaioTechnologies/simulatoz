@@ -76,7 +76,7 @@ public:
         CAN_VER_POS = 0x01,
     };
 
-    typedef struct _COM_SIMU_REMOTE_STATUS_
+    typedef struct _COM_OZCORE_REMOTE_STATUS_
     {
         bool secu_left;
         bool secu_right;
@@ -97,10 +97,10 @@ public:
 
         uint8_t teleco_self_id_6;
         uint8_t teleco_act_7;
-    } COM_SIMU_REMOTE_STATUS ;
+    } COM_OZCORE_REMOTE_STATUS ;
 
 
-    typedef struct _COM_SIMU_IHM_BUTTON_STATUS_
+    typedef struct _COM_OZCORE_IHM_BUTTON_STATUS_
     {
         bool cancel;
         bool validate;
@@ -108,7 +108,7 @@ public:
         bool minus;
         bool right;
         bool left;
-    } COM_SIMU_IHM_BUTTON_STATUS;
+    } COM_OZCORE_IHM_BUTTON_STATUS;
 
     const int64_t MAIN_GRAPHIC_DISPLAY_RATE_MS = 100;
     const int64_t SERVER_SEND_COMMAND_RATE_MS = 10;
@@ -121,7 +121,7 @@ public:
 
     const int OZCORE_LIDAR_PORT = 2213;
 
-    const int64_t COM_SIMU_REMOTE_SEND_RATE_MS = 100;
+    const int64_t COM_OZCORE_REMOTE_SEND_RATE_MS = 100;
 
 public:
 
@@ -134,7 +134,11 @@ public:
     void set_received_image(BaseNaio01PacketPtr packetPtr);
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
     void clear_packet_list_to_send();
-    bool get_com_simu_can_connected_();
+    bool get_com_ozcore_can_connected();
+    bool get_bridge_connected();
+    void set_stop_main_thread_asked(bool stop_main_thread_asked);
+    bool get_image_displayer_asked();
+
 
 private:
     // thread function
@@ -145,9 +149,11 @@ private:
     void read_thread( );
     void write_thread( );
 
-    // images from Core to SDL thread functions
+    // images from Core to SDL functions
     void image_thread( );
     void image_preparer_thread( );
+    void start_image_display();
+    void stop_image_display();
 
     // communication
     void manage_received_packet(BaseNaio01PacketPtr packetPtr);
@@ -164,27 +170,26 @@ private:
     void draw_images( );
 
     // COM SIMU
-    void com_simu_create_virtual_can( );
-    void com_simu_create_serial_thread_function( );
-    void com_simu_read_serial_thread_function( );
-    void com_simu_lidar_to_core_thread_function( );
-    void com_simu_connect_can( );
-    void com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr );
-    void com_simu_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
+    void com_ozcore_create_virtual_can( );
+    void com_ozcore_create_serial_thread_function( );
+    void com_ozcore_read_serial_thread_function( );
 
-    void com_simu_remote_thread_function( );
+    void ozcore_lidar_thread_function( );
+    void ozcore_lidar_disconnected();
 
-    void com_simu_read_can_thread_function( );
+    void com_ozcore_connect_can( );
+    void com_ozcore_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr );
+    void com_ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
+
+    void com_ozcore_remote_thread_function( );
+
+    void com_ozcore_read_can_thread_function( );
 
     void send_remote_can_packet( ComSimuCanMessageType message_type );
 
     void send_keypad_can_packet( );
 
     int64_t get_now_ms();
-
-    void image_displayer_starter_thread_function();
-    void start_image_display();
-    void stop_image_display();
 
     void text_keyboard_reader_thread_function( );
 
@@ -199,6 +204,8 @@ public:
 private:
 
     // Communication with Core
+    bool bridge_connected_;
+
     std::vector<BaseNaio01PacketPtr> received_packets_;
     std::mutex received_packets_access_;
 
@@ -277,42 +284,41 @@ private:
 
     uint64_t last_image_received_time_;
 
-    // COM SIMU
-    std::thread com_simu_create_serial_thread_;
-    std::thread com_simu_read_serial_thread_;
-    std::thread com_simu_lidar_to_core_thread_;
+    // Com with ozcore
+    std::thread com_ozcore_create_serial_thread_;
+    std::thread com_ozcore_read_serial_thread_;
+    bool com_ozcore_serial_connected_;
 
-    std::mutex com_simu_can_socket_access_;
-    SOCKET com_simu_can_socket_;
+    std::thread ozcore_lidar_thread_;
+    bool ozcore_lidar_thread_started_;
 
-    bool com_simu_can_connected_;
+    int ozcore_lidar_server_socket_desc_;
+    int ozcore_lidar_socket_desc_;
+    bool ozcore_lidar_socket_connected_;
+    uint64_t last_ozcore_lidar_socket_activity_time_;
+    std::mutex ozcore_lidar_socket_access_;
 
-    bool com_simu_last_odo_ticks_[4];
-    HaOdoPacketPtr com_simu_last_ha_odo_packet_ptr_;
+    std::thread com_ozcore_read_can_thread_;
+    std::mutex com_ozcore_can_socket_access_;
+    SOCKET com_ozcore_can_socket_;
+    bool com_ozcore_can_connected_;
 
-    std::mutex com_simu_remote_status_access_;
-    COM_SIMU_REMOTE_STATUS com_simu_remote_status_;
+    bool com_ozcore_last_odo_ticks_[4];
+    HaOdoPacketPtr com_ozcore_last_ha_odo_packet_ptr_;
 
-    std::thread com_simu_remote_thread_;
+    std::mutex com_ozcore_remote_status_access_;
+    COM_OZCORE_REMOTE_STATUS com_ozcore_remote_status_;
+    std::thread com_ozcore_remote_thread_;
 
-    char com_simu_ihm_line_top_[ 100 ];
-    char com_simu_ihm_line_bottom_[ 100 ];
+    char com_ozcore_ihm_line_top_[ 100 ];
+    char com_ozcore_ihm_line_bottom_[ 100 ];
 
-    std::thread com_simu_read_can_thread_;
-
-    COM_SIMU_IHM_BUTTON_STATUS com_simu_ihm_button_status_;
-
-    bool com_simu_serial_connected_;
-
-    std::mutex image_socket_desc_access_;
-
-    bool display_simuloz_camera_;
+    COM_OZCORE_IHM_BUTTON_STATUS com_ozcore_ihm_button_status_;
 
     bool stop_image_preparer_thread_asked_;
     bool image_prepared_thread_started_;
 
     uint64_t last_image_displayer_action_time_ms_;
-    std::thread	image_displayer_starter_thread_;
     bool asked_image_displayer_start_;
     std::mutex simulatoz_image_actionner_access_;
 

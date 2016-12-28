@@ -149,6 +149,37 @@ SOCKET DriverSocket::waitConnect(SOCKET sockfd){
 
 }
 
+//Attend qu'un client se connecte
+SOCKET DriverSocket::waitConnectTimer(SOCKET sockfd){
+    socklen_t clilen;
+    SOCKADDR_IN cli_addr;
+    SOCKET newsockfd;
+
+    listen(sockfd,5);
+    clilen = sizeof(cli_addr);
+
+    newsockfd = accept(sockfd, (SOCKADDR *) &cli_addr, &clilen);
+
+    if (newsockfd < 0){
+        error("ERROR on accept");
+    }
+
+    int flag = 1;
+    int result = setsockopt(newsockfd,/* socket affected */
+                            IPPROTO_TCP,     /* set option at TCP level */
+                            TCP_NODELAY,     /* name of option */
+                            (char *) &flag,  /* the cast is historical cruft */
+                            sizeof(int));    /* length of option value */
+    if (result < 0){
+        error("error on No_Delay");
+    }
+    int flags = fcntl(newsockfd, F_GETFL, 0);
+    fcntl(newsockfd, F_SETFL, flags | O_NONBLOCK);
+
+    return newsockfd;
+
+}
+
 int DriverSocket::readNonBlockSocket(SOCKET fd, char buff[], size_t size){
     int n = 0;
 

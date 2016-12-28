@@ -61,15 +61,17 @@ private:
     void ozcore_image_disconnected();
 
 private:
+
+    bool ozcore_connected_;
+    bool bridge_connected_;
+
     std::shared_ptr<tf::TransformListener> listener_ptr_;
     std::shared_ptr<Bridge> bridge_ptr_;
 
     std::vector< BaseNaio01PacketPtr > received_packet_list_;
 
     bool read_thread_started_;
-    bool image_thread_started_;
     std::thread read_thread_;
-    std::thread image_thread_;
 
     std::thread send_odo_thread_;
 
@@ -83,6 +85,8 @@ private:
 
     bool bridge_thread_started_;
     std::thread bridge_thread_;
+    std::string can_;
+    bool graphics_on_;
 
     std::mutex ozcore_image_socket_access_;
     int ozcore_image_server_socket_desc_;
@@ -92,14 +96,15 @@ private:
 
     std::mutex packet_to_send_list_access_;
     std::mutex image_to_send_access_;
-    std::mutex ozcore_image_packet_to_send_access_;
+    std::mutex ozcore_image_to_send_access_;
+
     std::vector< BaseNaio01PacketPtr > packet_to_send_list_;
     ApiStereoCameraPacketPtr image_to_send_;
     uint8_t image_buffer_to_send_[ 721920 ];
-    int64_t last_image_ms_;
-    int64_t last_ozcore_image_ms_;
 
     float actuator_position_;
+
+    bool new_image_received_;
 
     // ROS PART
     ros::Publisher velocity_pub_;

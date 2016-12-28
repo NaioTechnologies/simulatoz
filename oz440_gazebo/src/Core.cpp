@@ -1,6 +1,7 @@
 #include "../include/Core.hpp"
 #include "DriverSocket.hpp"
 #include <chrono>
+#include <pthread.h>
 
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
@@ -23,15 +24,24 @@
 
 #include <vector>
 #include <stdlib.h>
+#include <sys/types.h>
+#include <sys/syscall.h>
+#include <signal.h>
 
-#include "../include/Metric.hpp"
-#include "../include/Test.hpp"
 #include "../include/Bridge.hpp"
 
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
 
 using namespace std::chrono;
+
+static pid_t gettid( void )
+{
+    return syscall( __NR_gettid );
+}
+
+bool terminate_;
+
 
 // *********************************************************************************************************************
 
@@ -48,7 +58,7 @@ int main( int argc, char **argv )
 
 Core::Core( int argc, char **argv )
 {
-    ros::init( argc, argv, "core", ros::init_options::AnonymousName);
+    ros::init( argc, argv, "core", ros::init_options::NoSigintHandler);
 
     ros::NodeHandle n;
 
@@ -56,22 +66,23 @@ Core::Core( int argc, char **argv )
 
     read_thread_started_ = false;
 
-    image_thread_started_ = false;
-
     ozcore_image_thread_started_ = false;
 
     ozcore_image_socket_connected_ = false;
 
+    ozcore_connected_ = false;
+    bridge_connected_ = false;
+
+    terminate_ = false;
     image_to_send_ = nullptr;
-
-    last_image_ms_ = 0;
-
-    last_ozcore_image_ms_ = 0;
 
     actuator_position_ = 0.0;
 
+    graphics_on_ = true;
+    can_ = "vcan";
+
     // Bridge initialisation
-//    bridge_ptr_ = std::make_shared<Bridge>();
+    bridge_ptr_ = std::make_shared<Bridge>();
 
 }
 
@@ -85,6 +96,8 @@ Core::~Core( )
 
 void Core::run( int argc, char **argv )
 {
+    ROS_ERROR("RUN %d", gettid() );
+
     using namespace std::chrono_literals;
 
     ros::NodeHandle n;
@@ -94,10 +107,10 @@ void Core::run( int argc, char **argv )
     actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
 
     // subscribe to lidar topic
-    ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500000, &Core::send_lidar_packet_callback, this );
+    ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::send_lidar_packet_callback, this );
 
     // subscribe to actuator position
-    ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500000, &Core::send_actuator_position_callback, this );
+    ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500, &Core::send_actuator_position_callback, this );
 
     // subscribe to imu topic
     ros::Subscriber imu_sub = n.subscribe("/oz440/imu/data", 50, &Core::send_imu_packet_callback, this);
@@ -117,48 +130,57 @@ void Core::run( int argc, char **argv )
     // creates main thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
 
-    // creates image thread
-    image_thread_ = std::thread( &Core::image_thread_function, this );
-
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
     // creates ozcore_image thread
     ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
 
-    // creates test thread
-    test_thread_ = std::thread( &Core::test_thread_function, this, argc, argv );
-
-    std::this_thread::sleep_for(1000ms);
-
     // create_odo_thread
-//    send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
-
-    std::this_thread::sleep_for(1000ms);
+    send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
 
     // create_bridge_thread
-//    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
+    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
-    while (ros :: ok())
+    while (ros::master::check())
     {
-//        if(!bridge_ptr_->get_com_simu_can_connected_())
-//        {
-//            disconnected();
-//        }
+        bridge_connected_ = bridge_ptr_->get_bridge_connected();
 
-        packet_to_send_list_access_.lock();
-
-        for ( auto packetPtr : packet_to_send_list_ )
+        if( bridge_connected_ )
         {
-//            bridge_ptr_->add_received_packet(packetPtr);
+            packet_to_send_list_access_.lock();
+
+            if(packet_to_send_list_.size() > 0){
+
+                for ( auto packetPtr : packet_to_send_list_ )
+                {
+                    bridge_ptr_->add_received_packet(packetPtr);
+                }
+
+                packet_to_send_list_.clear();
+
+            }
+
+            packet_to_send_list_access_.unlock();
         }
 
-        packet_to_send_list_.clear();
-
-        packet_to_send_list_access_.unlock();
-
         std::this_thread::sleep_for(100ms);
+
     }
+
+    bridge_ptr_->set_stop_main_thread_asked(true);
+
+    terminate_ = true;
+
+    send_odo_thread_.join();
+    bridge_thread_.join();
+    ozcore_image_read_thread_.join();
+    ozcore_image_thread_.join();
+    read_thread_.join();
+
+    std::this_thread::sleep_for(500ms);
+
+
 }
 
 // *********************************************************************************************************************
@@ -171,6 +193,7 @@ void Core::ozcore_image_disconnected()
 
     ROS_ERROR("OzCore Image Socket Disconnected");
 
+    system("rosservice call gazebo/reset_world");
 }
 
 // *********************************************************************************************************************
@@ -183,14 +206,14 @@ void Core::disconnected()
 
     packet_to_send_list_access_.unlock();
 
-    system("rosservice call gazebo/reset_world");
-
 }
 
 // *********************************************************************************************************************
 
 void Core::read_thread_function( )
 {
+    ROS_ERROR("read thread %d", gettid() );
+
     using namespace std::chrono_literals;
 
     bool last_order_down = 0;
@@ -199,15 +222,13 @@ void Core::read_thread_function( )
 
     try
     {
-        while ( ros::ok() )
+        while ( !terminate_ )
         {
-
-//            received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
-//            bridge_ptr_->clear_packet_list_to_send();
+            received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
+            bridge_ptr_->clear_packet_list_to_send();
 
             for ( auto &&packetPtr : received_packet_list_) // For every packet decoded
             {
-
                 if (std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr))
                 {
                     //  When receiving a motor order
@@ -266,7 +287,7 @@ void Core::read_thread_function( )
                 received_packet_list_.clear();
 
             }
-            std::this_thread::sleep_for(5ms);
+            std::this_thread::sleep_for(10ms);
 
             ros::spinOnce();
         }
@@ -275,50 +296,15 @@ void Core::read_thread_function( )
     {
         ROS_INFO( "Read_thread_function exception was caught : %s", e.description().c_str() );
     }
-
     read_thread_started_ = false;
-}
-
-// *********************************************************************************************************************
-
-void Core::image_thread_function( )
-{
-    using namespace std::chrono_literals;
-
-    image_thread_started_ = true;
-
-    int last_image_sent_ms;
-
-    while (ros::ok())
-    {
-        bool new_image_received = false;
-
-        image_to_send_access_.lock();
-
-        if (last_image_sent_ms != last_image_ms_) {
-            new_image_received = true;
-
-            last_image_sent_ms = last_image_ms_;
-        }
-
-        if (new_image_received)
-        {
-//            bridge_ptr_->set_received_image(image_to_send_);
-        }
-
-        image_to_send_access_.unlock();
-
-        std::this_thread::sleep_for(10ms);
-    }
-
-    image_thread_started_ = false;
-
 }
 
 // *********************************************************************************************************************
 
 void Core::ozcore_image_read_thread_function()
 {
+    ROS_ERROR("image_read_thread %d", gettid() );
+
     using namespace std::chrono_literals;
 
     uint8_t received_buffer[ 4096 ];
@@ -327,9 +313,8 @@ void Core::ozcore_image_read_thread_function()
 
     try
     {
-        while ( ros::ok() )
+        while (!terminate_ )
         {
-
             if( ozcore_image_socket_connected_ )
             {
                 ozcore_image_socket_access_.lock();
@@ -359,12 +344,15 @@ void Core::ozcore_image_read_thread_function()
 
 void Core::ozcore_image_thread_function( )
 {
+    ROS_ERROR("image_thread %d", gettid() );
+
     using namespace std::chrono_literals;
+
     int naio01_ozcore_image_server_port = 5558;
 
     ozcore_image_thread_started_ = true;
 
-    ozcore_image_server_socket_desc_ = DriverSocket::openSocketServer( naio01_ozcore_image_server_port );
+    ozcore_image_server_socket_desc_ = DriverSocket::openSocketServer( 5558 );
 
     ozcore_image_socket_connected_ = false;
 
@@ -372,12 +360,11 @@ void Core::ozcore_image_thread_function( )
 
     uint8_t image_buffer_to_send[ 721920 ];
 
-    while ( ros::ok() )
+    while ( !terminate_ )
     {
         if ( not ozcore_image_socket_connected_ and ozcore_image_server_socket_desc_ > 0 )
         {
             ozcore_image_socket_desc_ = DriverSocket::waitConnect( ozcore_image_server_socket_desc_ );
-
             std::this_thread::sleep_for( 50ms );
 
             if ( ozcore_image_socket_desc_ > 0 )
@@ -391,121 +378,83 @@ void Core::ozcore_image_thread_function( )
             }
         }
 
-        if ( ozcore_image_socket_connected_ )
+        if ( ozcore_image_socket_connected_ and new_image_received_)
         {
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if ( now - last_ozcore_image_socket_activity_time_ > 5000 )
+            if ( now - last_ozcore_image_socket_activity_time_ > 1000 )
             {
                 ozcore_image_disconnected();
             }
             else
             {
-                bool new_image_received = false;
+                int total_written_bytes = 0;
+                ssize_t write_size = 0;
 
-                ozcore_image_packet_to_send_access_.lock();
+                int nb_tries = 0;
+                int max_tries = 500;
 
-                if( last_ozcore_image_sent_ms != last_ozcore_image_ms_ )
+                ozcore_image_to_send_access_.lock();
+
+                ozcore_image_socket_access_.lock();
+
+                while( total_written_bytes < 721920 and nb_tries < max_tries )
                 {
-                    std::memcpy( image_buffer_to_send, image_buffer_to_send_, 721920 );
-                    new_image_received = true;
+                    write_size = send( ozcore_image_socket_desc_, image_buffer_to_send_ + total_written_bytes, 721920 - total_written_bytes, 0 );
+                    std::this_thread::sleep_for( 5ms );
 
-                    last_ozcore_image_sent_ms = last_ozcore_image_ms_;
-                }
-
-                ozcore_image_packet_to_send_access_.unlock();
-
-                if ( new_image_received )
-                {
-                    int total_written_bytes = 0;
-                    ssize_t write_size = 0;
-
-                    int nb_tries = 0;
-                    int max_tries = 500;
-
-                    while( total_written_bytes < 721920 and nb_tries < max_tries )
+                    if( write_size < 0 )
                     {
-                        write_size = send( ozcore_image_socket_desc_, image_buffer_to_send + total_written_bytes, 721920 - total_written_bytes, 0 );
+                        nb_tries++;
                         std::this_thread::sleep_for( 5ms );
-
-                        if( write_size < 0 )
-                        {
-                            nb_tries++;
-                            std::this_thread::sleep_for( 10ms );
-                        }
-                        else
-                        {
-                            total_written_bytes = total_written_bytes + static_cast<int>( write_size );
-                            nb_tries = 0;
-                        }
-                    }
-
-                    if( nb_tries >= max_tries )
-                    {
-                        ROS_ERROR("send packet failed, too many tries");
                     }
                     else
                     {
-                        ROS_INFO("Camera packet send to 5558");
+                        total_written_bytes = total_written_bytes + static_cast<int>( write_size );
+                        nb_tries = 0;
                     }
+                }
+
+                ozcore_image_socket_access_.unlock();
+
+                new_image_received_ = false;
+
+                ozcore_image_to_send_access_.unlock();
+
+                if( nb_tries >= max_tries )
+                {
+                    ROS_ERROR("send packet failed, too many tries");
+                }
+                else
+                {
+                    ROS_INFO("Camera packet send to 5558");
                 }
             }
         }
 
-        std::this_thread::sleep_for( 5ms );
+        std::this_thread::sleep_for( 10ms );
+
     }
 
     close( ozcore_image_server_socket_desc_ );
 
     ozcore_image_thread_started_ = false;
-
-}
-
-//**********************************************************************************************************************
-
-void Core::test_thread_function( int argc, char **argv )
-{
-
 }
 
 //**********************************************************************************************************************
 
 void Core::bridge_thread_function()
 {
-//void Core::bridge_thread_function( int argc, char **argv )
-//{
-//    using namespace std::chrono_literals;
-//
-//    bool graphical_display_on = true;
-//    std::string can = "vcan";
-//
-//    for( int i = 0 ; i < argc ; i++ )
-//    {
-//        std::string arg = argv[ i ];
-//
-//        if( arg == "nogui" )
-//        {
-//            std::cout << "Starting Simulatoz Bridge in no gui mode." << std::endl;
-//
-//            graphical_display_on = false;
-//        }
-//        else if(arg == "pcan") {
-//
-//            can = "pcan";
-//        }
-//    }
+    std::this_thread::sleep_for( 5000ms );
 
-    std::this_thread::sleep_for( 10000ms );
+    ROS_ERROR("bridge_thread_function %d", gettid() );
 
+    bridge_ptr_->init(graphics_on_, can_ );
 
-//    bridge_ptr_->init( false, "vcan" );
-
-    std::cout << "Simulatoz Bridge Started" << std::endl;
-
-    while(ros::ok())
+    while(!terminate_)
     {
-        std::this_thread::sleep_for( 100ms );
+        std::this_thread::sleep_for( 200ms );
     }
 }
 
@@ -513,6 +462,7 @@ void Core::bridge_thread_function()
 
 void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
+
     try
     {
         uint16_t distance[ 271 ];
@@ -538,10 +488,9 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
 
         packet_to_send_list_.push_back( lidarPacketPtr );
 
-        packet_to_send_list_access_.unlock();
-
-
         ROS_INFO("Lidar packet enqueued");
+
+        packet_to_send_list_access_.unlock();
     }
     catch ( SocketException& e )
     {
@@ -581,29 +530,32 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 {
     try
     {
-        cl_copy::BufferUPtr dataBuffer = cl_copy::unique_buffer( static_cast<size_t>( 721920 ) );
-
-        ozcore_image_packet_to_send_access_.lock();
+        // Process image for OzCore
+        ozcore_image_to_send_access_.lock();
 
         std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
         std::memcpy( image_buffer_to_send_+ 360960, &image_right->data[ 0 ], 360960 );
 
-        std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
-        std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
+        new_image_received_ = true;
 
-        milliseconds ozcore_image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-        last_ozcore_image_ms_ = static_cast<int64_t>( ozcore_image_now_ms.count());
+        ozcore_image_to_send_access_.unlock();
 
-        ozcore_image_packet_to_send_access_.unlock();
+        // Send image to bridge
+        if(bridge_ptr_->get_image_displayer_asked())
+        {
+            cl_copy::BufferUPtr dataBuffer = cl_copy::unique_buffer( static_cast<size_t>( 721920 ) );
 
-        image_to_send_access_.lock();
+            image_to_send_access_.lock();
 
-        image_to_send_ = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
+            std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
+            std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
 
-        milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-        last_image_ms_ = static_cast<int64_t>( image_now_ms.count());
+            image_to_send_ = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
 
-        image_to_send_access_.unlock();
+            bridge_ptr_->set_received_image(image_to_send_);
+
+            image_to_send_access_.unlock();
+        }
 
         ROS_INFO("Stereo camera packet managed");
     }
@@ -691,19 +643,15 @@ void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_
 void Core::send_odo_packet()
 {
 
-    std::this_thread::sleep_for( 30000ms );
-
-
     using namespace std::chrono_literals;
     uint8_t fr = 0;
     uint8_t br = 0;
     uint8_t bl = 0;
     uint8_t fl = 0;
 
-    while (ros::ok()) {
+    while (!terminate_) {
 
-//        bridge_ptr_->get_com_simu_can_connected_()
-        if (ros::ok()) {
+        if (bridge_connected_) {
 
             // Initialisation
             double pitch_bl = getPitch("/back_left_wheel");
@@ -720,10 +668,10 @@ void Core::send_odo_packet()
             double pitch_last_tic_br = pitch_br;
             int forward_backward_br = 0;
 
-            while (ros::ok()) {
+            while (!terminate_) {
                 bool tic = false;
 
-                while (not tic and ros::ok()) {
+                while (not tic and !terminate_) {
                     std::this_thread::sleep_for(10ms);
 
                     pitch_bl = getPitch("/back_left_wheel");

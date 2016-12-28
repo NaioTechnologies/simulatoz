@@ -3,7 +3,6 @@
 
 #include "ros/ros.h"
 
-
 #include <iostream>
 #include <sys/socket.h>
 #include <arpa/inet.h>
@@ -14,6 +13,11 @@
 #include <linux/can.h>
 #include <linux/can/raw.h>
 #include <cstring>
+#include <pthread.h>
+
+#include <sys/types.h>
+#include <sys/syscall.h>
+
 
 #include <../include/oz440_api/ApiMoveActuatorPacket.hpp>
 #include <../include/oz440_api/ApiCommandPacket.hpp>
@@ -31,6 +35,12 @@ using namespace std;
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
+static pid_t gettid( void )
+{
+    return syscall( __NR_gettid );
+}
+
+
 // ##################################################################################################
 // ##################################################################################################
 // ##################################################################################################
@@ -43,7 +53,7 @@ static struct termios old_t, new_t;
 /* Initialize new terminal i/o settings */
 void initTermios( int echo )
 {
-    tcgetattr( 0, &old_t ); /* grab old terminal i/o settings */
+    tcgetattr( 0, &old_t ); /* gab old terminal i/o settings */
 
     new_t = old_t; /* make new settings same as old settings */
     new_t.c_lflag &= ~ICANON; /* disable buffered i/o */
@@ -51,6 +61,7 @@ void initTermios( int echo )
 
     tcsetattr( 0, TCSANOW, &new_t ); /* use these new terminal i/o settings now */
 }
+
 
 /* Restore old terminal i/o settings */
 void resetTermios( void )
@@ -99,12 +110,13 @@ Bridge::Bridge( ) :
         control_type_{ ControlType::CONTROL_TYPE_MANUAL },
         last_motor_time_{ 0L },
         last_image_received_time_{ 0 },
-        com_simu_can_connected_{ false },
-        com_simu_serial_connected_{ false },
-        display_simuloz_camera_{ false },
+        com_ozcore_can_connected_{ false },
+        com_ozcore_serial_connected_{ false },
         last_image_displayer_action_time_ms_{ 0 },
         asked_image_displayer_start_{ false },
-        received_packets_{}
+        received_packets_{},
+        ozcore_lidar_socket_connected_{false},
+        last_ozcore_lidar_socket_activity_time_{0}
 {
     uint8_t fake = 0;
 
@@ -120,42 +132,42 @@ Bridge::Bridge( ) :
         fake++;
     }
 
-    com_simu_last_odo_ticks_[0] = false;
-    com_simu_last_odo_ticks_[1] = false;
-    com_simu_last_odo_ticks_[2] = false;
-    com_simu_last_odo_ticks_[3] = false;
+    com_ozcore_last_odo_ticks_[0] = false;
+    com_ozcore_last_odo_ticks_[1] = false;
+    com_ozcore_last_odo_ticks_[2] = false;
+    com_ozcore_last_odo_ticks_[3] = false;
 
-    com_simu_remote_status_.pad_down = false;
-    com_simu_remote_status_.pad_up = false;
-    com_simu_remote_status_.pad_left = false;
-    com_simu_remote_status_.pad_right = false;
-    com_simu_remote_status_.analog_x = 63;
-    com_simu_remote_status_.analog_y = 63;
+    com_ozcore_remote_status_.pad_down = false;
+    com_ozcore_remote_status_.pad_up = false;
+    com_ozcore_remote_status_.pad_left = false;
+    com_ozcore_remote_status_.pad_right = false;
+    com_ozcore_remote_status_.analog_x = 63;
+    com_ozcore_remote_status_.analog_y = 63;
 
-    com_simu_remote_status_.tool_down = false;
-    com_simu_remote_status_.tool_up = false;
+    com_ozcore_remote_status_.tool_down = false;
+    com_ozcore_remote_status_.tool_up = false;
 
-    com_simu_remote_status_.teleco_self_id_6 = 255;
-    com_simu_remote_status_.teleco_act_7 = 253;
+    com_ozcore_remote_status_.teleco_self_id_6 = 255;
+    com_ozcore_remote_status_.teleco_act_7 = 253;
 
     for( uint i = 0 ; i < 20 ; i++ )
     {
-        com_simu_ihm_line_top_[ i ] = ' ';
-        com_simu_ihm_line_bottom_[ i ] = ' ';
+        com_ozcore_ihm_line_top_[ i ] = ' ';
+        com_ozcore_ihm_line_bottom_[ i ] = ' ';
     }
 
     for( uint i = 20 ; i < 100 ; i++ )
     {
-        com_simu_ihm_line_top_[ i ] = '\0';
-        com_simu_ihm_line_bottom_[ i ] = '\0';
+        com_ozcore_ihm_line_top_[ i ] = '\0';
+        com_ozcore_ihm_line_bottom_[ i ] = '\0';
     }
 
-    com_simu_ihm_button_status_.cancel = false;
-    com_simu_ihm_button_status_.validate = false;
-    com_simu_ihm_button_status_.minus = false;
-    com_simu_ihm_button_status_.plus = false;
-    com_simu_ihm_button_status_.left = false;
-    com_simu_ihm_button_status_.right = false;
+    com_ozcore_ihm_button_status_.cancel = false;
+    com_ozcore_ihm_button_status_.validate = false;
+    com_ozcore_ihm_button_status_.minus = false;
+    com_ozcore_ihm_button_status_.plus = false;
+    com_ozcore_ihm_button_status_.left = false;
+    com_ozcore_ihm_button_status_.right = false;
 
     image_thread_started_ = false;
     stop_image_thread_asked_ = false;
@@ -163,7 +175,7 @@ Bridge::Bridge( ) :
     image_prepared_thread_started_ = false;
     stop_image_preparer_thread_asked_ = false;
 
-
+    bridge_connected_ = false;
 
 }
 
@@ -182,8 +194,6 @@ void Bridge::init( bool graphical_display_on, std::string can )
 {
     try
     {
-        ROS_ERROR("Ici 0");
-
         can_ = can;
 
         if( can_ == "pcan" )
@@ -194,7 +204,6 @@ void Bridge::init( bool graphical_display_on, std::string can )
         }
         else
         {
-            ROS_ERROR("vcan");
             std::cout << "using virtual can" << std::endl;
         }
 
@@ -206,57 +215,47 @@ void Bridge::init( bool graphical_display_on, std::string can )
         read_thread_started_ = false;
         write_thread_started_ = false;
 
-        stop_read_thread_asked_ = false;
-        stop_write_thread_asked_ = false;
-
         main_thread_ = std::thread(&Bridge::main_thread, this);
-
         read_thread_ = std::thread(&Bridge::read_thread, this);
         write_thread_ = std::thread(&Bridge::write_thread, this);
 
-        ROS_ERROR("Ici 1");
-
-
         if (graphical_display_on_) {
-            image_displayer_starter_thread_ = std::thread(&Bridge::image_displayer_starter_thread_function, this);
+            image_thread_ = std::thread(&Bridge::image_thread, this);
         }
 
-        ROS_ERROR("Ici 2");
+        com_ozcore_create_virtual_can();
 
-
-        com_simu_create_virtual_can();
-
-        ROS_ERROR("Ici 3");
-
-
-        com_simu_create_serial_thread_ = std::thread(&Bridge::com_simu_create_serial_thread_function, this);
-
+        com_ozcore_create_serial_thread_ = std::thread(&Bridge::com_ozcore_create_serial_thread_function, this);
         std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 
-        ROS_ERROR("Ici 4");
+        com_ozcore_read_serial_thread_ = std::thread(&Bridge::com_ozcore_read_serial_thread_function, this);
 
+        ozcore_lidar_thread_ = std::thread(&Bridge::ozcore_lidar_thread_function, this);
 
-        com_simu_read_serial_thread_ = std::thread(&Bridge::com_simu_read_serial_thread_function, this);
+        com_ozcore_connect_can();
 
-        ROS_ERROR("Ici 5");
+        com_ozcore_read_can_thread_ = std::thread(&Bridge::com_ozcore_read_can_thread_function, this);
 
-
-        com_simu_lidar_to_core_thread_ = std::thread(&Bridge::com_simu_lidar_to_core_thread_function, this);
-
-        com_simu_connect_can();
-
-        com_simu_read_can_thread_ = std::thread(&Bridge::com_simu_read_can_thread_function, this);
-
-        com_simu_remote_thread_ = std::thread(&Bridge::com_simu_remote_thread_function, this);
+        com_ozcore_remote_thread_ = std::thread(&Bridge::com_ozcore_remote_thread_function, this);
 
         gps_manager_thread_ = std::thread(&Bridge::gps_manager_thread_function, this);
 
-        ROS_ERROR("Ici 1");
+        bridge_connected_ = true;
 
     }
     catch ( std::exception e ) {
         std::cout<<"Exception init catch : "<< e.what() << std::endl;
     }
+
+    main_thread_.join();
+    read_thread_.join();
+    write_thread_.join();
+    com_ozcore_read_serial_thread_.join();
+    ozcore_lidar_thread_.join();
+    com_ozcore_read_can_thread_.join();
+    com_ozcore_remote_thread_.join();
+    gps_manager_thread_.join();
+
 }
 
 // ##################################################################################################
@@ -265,9 +264,23 @@ void Bridge::init( bool graphical_display_on, std::string can )
 
 void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 {
+    received_packets_access_.lock();
+
     received_packets_.push_back(packetPtr);
+
+    received_packets_access_.unlock();
 }
 
+
+// ##################################################################################################
+
+// Ask to stop main thread
+
+void Bridge::set_stop_main_thread_asked(bool stop_main_thread_asked)
+{
+    stop_main_thread_asked_ = stop_main_thread_asked;
+
+}
 
 // ##################################################################################################
 
@@ -275,7 +288,12 @@ void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 
 void Bridge::set_received_image(BaseNaio01PacketPtr packetPtr)
 {
+    received_image_access_.lock();
+
     received_image_ = packetPtr;
+
+    received_image_access_.unlock();
+
 }
 
 // ##################################################################################################
@@ -284,26 +302,50 @@ void Bridge::set_received_image(BaseNaio01PacketPtr packetPtr)
 
 std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
 {
-    return( packet_list_to_send_ );
+    packet_list_to_send_access_.lock();
+
+    std::vector< BaseNaio01PacketPtr > list = packet_list_to_send_;
+
+    packet_list_to_send_access_.unlock();
+
+    return( list );
+
+
 }
 
 // ##################################################################################################
-
-// Creates graphic thread or sends teleco keys and ihm...
 
 void Bridge::clear_packet_list_to_send()
 {
+    packet_list_to_send_access_.lock();
+
     packet_list_to_send_.clear();
+
+    packet_list_to_send_access_.unlock();
+
 }
 
 // ##################################################################################################
 
-// Creates graphic thread or sends teleco keys and ihm...
-
-bool Bridge::get_com_simu_can_connected_()
+bool Bridge::get_com_ozcore_can_connected()
 {
-    return(com_simu_can_connected_);
+    return(com_ozcore_can_connected_);
 }
+
+// ##################################################################################################
+
+bool Bridge::get_bridge_connected()
+{
+    return(bridge_connected_);
+}
+
+// ##################################################################################################
+
+bool Bridge::get_image_displayer_asked()
+{
+    return(asked_image_displayer_start_);
+}
+
 
 // ##################################################################################################
 
@@ -311,8 +353,9 @@ bool Bridge::get_com_simu_can_connected_()
 
 void Bridge::main_thread( )
 {
-    try {
+    ROS_ERROR("Bridge::main_thread %d", gettid() );
 
+    try {
         main_thread_started_ = true;
 
         stop_main_thread_asked_ = false;
@@ -320,52 +363,54 @@ void Bridge::main_thread( )
         uint64_t last_screen_output_time = 0;
         uint64_t last_key_time = 0;
 
-        text_keyboard_reader_thread_ = std::thread(&Bridge::text_keyboard_reader_thread_function, this);
+//        text_keyboard_reader_thread_ = std::thread(&Bridge::text_keyboard_reader_thread_function, this);
 
         // creates graphic thread
         if (graphical_display_on_)
         {
             graphic_thread();
         }
-        else
-        {
-            while (not stop_main_thread_asked_) {
-                uint64_t now_t = get_now_ms();
-
-                if (now_t - last_screen_output_time > 1000) {
-                    std::cout << com_simu_ihm_line_top_ << std::endl;
-                    std::cout << com_simu_ihm_line_bottom_ << std::endl;
-
-                    last_screen_output_time = now_t;
-                }
-
-                if ((now_t - last_key_time) > 50) {
-                    if ((now_t - last_text_keyboard_hit_time_) > 200) {
-                        com_simu_remote_status_.analog_x = 127;
-                        com_simu_remote_status_.analog_y = 127;
-
-                        com_simu_remote_status_.tool_down = false;
-                        com_simu_remote_status_.tool_up = false;
-
-                        com_simu_remote_status_.arr_left = false;
-                        com_simu_remote_status_.arr_right = false;
-                        com_simu_remote_status_.pad_up = false;
-                        com_simu_remote_status_.pad_down = false;
-                        com_simu_remote_status_.pad_left = false;
-                        com_simu_remote_status_.pad_right = false;
-                        com_simu_remote_status_.secu_left = false;
-                        com_simu_remote_status_.secu_right = false;
-                    }
-
-                    send_remote_can_packet(CAN_TELECO_KEYS);
-
-                    last_key_time = now_t;
-                }
-
-                std::this_thread::sleep_for(25ms);
-            }
-
-        }
+//        else
+//        {
+//            while (!stop_main_thread_asked_) {
+//                uint64_t now_t = get_now_ms();
+//
+//                if (now_t - last_screen_output_time > 1000) {
+//                    std::cout << com_ozcore_ihm_line_top_ << std::endl;
+//                    std::cout << com_ozcore_ihm_line_bottom_ << std::endl;
+//
+//                    last_screen_output_time = now_t;
+//                }
+//
+//                if ((now_t - last_key_time) > 50) {
+//                    if ((now_t - last_text_keyboard_hit_time_) > 200) {
+//                        com_ozcore_remote_status_.analog_x = 127;
+//                        com_ozcore_remote_status_.analog_y = 127;
+//
+//                        com_ozcore_remote_status_.tool_down = false;
+//                        com_ozcore_remote_status_.tool_up = false;
+//
+//                        com_ozcore_remote_status_.arr_left = false;
+//                        com_ozcore_remote_status_.arr_right = false;
+//                        com_ozcore_remote_status_.pad_up = false;
+//                        com_ozcore_remote_status_.pad_down = false;
+//                        com_ozcore_remote_status_.pad_left = false;
+//                        com_ozcore_remote_status_.pad_right = false;
+//                        com_ozcore_remote_status_.secu_left = false;
+//                        com_ozcore_remote_status_.secu_right = false;
+//                    }
+//
+//                    send_remote_can_packet(CAN_TELECO_KEYS);
+//
+//                    last_key_time = now_t;
+//                }
+//
+//                std::this_thread::sleep_for(25ms);
+//            }
+//
+//        }
+//
+        std::this_thread::sleep_for(100ms);
 
         main_thread_started_ = false;
         stop_main_thread_asked_ = false;
@@ -373,10 +418,14 @@ void Bridge::main_thread( )
         std::cout << "Stopping main thread." << std::endl;
 
         (void) (system("pkill socat") + 1);
+
     }
     catch ( std::exception e ) {
         std::cout<<"Exception main_thread catch : "<< e.what() << std::endl;
     }
+
+//    text_keyboard_reader_thread_.join();
+
 }
 
 // ##################################################################################################
@@ -385,13 +434,16 @@ void Bridge::main_thread( )
 
 void Bridge::read_thread( )
 {
+
+    ROS_ERROR("Bridge::read_thread %d", gettid() );
+
     try{
 
         std::cout << "Starting read thread !" << std::endl;
 
         read_thread_started_ = true;
 
-        while( !stop_read_thread_asked_ )
+        while(!stop_main_thread_asked_)
         {
             received_packets_access_.lock();
 
@@ -409,9 +461,9 @@ void Bridge::read_thread( )
         }
 
         read_thread_started_ = false;
-        stop_read_thread_asked_= false;
 
         std::cout << "Stopping read thread !" << std::endl;
+
     }
     catch ( std::exception e ) {
         std::cout<<"Exception server_read_thread catch : "<< e.what() << std::endl;
@@ -420,25 +472,28 @@ void Bridge::read_thread( )
 
 // ##################################################################################################
 
-// Sends 0.0 0.0 motor orders to the simulator when OzCore is not connected
+// Sends 0 0 motor orders to the simulator when OzCore is not connected
 
 void Bridge::write_thread( )
 {
+    ROS_ERROR("Bridge::write_thread %d", gettid() );
+
     try{
+
         std::cout << "Starting write_thread." << std::endl;
 
-        stop_write_thread_asked_ = false;
         write_thread_started_ = true;
 
-        while( not stop_write_thread_asked_ )
+        while( !stop_main_thread_asked_)
         {
             packet_list_to_send_access_.lock();
 
-            if ( not com_simu_serial_connected_ )
+            if ( not com_ozcore_serial_connected_ )
             {
                 HaMotorsPacketPtr motor_packet = std::make_shared<HaMotorsPacket>( 0, 0 );
 
                 packet_list_to_send_.push_back( motor_packet );
+
             }
 
             packet_list_to_send_access_.unlock();
@@ -446,7 +501,6 @@ void Bridge::write_thread( )
             std::this_thread::sleep_for( 10ms );
         }
 
-        stop_write_thread_asked_ = false;
         write_thread_started_ = false;
 
         std::cout << "Stopping write thread." << std::endl;
@@ -462,22 +516,24 @@ void Bridge::write_thread( )
 void Bridge::text_keyboard_reader_thread_function( )
 {
     try{
+        ROS_ERROR("Bridge::text_keyboard_reader_thread_function %d", gettid() );
+
         last_text_keyboard_hit_time_ = 0;
 
-        com_simu_remote_status_.analog_x = 127;
-        com_simu_remote_status_.analog_y = 127;
-        com_simu_remote_status_.tool_down = false;
-        com_simu_remote_status_.tool_up = false;
-        com_simu_remote_status_.arr_left = false;
-        com_simu_remote_status_.arr_right = false;
-        com_simu_remote_status_.pad_up = false;
-        com_simu_remote_status_.pad_down = false;
-        com_simu_remote_status_.pad_left = false;
-        com_simu_remote_status_.pad_right = false;
-        com_simu_remote_status_.secu_left = false;
-        com_simu_remote_status_.secu_right = false;
+        com_ozcore_remote_status_.analog_x = 127;
+        com_ozcore_remote_status_.analog_y = 127;
+        com_ozcore_remote_status_.tool_down = false;
+        com_ozcore_remote_status_.tool_up = false;
+        com_ozcore_remote_status_.arr_left = false;
+        com_ozcore_remote_status_.arr_right = false;
+        com_ozcore_remote_status_.pad_up = false;
+        com_ozcore_remote_status_.pad_down = false;
+        com_ozcore_remote_status_.pad_left = false;
+        com_ozcore_remote_status_.pad_right = false;
+        com_ozcore_remote_status_.secu_left = false;
+        com_ozcore_remote_status_.secu_right = false;
 
-        while( not stop_main_thread_asked_ )
+        while( !stop_main_thread_asked_ and ros :: ok() )
         {
             uint64_t now_t = get_now_ms();
 
@@ -493,35 +549,35 @@ void Bridge::text_keyboard_reader_thread_function( )
             {
                 if( key == 56 )
                 {
-                    com_simu_remote_status_.pad_up = true;
+                    com_ozcore_remote_status_.pad_up = true;
                 }
                 else if( key == 50 )
                 {
-                    com_simu_remote_status_.pad_down = true;
+                    com_ozcore_remote_status_.pad_down = true;
                 }
                 else if( key == 52 )
                 {
-                    com_simu_remote_status_.pad_left = true;
+                    com_ozcore_remote_status_.pad_left = true;
                 }
                 else if( key == 54 )
                 {
-                    com_simu_remote_status_.pad_right = true;
+                    com_ozcore_remote_status_.pad_right = true;
                 }
                 else if( key == 55 )
                 {
-                    com_simu_remote_status_.secu_left = true;
+                    com_ozcore_remote_status_.secu_left = true;
                 }
                 else if( key == 57 )
                 {
-                    com_simu_remote_status_.secu_right = true;
+                    com_ozcore_remote_status_.secu_right = true;
                 }
                 else if( key == 49 )
                 {
-                    com_simu_remote_status_.arr_left = true;
+                    com_ozcore_remote_status_.arr_left = true;
                 }
                 else if( key == 51 )
                 {
-                    com_simu_remote_status_.arr_right = true;
+                    com_ozcore_remote_status_.arr_right = true;
                 }
             }
 
@@ -539,8 +595,10 @@ void Bridge::text_keyboard_reader_thread_function( )
 void Bridge::graphic_thread( )
 {
     try{
-        std::cout << "Starting graphic_thread." << std::endl;
 
+        ROS_ERROR("Bridge::graphic_thread %d", gettid() );
+
+        std::cout << "Starting graphic_thread." << std::endl;
 
         for ( int i = 0 ; i < SDL_NUM_SCANCODES ; i++ )
         {
@@ -557,7 +615,7 @@ void Bridge::graphic_thread( )
         int64_t duration = MAIN_GRAPHIC_DISPLAY_RATE_MS;
         int64_t nextTick = now + duration;
 
-        while( !stop_main_thread_asked_ )
+        while( !stop_main_thread_asked_)
         {
             ms = duration_cast< milliseconds >( system_clock::now().time_since_epoch() );
             now = static_cast<int64_t>( ms.count() );
@@ -578,7 +636,7 @@ void Bridge::graphic_thread( )
                     packet_list_to_send_.emplace_back( api_command_packet_stereo_on );
                     packet_list_to_send_access_.unlock();
 
-                    start_image_display( );
+                    start_image_display();
 
                     asked_start_video_ = false;
 
@@ -592,7 +650,7 @@ void Bridge::graphic_thread( )
                     packet_list_to_send_.emplace_back( api_command_packet_stereo_off );
                     packet_list_to_send_access_.unlock();
 
-                    stop_image_display( );
+                    stop_image_display();
 
                     asked_stop_video_ = false;
 
@@ -713,8 +771,8 @@ void Bridge::graphic_thread( )
             draw_text( gps1_buff, 10, 440 );
             draw_text( gps2_buff, 10, 450 );
 
-            draw_text( com_simu_ihm_line_top_, 500, 410 );
-            draw_text( com_simu_ihm_line_bottom_, 500, 420 );
+            draw_text( com_ozcore_ihm_line_top_, 500, 410 );
+            draw_text( com_ozcore_ihm_line_bottom_, 500, 420 );
 
 
             // ##############################################
@@ -1013,7 +1071,7 @@ Bridge::read_sdl_keyboard()
 
         SDL_Event event;
 
-        while (SDL_PollEvent(&event)) {
+        while (SDL_PollEvent(&event)  and ros :: ok() ) {
             switch (event.type) {
                 // Cas d'une touche enfoncée
                 case SDL_KEYDOWN:
@@ -1044,6 +1102,9 @@ Bridge::manage_sdl_keyboard()
 
         if (sdl_key_[SDL_SCANCODE_ESCAPE] == 1) {
             stop_main_thread_asked_ = true;
+            ROS_ERROR("stop_main_thread_asked_");
+
+            bridge_connected_ = false;
 
             return true;
         }
@@ -1061,8 +1122,8 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 1 and sdl_key_[SDL_SCANCODE_LEFT] == 1) {
-            com_simu_remote_status_.analog_x = 250;
-            com_simu_remote_status_.analog_y = 5;
+            com_ozcore_remote_status_.analog_x = 250;
+            com_ozcore_remote_status_.analog_y = 5;
 
             left = 32;
             right = 63;
@@ -1070,8 +1131,8 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 1 and sdl_key_[SDL_SCANCODE_RIGHT] == 1) {
-            com_simu_remote_status_.analog_x = 250;
-            com_simu_remote_status_.analog_y = 250;
+            com_ozcore_remote_status_.analog_x = 250;
+            com_ozcore_remote_status_.analog_y = 250;
 
             left = 63;
             right = 32;
@@ -1080,8 +1141,8 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_DOWN] == 1 and sdl_key_[SDL_SCANCODE_LEFT] == 1) {
-            com_simu_remote_status_.analog_x = 5;
-            com_simu_remote_status_.analog_y = 5;
+            com_ozcore_remote_status_.analog_x = 5;
+            com_ozcore_remote_status_.analog_y = 5;
 
             left = -32;
             right = -63;
@@ -1089,8 +1150,8 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_DOWN] == 1 and sdl_key_[SDL_SCANCODE_RIGHT] == 1) {
-            com_simu_remote_status_.analog_x = 5;
-            com_simu_remote_status_.analog_y = 250;
+            com_ozcore_remote_status_.analog_x = 5;
+            com_ozcore_remote_status_.analog_y = 250;
 
             left = -63;
             right = -32;
@@ -1098,7 +1159,7 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 1) {
-            com_simu_remote_status_.analog_x = 250;
+            com_ozcore_remote_status_.analog_x = 250;
 
             left = 63;
             right = 63;
@@ -1106,7 +1167,7 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_DOWN] == 1) {
-            com_simu_remote_status_.analog_x = 5;
+            com_ozcore_remote_status_.analog_x = 5;
 
             left = -63;
             right = -63;
@@ -1114,18 +1175,18 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_PLUS] == 1) {
-            com_simu_remote_status_.tool_up = true;
+            com_ozcore_remote_status_.tool_up = true;
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_MINUS] == 1) {
-            com_simu_remote_status_.tool_down = true;
+            com_ozcore_remote_status_.tool_down = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_LEFT] == 1) {
-            com_simu_remote_status_.analog_y = 5;
+            com_ozcore_remote_status_.analog_y = 5;
 
             left = -63;
             right = 63;
@@ -1133,7 +1194,7 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_RIGHT] == 1) {
-            com_simu_remote_status_.analog_y = 250;
+            com_ozcore_remote_status_.analog_y = 250;
 
             left = 63;
             right = -63;
@@ -1141,138 +1202,138 @@ Bridge::manage_sdl_keyboard()
         }
 
         // ########################
-        //         COM_SIMU
+        //         com_ozcore
         // ########################
 
         if (sdl_key_[SDL_SCANCODE_KP_7] == 1) {
-            com_simu_remote_status_.secu_left = true;
+            com_ozcore_remote_status_.secu_left = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_9] == 1) {
-            com_simu_remote_status_.secu_right = true;
+            com_ozcore_remote_status_.secu_right = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_1] == 1) {
-            com_simu_remote_status_.arr_left = true;
+            com_ozcore_remote_status_.arr_left = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_3] == 1) {
-            com_simu_remote_status_.arr_right = true;
+            com_ozcore_remote_status_.arr_right = true;
 
             keyPressed = true;
         }
 
 
         if (sdl_key_[SDL_SCANCODE_KP_4] == 1) {
-            com_simu_remote_status_.pad_left = true;
+            com_ozcore_remote_status_.pad_left = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_6] == 1) {
-            com_simu_remote_status_.pad_right = true;
+            com_ozcore_remote_status_.pad_right = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_8] == 1) {
-            com_simu_remote_status_.pad_up = true;
+            com_ozcore_remote_status_.pad_up = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_2] == 1) {
-            com_simu_remote_status_.pad_down = true;
+            com_ozcore_remote_status_.pad_down = true;
 
             keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_PAGEUP] == 1) {
-            com_simu_ihm_button_status_.plus = true;
+            com_ozcore_ihm_button_status_.plus = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.plus = false;
+            com_ozcore_ihm_button_status_.plus = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_PAGEDOWN] == 1) {
-            com_simu_ihm_button_status_.minus = true;
+            com_ozcore_ihm_button_status_.minus = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.minus = false;
+            com_ozcore_ihm_button_status_.minus = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_HOME] == 1) {
-            com_simu_ihm_button_status_.left = true;
+            com_ozcore_ihm_button_status_.left = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.left = false;
+            com_ozcore_ihm_button_status_.left = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_END] == 1) {
-            com_simu_ihm_button_status_.right = true;
+            com_ozcore_ihm_button_status_.right = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.right = false;
+            com_ozcore_ihm_button_status_.right = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_INSERT] == 1) {
-            com_simu_ihm_button_status_.validate = true;
+            com_ozcore_ihm_button_status_.validate = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.validate = false;
+            com_ozcore_ihm_button_status_.validate = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_DELETE] == 1) {
-            com_simu_ihm_button_status_.cancel = true;
+            com_ozcore_ihm_button_status_.cancel = true;
 
             keyPressed = true;
         } else {
-            com_simu_ihm_button_status_.cancel = false;
+            com_ozcore_ihm_button_status_.cancel = false;
         }
 
         // #######################
 
         if (sdl_key_[SDL_SCANCODE_LEFT] == 0 and sdl_key_[SDL_SCANCODE_RIGHT] == 0) {
-            com_simu_remote_status_.analog_y = 128;
+            com_ozcore_remote_status_.analog_y = 128;
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 0 and sdl_key_[SDL_SCANCODE_DOWN] == 0) {
-            com_simu_remote_status_.analog_x = 128;
+            com_ozcore_remote_status_.analog_x = 128;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_PLUS] == 0) {
-            com_simu_remote_status_.tool_up = false;
+            com_ozcore_remote_status_.tool_up = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_MINUS] == 0) {
-            com_simu_remote_status_.tool_down = false;
+            com_ozcore_remote_status_.tool_down = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_6] == 0) {
-            com_simu_remote_status_.pad_right = false;
+            com_ozcore_remote_status_.pad_right = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_8] == 0) {
-            com_simu_remote_status_.pad_up = false;
+            com_ozcore_remote_status_.pad_up = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_2] == 0) {
-            com_simu_remote_status_.pad_down = false;
+            com_ozcore_remote_status_.pad_down = false;
         }
 
         if (sdl_key_[SDL_SCANCODE_KP_4] == 0) {
-            com_simu_remote_status_.pad_left = false;
+            com_ozcore_remote_status_.pad_left = false;
         }
 
         return keyPressed;
@@ -1285,11 +1346,10 @@ Bridge::manage_sdl_keyboard()
 
 // ##################################################################################################
 
-// Manages all the packets received on the socket : Lidar, gyro, accelero, odo, post, Gps, sends actuator position to OzCore (via CAN)
+// Manages all the packets received from Core : Lidar, gyro, accelero, odo, post, Gps, sends actuator position to OzCore (via CAN)
 
 void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
 {
-
     try {
 
         if (std::dynamic_pointer_cast<HaLidarPacket>(packetPtr)) {
@@ -1307,7 +1367,7 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ha_gyro_packet_ptr_ = haGyroPacketPtr;
             ha_gyro_packet_ptr_access_.unlock();
 
-            com_simu_transform_and_write_to_can(packetPtr);
+            com_ozcore_transform_and_write_to_can(packetPtr);
         }
         else if (std::dynamic_pointer_cast<HaAcceleroPacket>(packetPtr))
         {
@@ -1317,7 +1377,7 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ha_accel_packet_ptr_ = haAcceleroPacketPtr;
             ha_accel_packet_ptr_access_.unlock();
 
-            com_simu_transform_and_write_to_can(packetPtr);
+            com_ozcore_transform_and_write_to_can(packetPtr);
         }
         else if (std::dynamic_pointer_cast<HaOdoPacket>(packetPtr))
         {
@@ -1327,7 +1387,7 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ha_odo_packet_ptr_ = haOdoPacketPtr;
             ha_odo_packet_ptr_access.unlock();
 
-            com_simu_transform_and_write_to_can(packetPtr);
+            com_ozcore_transform_and_write_to_can(packetPtr);
         }
         else if (std::dynamic_pointer_cast<ApiPostPacket>(packetPtr))
         {
@@ -1373,7 +1433,7 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             data[0] = tool_position_;
             tool_position_access_.unlock();
 
-            com_simu_send_can_packet(ComSimuCanMessageId::CAN_ID_VER, ComSimuCanMessageType::CAN_VER_POS, data, 1);
+            com_ozcore_send_can_packet(ComSimuCanMessageId::CAN_ID_VER, ComSimuCanMessageType::CAN_VER_POS, data, 1);
         }
 
     }
@@ -1390,36 +1450,48 @@ void Bridge::image_thread()
 {
     try {
 
-        std::cout << "Starting image_server_thread." << std::endl;
-
-        stop_image_thread_asked_ = false;
         image_thread_started_ = true;
 
-        image_prepared_thread_ = std::thread(&Bridge::image_preparer_thread, this);
+        while (!stop_main_thread_asked_)
+        {
+            if (asked_image_displayer_start_)
+            {
+                std::cout << "Starting image displayer" << std::endl;
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 50 )));
+                stop_image_thread_asked_ = false;
 
-        while (not stop_image_thread_asked_) {
+                image_prepared_thread_ = std::thread(&Bridge::image_preparer_thread, this);
 
-            received_image_access_.lock();
+                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 50 )));
 
-            manage_received_packet(received_image_);
+                while (!stop_image_thread_asked_ and !stop_main_thread_asked_) {
 
-            received_image_access_.unlock();
+                    received_image_access_.lock();
 
-            std::this_thread::sleep_for(10ms);
+                    manage_received_packet(received_image_);
+
+                    received_image_access_.unlock();
+
+                    std::this_thread::sleep_for(10ms);
+                }
+
+                stop_image_thread_asked_ = false;
+
+                std::cout << "Exiting image displayer" << std::endl;
+
+                asked_image_displayer_start_ = false;
+            }
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 200 )));
+
         }
-
-        image_thread_started_ = false;
-        stop_image_thread_asked_ = false;
-
-        std::cout << ".";
-
-        std::cout << "Exiting image_server_thread" << std::endl;
     }
     catch ( std::exception e ) {
         std::cout<<"Exception image_thread catch : "<< e.what() << std::endl;
     }
+
+    image_thread_started_ = false;
+
 }
 
 // ##################################################################################################
@@ -1433,7 +1505,7 @@ void Bridge::image_preparer_thread( )
         image_prepared_thread_started_ = true;
         stop_image_preparer_thread_asked_ = false;
 
-        while (not stop_image_preparer_thread_asked_) {
+        while (!stop_image_preparer_thread_asked_ and !stop_main_thread_asked_) {
             api_stereo_camera_packet_ptr_access_.lock();
 
             if (api_stereo_camera_packet_ptr_ == nullptr) {
@@ -1498,30 +1570,7 @@ void Bridge::image_preparer_thread( )
     catch ( std::exception e ) {
         std::cout<<"Exception image_preparer_thread catch : "<< e.what() << std::endl;
     }
-}
 
-// ##################################################################################################
-
-// Starts image_server_thread when asked
-
-void Bridge::image_displayer_starter_thread_function() {
-    try {
-        while (true) {
-            if (asked_image_displayer_start_) {
-                std::cout << "Starting image displayer." << std::endl;
-
-                image_thread_ = std::thread(&Bridge::image_thread, this);
-
-                asked_image_displayer_start_ = false;
-            }
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 100 )));
-        }
-    }
-
-    catch ( std::exception e ) {
-        std::cout<<"Exception image_displayer_starter_thread_function catch : "<< e.what() << std::endl;
-    }
 }
 
 // ##################################################################################################
@@ -1533,7 +1582,6 @@ void Bridge::start_image_display()
     try{
 
         simulatoz_image_actionner_access_.lock();
-
 
         uint64_t now = get_now_ms();
 
@@ -1547,8 +1595,6 @@ void Bridge::start_image_display()
             }
         }
 
-        std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 100 ) ) );
-
         simulatoz_image_actionner_access_.unlock();
     }
 
@@ -1559,7 +1605,7 @@ void Bridge::start_image_display()
 
 // ##################################################################################################
 
-// Stop image threads and close socket
+// Stop image displayer
 
 void Bridge::stop_image_display()
 {
@@ -1581,7 +1627,7 @@ void Bridge::stop_image_display()
 
                 int cpt = 0;
 
-                while( ( image_thread_started_ or image_prepared_thread_started_ ) and cpt < 100  )
+                while( !stop_main_thread_asked_ and ( image_prepared_thread_started_ ) and cpt < 100  )
                 {
                     std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 1 ) ) );
                     cpt++;
@@ -1600,23 +1646,9 @@ void Bridge::stop_image_display()
                     fake++;
                 }
 
-                std::cout << "joining threads";
-
-                std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
-
                 image_prepared_thread_.join();
-
-                std::cout << ".";
-
-                std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
-
-                image_thread_.join();
-
-                std::cout << std::endl;
             }
         }
-
-        std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 50 ) ) );
 
         simulatoz_image_actionner_access_.unlock();
     }
@@ -1630,7 +1662,7 @@ void Bridge::stop_image_display()
 
 // Creates virtual CAN
 
-void Bridge::com_simu_create_virtual_can( )
+void Bridge::com_ozcore_create_virtual_can( )
 {
     (void)( system( "ifconfig can0 down"));
 
@@ -1644,7 +1676,7 @@ void Bridge::com_simu_create_virtual_can( )
     }
     else
     {
-        std::cout<<"pcan"<<std::endl;
+        ROS_ERROR("pcan");
         (void)( system( "modprobe pcan"));
         (void)( system( "modprobe pcan assign=pcan32:can0"));
         (void)( system( "ip link set can0 type can bitrate 1000000"));
@@ -1654,7 +1686,7 @@ void Bridge::com_simu_create_virtual_can( )
 
 // ##################################################################################################
 
-void Bridge::com_simu_create_serial_thread_function( )
+void Bridge::com_ozcore_create_serial_thread_function( )
 {
     (void)( system( "sudo socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
 }
@@ -1663,9 +1695,12 @@ void Bridge::com_simu_create_serial_thread_function( )
 
 // Reads motor orders from OzCore on the Serial and add them to packet_list_to_send
 
-void Bridge::com_simu_read_serial_thread_function( )
+void Bridge::com_ozcore_read_serial_thread_function( )
 {
     try{
+
+        ROS_ERROR("Bridge::com_ozcore_read_serial_thread_function %d", gettid() );
+
         std::cout << "Starting read serial thread" << std::endl;
 
         unsigned char b[200];
@@ -1685,13 +1720,13 @@ void Bridge::com_simu_read_serial_thread_function( )
             std::cout << "connected to /tmp/ttyS1" << std::endl;
         }
 
-        while ( true )
+        while ( !stop_main_thread_asked_ and ros :: ok() )
         {
             ssize_t serial_read_size = read( serialPort, b, 1 );
 
             if ( serial_read_size > 0 )
             {
-                com_simu_serial_connected_ = true;
+                com_ozcore_serial_connected_ = true;
 
                 if ( posInEntete == 2 )
                 {
@@ -1734,6 +1769,13 @@ void Bridge::com_simu_read_serial_thread_function( )
                     posInEntete = 1;
                 }
             }
+
+            else
+            {
+                std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 25) ) );
+
+            }
+
         }
 
         std::cout << "Stopping read serial thread." << std::endl;
@@ -1744,90 +1786,146 @@ void Bridge::com_simu_read_serial_thread_function( )
     }
 }
 
-// ##################################################################################################
+//**********************************************************************************************************************
 
-// Sends lidar trame to OzCore
+void Bridge::ozcore_lidar_thread_function( ) {
+    try {
 
-void Bridge::com_simu_lidar_to_core_thread_function( )
-{
-    try{
-        SOCKET sockLidarRobot = DriverSocket::openSocketServer( OZCORE_LIDAR_PORT );
+        ROS_ERROR("Bridge::ozcore_lidar_thread_function %d", gettid());
 
-        sockLidarRobot = DriverSocket::waitConnect( sockLidarRobot );
+        using namespace std::chrono_literals;
 
-        printf( "Bridge connected to OzCore Lidar Port \n" );
+        ozcore_lidar_thread_started_ = true;
+        ozcore_lidar_socket_connected_ = false;
 
-        struct timespec timeInit;
+        ozcore_lidar_server_socket_desc_ = DriverSocket::openSocketServer(OZCORE_LIDAR_PORT);
 
-        clock_gettime( CLOCK_MONOTONIC_RAW, &timeInit );
+        char received_buffer[4096];
 
-        unsigned char buffer[ 1000 ];
-        char trame[ 10000 ];
+        char trame[10000];
 
         int lidar[271];
         int albedo[271];
 
-        uint16_t nbMesures = 1; //à incrémenter à chaque mesure
-        uint16_t nbTelegrammes = 1; //à incrémenter à chaque fois qu'on envoie une donnée
+        uint16_t nbMesures = 1;
+        uint16_t nbTelegrammes = 1;
 
-        printf( "Listening to Lidar\n" );
+        while (!stop_main_thread_asked_) {
+            if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0) {
+                ozcore_lidar_socket_desc_ = DriverSocket::waitConnect(ozcore_lidar_server_socket_desc_);
+                std::this_thread::sleep_for(50ms);
 
-        while ( 1 )
-        {
-            memset( buffer, '\0', 1000 );
+                if (ozcore_lidar_socket_desc_ > 0) {
+                    ozcore_lidar_socket_connected_ = true;
 
-            int size = read( sockLidarRobot, buffer, 1000 );
+                    ROS_ERROR("Bridge connected to OzCore Lidar Port");
+                    printf("Bridge connected to OzCore Lidar Port \n");
 
-            if ( size > 0 )
-            {
-                buffer[ size ] = '\0';
-
-                if ( strncmp( "\x02sRN LMDscandata 1\x03", ( char* )buffer, strlen( "\x02sRN LMDscandata 1\x03" ) ) == 0 )
-                {
-                    ha_lidar_packet_ptr_access_.lock( );
-
-                    if( ha_lidar_packet_ptr_ != nullptr )
-                    {
-                        for ( int i = 0 ; i < 271 ; i++ )
-                        {
-                            // 2 bytes
-                            lidar[ i ] = ha_lidar_packet_ptr_->distance[ i ];
-                        }
-                        //albedo
-                        for ( int i = 0 ; i < 271 ; i++ )
-                        {
-                            // 1 byte
-                            albedo[ i ] = ha_lidar_packet_ptr_->albedo[ i ];
-                        }
-
-                        nbMesures++;
-
-                        // buffer to socket;
-                        nbTelegrammes++;
-
-                        createTrame( lidar, albedo, trame, nbMesures, nbTelegrammes, timeInit );
-
-                        (void)( write( sockLidarRobot, trame, strlen( trame ) ) + 1 );
-                    }
-
-                    ha_lidar_packet_ptr_access_.unlock( );
+                    milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                    last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
                 }
             }
-            else
-            {
-                usleep( 1000 );
+
+            if (ozcore_lidar_socket_connected_) {
+                milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                int64_t now = static_cast<int64_t>( lidar_now_ms.count());
+
+                if (now - last_ozcore_lidar_socket_activity_time_ > 5000) {
+                    ozcore_lidar_disconnected();
+                    ROS_ERROR("Bridge disconnected to OzCore Lidar Port");
+                } else {
+                    ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
+
+                    ozcore_lidar_socket_access_.unlock();
+
+                    if (size > 0) {
+                        milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                        last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
+
+                        if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer,
+                                    strlen("\x02sRN LMDscandata 1\x03")) == 0) {
+                            struct timespec timeInit;
+                            clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
+
+                            ha_lidar_packet_ptr_access_.lock();
+
+                            if (ha_lidar_packet_ptr_ != nullptr) {
+                                for (int i = 0; i < 271; i++) {
+                                    lidar[i] = ha_lidar_packet_ptr_->distance[i];
+                                    albedo[i] = ha_lidar_packet_ptr_->albedo[i];
+                                }
+                            }
+
+                            ha_lidar_packet_ptr_access_.unlock();
+
+                            nbMesures++;
+                            nbTelegrammes++;
+
+                            createTrame(lidar, albedo, trame, nbMesures, nbTelegrammes, timeInit);
+
+                            ozcore_lidar_socket_access_.lock();
+
+                            ssize_t write_size = write(ozcore_lidar_socket_desc_, trame, strlen(trame));
+
+                            if (write_size != strlen(trame)) {
+                                ROS_ERROR("Error sending lidar trame");
+                            }
+
+                            ozcore_lidar_socket_access_.unlock();
+                        }
+                    }
+                }
+                std::this_thread::sleep_for(10ms);
             }
+            close(ozcore_lidar_server_socket_desc_);
+
+            ozcore_lidar_thread_started_ = false;
         }
     }
 
-    catch ( std::exception e ) {
-        std::cout<<"Exception com_simu_lidar_to_core_thread_function catch : "<< e.what() << std::endl;
+    catch (std::exception e)
+    {
+        std::cout << "Exception ozcore_lidar_thread_function catch : " << e.what() << std::endl;
     }
+
 }
 
 // ##################################################################################################
 
-void Bridge::com_simu_connect_can( )
+void Bridge::ozcore_lidar_disconnected()
+{
+    close( ozcore_lidar_socket_desc_ );
+
+    ozcore_lidar_socket_connected_ = false;
+
+    ROS_ERROR("OzCore Lidar Socket Disconnected");
+}
+
+//        char trame[ 10000 ];
+//
+//        int lidar[271];
+//        int albedo[271];
+//
+//        uint16_t nbMesures = 1;
+//        uint16_t nbTelegrammes = 1;
+//
+//
+//        while ( !stop_main_thread_asked_)
+//        {
+//            memset( buffer, '\0', 1000 );
+//
+//            int size = read( sockLidarRobot, buffer, 1000 );
+//
+//            if ( size > 0 )
+//            {
+//                buffer[ size ] = '\0';
+//
+//                if ( strncmp( "\x02sRN LMDscandata 1\x03", ( char* )buffer, strlen( "\x02sRN LMDscandata 1\x03" ) ) == 0 )
+
+
+// ##################################################################################################
+
+void Bridge::com_ozcore_connect_can( )
 {
     try
     {
@@ -1839,27 +1937,24 @@ void Bridge::com_simu_connect_can( )
         printf( "Connecting Can\n" );
 
         // Create the CAN socket
-        com_simu_can_socket_ = socket( PF_CAN, SOCK_RAW, CAN_RAW );
-        printf( "Can sock : %d\n", com_simu_can_socket_ );
+        com_ozcore_can_socket_ = socket( PF_CAN, SOCK_RAW, CAN_RAW );
+        std::cout<<"Can sock : "<< com_ozcore_can_socket_ <<std::endl;
 
         strcpy( ifr.ifr_name, ifname );
-        ioctl( com_simu_can_socket_, SIOCGIFINDEX, &ifr );
+        ioctl( com_ozcore_can_socket_, SIOCGIFINDEX, &ifr );
 
         addr.can_family  = AF_CAN;
         addr.can_ifindex = ifr.ifr_ifindex;
 
         printf( "Can : %s at index %d\n", ifname, ifr.ifr_ifindex );
 
-        if( bind( com_simu_can_socket_, ( struct sockaddr * ) &addr, sizeof( addr ) ) < 0 )
+        if( bind( com_ozcore_can_socket_, ( struct sockaddr * ) &addr, sizeof( addr ) ) < 0 )
         {
             perror( "Error in can socket bind" );
-            //return -2;
             return;
         }
 
-        com_simu_can_connected_ = true;
-
-        printf( "Can Connected\n" );
+        com_ozcore_can_connected_ = true;
 
         //return 0;
     }
@@ -1873,7 +1968,7 @@ void Bridge::com_simu_connect_can( )
 
 // Sends accelero, gyro and odo packets to OzCore (via CAN)
 
-void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr )
+void Bridge::com_ozcore_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr )
 {
     try {
 
@@ -1881,26 +1976,26 @@ void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr 
         {
             HaOdoPacketPtr haOdoPacketPtr = std::dynamic_pointer_cast<HaOdoPacket>( packetPtr );
 
-            if( com_simu_last_ha_odo_packet_ptr_ != nullptr )
+            if( com_ozcore_last_ha_odo_packet_ptr_ != nullptr )
             {
-                if( com_simu_last_ha_odo_packet_ptr_->fr != haOdoPacketPtr->fr )
+                if( com_ozcore_last_ha_odo_packet_ptr_->fr != haOdoPacketPtr->fr )
                 {
-                    com_simu_last_odo_ticks_[ 0 ] = not com_simu_last_odo_ticks_[ 0 ];
+                    com_ozcore_last_odo_ticks_[ 0 ] = not com_ozcore_last_odo_ticks_[ 0 ];
                 }
 
-                if( com_simu_last_ha_odo_packet_ptr_->fl != haOdoPacketPtr->fl )
+                if( com_ozcore_last_ha_odo_packet_ptr_->fl != haOdoPacketPtr->fl )
                 {
-                    com_simu_last_odo_ticks_[ 1 ] = not com_simu_last_odo_ticks_[ 1 ];
+                    com_ozcore_last_odo_ticks_[ 1 ] = not com_ozcore_last_odo_ticks_[ 1 ];
                 }
 
-                if( com_simu_last_ha_odo_packet_ptr_->rr != haOdoPacketPtr->rr )
+                if( com_ozcore_last_ha_odo_packet_ptr_->rr != haOdoPacketPtr->rr )
                 {
-                    com_simu_last_odo_ticks_[ 2 ] = not com_simu_last_odo_ticks_[ 2 ];
+                    com_ozcore_last_odo_ticks_[ 2 ] = not com_ozcore_last_odo_ticks_[ 2 ];
                 }
 
-                if( com_simu_last_ha_odo_packet_ptr_->rl != haOdoPacketPtr->rl )
+                if( com_ozcore_last_ha_odo_packet_ptr_->rl != haOdoPacketPtr->rl )
                 {
-                    com_simu_last_odo_ticks_[ 3 ] = not com_simu_last_odo_ticks_[ 3 ];
+                    com_ozcore_last_odo_ticks_[ 3 ] = not com_ozcore_last_odo_ticks_[ 3 ];
                 }
             }
 
@@ -1908,29 +2003,29 @@ void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr 
 
             data[ 0 ] = 0x00;
 
-            if( com_simu_last_odo_ticks_[ 0 ] )
+            if( com_ozcore_last_odo_ticks_[ 0 ] )
             {
                 data[ 0 ] = ( data[ 0 ] | ( 0x01 << 0 ) );
             }
 
-            if( com_simu_last_odo_ticks_[ 1 ] )
+            if( com_ozcore_last_odo_ticks_[ 1 ] )
             {
                 data[ 0 ] = ( data[ 0 ] | ( 0x01 << 1 ) );
             }
 
-            if( com_simu_last_odo_ticks_[ 2 ] )
+            if( com_ozcore_last_odo_ticks_[ 2 ] )
             {
                 data[ 0 ] = ( data[ 0 ] | ( 0x01 << 2 ) );
             }
 
-            if( com_simu_last_odo_ticks_[ 3 ] )
+            if( com_ozcore_last_odo_ticks_[ 3 ] )
             {
                 data[ 0 ] = ( data[ 0 ] | ( 0x01 << 3 ) );
             }
 
-            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GEN, ComSimuCanMessageType::CAN_MOT_CONS, data, 1 );
+            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GEN, ComSimuCanMessageType::CAN_MOT_CONS, data, 1 );
 
-            com_simu_last_ha_odo_packet_ptr_ = haOdoPacketPtr;
+            com_ozcore_last_ha_odo_packet_ptr_ = haOdoPacketPtr;
         }
         else if( std::dynamic_pointer_cast<HaGyroPacket>( packetPtr )  )
         {
@@ -1947,7 +2042,7 @@ void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr 
             data[ 4 ] = ( haGyroPacketPtr->z >> 8 ) & 0xFF;
             data[ 5 ] = ( haGyroPacketPtr->z >> 0 ) & 0xFF;
 
-            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_GYRO, data, 6 );
+            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_GYRO, data, 6 );
         }
         else if( std::dynamic_pointer_cast<HaAcceleroPacket>( packetPtr )  )
         {
@@ -1964,7 +2059,7 @@ void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr 
             data[ 4 ] = ( haAcceleroPacketPtr->z >> 8 ) & 0xFF;
             data[ 5 ] = ( haAcceleroPacketPtr->z >> 0 ) & 0xFF;
 
-            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_ACC, data, 6 );
+            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_ACC, data, 6 );
         }
 
     }
@@ -1975,10 +2070,10 @@ void Bridge::com_simu_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr 
 
 // ##################################################################################################
 
-void Bridge::com_simu_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len )
+void Bridge::com_ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len )
 {
     try {
-        if (not com_simu_can_connected_) {
+        if (not com_ozcore_can_connected_) {
             return;
         }
 
@@ -1994,11 +2089,11 @@ void Bridge::com_simu_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessage
         }
 
         while (nbytes <= 0 && nbTests < 10) {
-            com_simu_can_socket_access_.lock();
+            com_ozcore_can_socket_access_.lock();
 
-            nbytes = write(com_simu_can_socket_, &frame, sizeof(struct can_frame));
+            nbytes = write(com_ozcore_can_socket_, &frame, sizeof(struct can_frame));
 
-            com_simu_can_socket_access_.unlock();
+            com_ozcore_can_socket_access_.unlock();
 
             nbTests++;
         }
@@ -2016,17 +2111,21 @@ void Bridge::com_simu_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessage
 
 // Send teleco orders to OzCore
 
-void Bridge::com_simu_remote_thread_function( )
+void Bridge::com_ozcore_remote_thread_function( )
 {
     try {
-        while (true) {
+
+        ROS_ERROR("Bridge::com_ozcore_remote_thread_function %d", gettid() );
+
+        while (!stop_main_thread_asked_ and ros :: ok() ) {
+
             send_remote_can_packet(CAN_TELECO_KEYS);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(COM_SIMU_REMOTE_SEND_RATE_MS / 2));
+            std::this_thread::sleep_for(std::chrono::milliseconds(COM_OZCORE_REMOTE_SEND_RATE_MS / 2));
 
             send_keypad_can_packet();
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(COM_SIMU_REMOTE_SEND_RATE_MS / 2));
+            std::this_thread::sleep_for(std::chrono::milliseconds(COM_OZCORE_REMOTE_SEND_RATE_MS / 2));
         }
     }
     catch ( std::exception e ) {
@@ -2038,22 +2137,24 @@ void Bridge::com_simu_remote_thread_function( )
 
 // Read can packets from OzCore : Actuator, IHM, teleco setup
 
-void Bridge::com_simu_read_can_thread_function( )
+void Bridge::com_ozcore_read_can_thread_function( )
 {
     try{
-        ssize_t bytesRead;
 
+        ROS_ERROR("Bridge::com_ozcore_read_can_thread_function %d", gettid() );
+
+        ssize_t bytesRead;
 
         struct can_frame frame;
 
         memset( &frame, 0, sizeof( frame ) );
 
-        while( true )
+        while( !stop_main_thread_asked_)
         {
-            if( com_simu_can_connected_ )
+            if( com_ozcore_can_connected_ )
             {
 
-                bytesRead = recv( com_simu_can_socket_, &frame, sizeof( frame ), 0 );
+                bytesRead = recv( com_ozcore_can_socket_, &frame, sizeof( frame ), 0 );
 
                 if ( bytesRead > 0 )
                 {
@@ -2068,11 +2169,11 @@ void Bridge::com_simu_read_can_thread_function( )
 
                             if( car_position < 16 )
                             {
-                                com_simu_ihm_line_top_[ car_position ] = car;
+                                com_ozcore_ihm_line_top_[ car_position ] = car;
                             }
                             else
                             {
-                                com_simu_ihm_line_bottom_[ car_position - 40 ] = car;
+                                com_ozcore_ihm_line_bottom_[ car_position - 40 ] = car;
                             }
                         }
                     }
@@ -2100,16 +2201,16 @@ void Bridge::com_simu_read_can_thread_function( )
                             data[ 0 ] = tool_position_;
                             tool_position_access_.unlock();
 
-                            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_VER, ComSimuCanMessageType::CAN_VER_POS, data, 1 );
+                            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_VER, ComSimuCanMessageType::CAN_VER_POS, data, 1 );
                         }
                     }
-                    else if( use_virtual_can_ == true and ( ( ( frame.can_id ) >> 7 ) == CAN_ID_TELECO ) )
+                    else if( use_virtual_can_ and ( ( ( frame.can_id ) >> 7 ) == CAN_ID_TELECO ) )
                     {
                         if( ( ( frame.can_id ) % 16 ) == CAN_TELECO_NUM_VERSION )
                         {
                             std::cout << "setting teleco act : " << static_cast<int>( frame.data[ 6 ] ) << " self_id : " << static_cast<int>(  frame.data[ 7 ] ) << std::endl;
 
-                            com_simu_remote_status_.teleco_self_id_6 = frame.data[ 7 ];
+                            com_ozcore_remote_status_.teleco_self_id_6 = frame.data[ 7 ];
 
                             send_remote_can_packet( CAN_TELECO_NUM_VERSION );
                         }
@@ -2120,6 +2221,9 @@ void Bridge::com_simu_read_can_thread_function( )
             {
                 std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
             }
+
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+
         }
 
     }
@@ -2146,58 +2250,58 @@ void Bridge::send_remote_can_packet( ComSimuCanMessageType message_type )
             uint8_t directional_cross = 0x00;
             uint8_t buttons1 = 0x00;
 
-            if( com_simu_remote_status_.pad_up )
+            if( com_ozcore_remote_status_.pad_up )
             {
                 directional_cross = ( directional_cross | ( 0x01 << 3 ) );
             }
 
-            if( com_simu_remote_status_.pad_left )
+            if( com_ozcore_remote_status_.pad_left )
             {
                 directional_cross = ( directional_cross | ( 0x01 << 4 ) );
             }
 
-            if( com_simu_remote_status_.pad_right )
+            if( com_ozcore_remote_status_.pad_right )
             {
                 directional_cross = ( directional_cross | ( 0x01 << 5 ) );
             }
 
-            if( com_simu_remote_status_.pad_down )
+            if( com_ozcore_remote_status_.pad_down )
             {
                 directional_cross = ( directional_cross | ( 0x01 << 6 ) );
             }
 
-            if( com_simu_remote_status_.secu_left )
+            if( com_ozcore_remote_status_.secu_left )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 0 ) );
             }
 
-            if( com_simu_remote_status_.secu_right )
+            if( com_ozcore_remote_status_.secu_right )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 1 ) );
             }
 
-            if( com_simu_remote_status_.arr_left )
+            if( com_ozcore_remote_status_.arr_left )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 2 ) );
             }
 
-            if( com_simu_remote_status_.arr_right )
+            if( com_ozcore_remote_status_.arr_right )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 3 ) );
             }
 
-            if( com_simu_remote_status_.tool_down )
+            if( com_ozcore_remote_status_.tool_down )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 6 ) );
             }
 
-            if( com_simu_remote_status_.tool_up )
+            if( com_ozcore_remote_status_.tool_up )
             {
                 buttons1 = ( buttons1 | ( 0x01 << 4 ) );
             }
 
-            remote_data[ 0 ] = com_simu_remote_status_.analog_x;
-            remote_data[ 1 ] = com_simu_remote_status_.analog_y;
+            remote_data[ 0 ] = com_ozcore_remote_status_.analog_x;
+            remote_data[ 1 ] = com_ozcore_remote_status_.analog_y;
 
             remote_data[ 2 ] = buttons1;
             remote_data[ 3 ] = directional_cross;
@@ -2205,10 +2309,10 @@ void Bridge::send_remote_can_packet( ComSimuCanMessageType message_type )
             remote_data[ 4 ] = 0x00;
             remote_data[ 5 ] = 0x00;
 
-            remote_data[ 6 ] = com_simu_remote_status_.teleco_self_id_6;
-            remote_data[ 7 ] = com_simu_remote_status_.teleco_act_7;
+            remote_data[ 6 ] = com_ozcore_remote_status_.teleco_self_id_6;
+            remote_data[ 7 ] = com_ozcore_remote_status_.teleco_act_7;
 
-            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_TELECO, ComSimuCanMessageType::CAN_TELECO_KEYS, remote_data, 8 );
+            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_TELECO, ComSimuCanMessageType::CAN_TELECO_KEYS, remote_data, 8 );
         }
         else if( message_type == ComSimuCanMessageType::CAN_TELECO_NUM_VERSION )
         {
@@ -2218,19 +2322,19 @@ void Bridge::send_remote_can_packet( ComSimuCanMessageType message_type )
             remote_data[ 3 ] = 0x00;
             remote_data[ 4 ] = 0x00;
             remote_data[ 5 ] = 0x00;
-            remote_data[ 6 ] = com_simu_remote_status_.teleco_self_id_6;
-            remote_data[ 7 ] = com_simu_remote_status_.teleco_act_7;
+            remote_data[ 6 ] = com_ozcore_remote_status_.teleco_self_id_6;
+            remote_data[ 7 ] = com_ozcore_remote_status_.teleco_act_7;
 
-            if( com_simu_remote_status_.teleco_act_7 < 10 )
+            if( com_ozcore_remote_status_.teleco_act_7 < 10 )
             {
                 remote_data[ 2 ] = ( 4 + 128 );
             }
-            else if( com_simu_remote_status_.teleco_act_7 > 10 )
+            else if( com_ozcore_remote_status_.teleco_act_7 > 10 )
             {
                 remote_data[ 2 ] = ( 16 + 32 );
             }
 
-            com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_TELECO, ComSimuCanMessageType::CAN_TELECO_NUM_VERSION, remote_data, 8 );
+            com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_TELECO, ComSimuCanMessageType::CAN_TELECO_NUM_VERSION, remote_data, 8 );
         }
     }
     catch ( std::exception e ) {
@@ -2247,39 +2351,39 @@ void Bridge::send_keypad_can_packet( )
 
         uint8_t buttons = 0;
 
-        if( com_simu_ihm_button_status_.cancel )
+        if( com_ozcore_ihm_button_status_.cancel )
         {
             buttons = ( buttons | ( 0x01 << 0 ) );
         }
 
-        if( com_simu_ihm_button_status_.validate )
+        if( com_ozcore_ihm_button_status_.validate )
         {
             buttons = ( buttons | ( 0x01 << 1 ) );
         }
 
-        if( com_simu_ihm_button_status_.plus )
+        if( com_ozcore_ihm_button_status_.plus )
         {
             buttons = ( buttons | ( 0x01 << 2 ) );
         }
 
-        if( com_simu_ihm_button_status_.minus )
+        if( com_ozcore_ihm_button_status_.minus )
         {
             buttons = ( buttons | ( 0x01 << 3 ) );
         }
 
-        if( com_simu_ihm_button_status_.right )
+        if( com_ozcore_ihm_button_status_.right )
         {
             buttons = ( buttons | ( 0x01 << 4 ) );
         }
 
-        if( com_simu_ihm_button_status_.left )
+        if( com_ozcore_ihm_button_status_.left )
         {
             buttons = ( buttons | ( 0x01 << 5 ) );
         }
 
         keypad_data[ 0 ] = buttons;
 
-        com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_IHM, ComSimuCanMessageType::CAN_IHM_BUT, keypad_data, 1 );
+        com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_IHM, ComSimuCanMessageType::CAN_IHM_BUT, keypad_data, 1 );
 
     }
     catch ( std::exception e ) {
@@ -2304,12 +2408,15 @@ int64_t Bridge::get_now_ms( )
 void Bridge::gps_manager_thread_function( )
 {
     try{
+
+        ROS_ERROR("Bridge::gps_manager_thread_function %d", gettid() );
+
         uint64_t tick_duration_ms = 1000;
 
         uint64_t now = get_now_ms();
         uint64_t next_tick_time = now + tick_duration_ms;
 
-        while( not stop_main_thread_asked_ )
+        while(!stop_main_thread_asked_ )
         {
             now = get_now_ms();
 
@@ -2408,7 +2515,7 @@ void Bridge::gps_manager_thread_function( )
 
                     data[ 0 ] = static_cast<uint8_t>( gprmc.at( i ) );
 
-                    com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+                    com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
 
                     usleep( 200 );
                 }
@@ -2416,7 +2523,7 @@ void Bridge::gps_manager_thread_function( )
                 uint8_t end_data[ 1 ];
                 end_data[ 0 ] = 10;
 
-                com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+                com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
 
                 usleep( 200 );
 
@@ -2428,12 +2535,12 @@ void Bridge::gps_manager_thread_function( )
 
                     data[ 0 ] = static_cast<uint8_t>( gpvtg.at( i ) );
 
-                    com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+                    com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
 
                     usleep( 200 );
                 }
 
-                com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+                com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
 
                 usleep( 200 );
 
@@ -2446,12 +2553,12 @@ void Bridge::gps_manager_thread_function( )
 
                     data[ 0 ] = static_cast<uint8_t>( gpgga.at( i ) );
 
-                    com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+                    com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
 
                     usleep( 200 );
                 }
 
-                com_simu_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+                com_ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
 
                 usleep( 200 );
 

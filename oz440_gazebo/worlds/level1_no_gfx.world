@@ -27,14 +27,11 @@
  	 	 </include>	 	 <include> 
  	 	 	 <uri>model://heightmap</uri> 
  	 	 </include>
- 
-	 	<scene> 
- 	 	 	 <sky> 
- 	 	 	 	 <clouds> 
- 	 	 	 	 	 <speed>0</speed> 
- 	 	 	 	 </clouds> 
- 	 	 	 </sky> 
- 	 	 </scene> 
+
+		 <scene>
+			 <background>160 210 255 1 </background>
+			 <ambient>100 100 100 1</ambient>
+		 </scene>
  
  	 	 <population name="sticks"> 
  	 	 	 <model name="Red_stick">
