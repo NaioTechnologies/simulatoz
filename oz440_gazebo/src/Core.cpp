@@ -96,8 +96,6 @@ Core::~Core( )
 
 void Core::run( int argc, char **argv )
 {
-    ROS_ERROR("RUN %d", gettid() );
-
     using namespace std::chrono_literals;
 
     ros::NodeHandle n;
@@ -142,7 +140,7 @@ void Core::run( int argc, char **argv )
     // create_bridge_thread
     bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
-    while (ros::master::check())
+    while (ros::master::check() and !terminate_)
     {
         bridge_connected_ = bridge_ptr_->get_bridge_connected();
 
@@ -180,7 +178,7 @@ void Core::run( int argc, char **argv )
 
     std::this_thread::sleep_for(500ms);
 
-
+    ros::shuttingdown();
 }
 
 // *********************************************************************************************************************
@@ -212,8 +210,6 @@ void Core::disconnected()
 
 void Core::read_thread_function( )
 {
-    ROS_ERROR("read thread %d", gettid() );
-
     using namespace std::chrono_literals;
 
     bool last_order_down = 0;
@@ -224,6 +220,13 @@ void Core::read_thread_function( )
     {
         while ( !terminate_ )
         {
+            terminate_ = bridge_ptr_->get_stop_main_thread_asked();
+            if(terminate_)
+            {
+                ROS_ERROR("Terminate_ from bridge");
+                ros::shuttingdown();
+            }
+
             received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
             bridge_ptr_->clear_packet_list_to_send();
 
@@ -278,7 +281,6 @@ void Core::read_thread_function( )
                             std::this_thread::sleep_for(10ms);
                         }
                     }
-
                     ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
 
                     actuator_pub_.publish(command);
@@ -303,8 +305,6 @@ void Core::read_thread_function( )
 
 void Core::ozcore_image_read_thread_function()
 {
-    ROS_ERROR("image_read_thread %d", gettid() );
-
     using namespace std::chrono_literals;
 
     uint8_t received_buffer[ 4096 ];
@@ -344,8 +344,6 @@ void Core::ozcore_image_read_thread_function()
 
 void Core::ozcore_image_thread_function( )
 {
-    ROS_ERROR("image_thread %d", gettid() );
-
     using namespace std::chrono_literals;
 
     int naio01_ozcore_image_server_port = 5558;
@@ -447,8 +445,6 @@ void Core::ozcore_image_thread_function( )
 void Core::bridge_thread_function()
 {
     std::this_thread::sleep_for( 5000ms );
-
-    ROS_ERROR("bridge_thread_function %d", gettid() );
 
     bridge_ptr_->init(graphics_on_, can_ );
 
@@ -642,7 +638,6 @@ void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_
 
 void Core::send_odo_packet()
 {
-
     using namespace std::chrono_literals;
     uint8_t fr = 0;
     uint8_t br = 0;

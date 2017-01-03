@@ -198,13 +198,13 @@ void Bridge::init( bool graphical_display_on, std::string can )
 
         if( can_ == "pcan" )
         {
-            std::cout << "using physical can" << std::endl;
+            ROS_INFO("using physical can");
 
             use_virtual_can_ = false;
         }
         else
         {
-            std::cout << "using virtual can" << std::endl;
+            ROS_INFO("using virtual can");
         }
 
         graphical_display_on_ = graphical_display_on;
@@ -310,7 +310,6 @@ std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
 
     return( list );
 
-
 }
 
 // ##################################################################################################
@@ -341,11 +340,17 @@ bool Bridge::get_bridge_connected()
 
 // ##################################################################################################
 
+bool Bridge::get_stop_main_thread_asked()
+{
+    return(stop_main_thread_asked_);
+}
+
+// ##################################################################################################
+
 bool Bridge::get_image_displayer_asked()
 {
     return(asked_image_displayer_start_);
 }
-
 
 // ##################################################################################################
 
@@ -353,8 +358,6 @@ bool Bridge::get_image_displayer_asked()
 
 void Bridge::main_thread( )
 {
-    ROS_ERROR("Bridge::main_thread %d", gettid() );
-
     try {
         main_thread_started_ = true;
 
@@ -415,7 +418,7 @@ void Bridge::main_thread( )
         main_thread_started_ = false;
         stop_main_thread_asked_ = false;
 
-        std::cout << "Stopping main thread." << std::endl;
+        ROS_ERROR("Stopping main thread");
 
         (void) (system("pkill socat") + 1);
 
@@ -434,12 +437,9 @@ void Bridge::main_thread( )
 
 void Bridge::read_thread( )
 {
-
-    ROS_ERROR("Bridge::read_thread %d", gettid() );
-
     try{
 
-        std::cout << "Starting read thread !" << std::endl;
+        ROS_INFO("Starting read thread !");
 
         read_thread_started_ = true;
 
@@ -462,10 +462,11 @@ void Bridge::read_thread( )
 
         read_thread_started_ = false;
 
-        std::cout << "Stopping read thread !" << std::endl;
+        ROS_INFO("Stopping read thread !");
 
     }
-    catch ( std::exception e ) {
+    catch ( std::exception e )
+    {
         std::cout<<"Exception server_read_thread catch : "<< e.what() << std::endl;
     }
 }
@@ -476,11 +477,9 @@ void Bridge::read_thread( )
 
 void Bridge::write_thread( )
 {
-    ROS_ERROR("Bridge::write_thread %d", gettid() );
-
     try{
 
-        std::cout << "Starting write_thread." << std::endl;
+        ROS_INFO("Starting write_thread.");
 
         write_thread_started_ = true;
 
@@ -503,7 +502,7 @@ void Bridge::write_thread( )
 
         write_thread_started_ = false;
 
-        std::cout << "Stopping write thread." << std::endl;
+        ROS_INFO("Stopping write thread.");
 
     }
     catch ( std::exception e ) {
@@ -516,8 +515,6 @@ void Bridge::write_thread( )
 void Bridge::text_keyboard_reader_thread_function( )
 {
     try{
-        ROS_ERROR("Bridge::text_keyboard_reader_thread_function %d", gettid() );
-
         last_text_keyboard_hit_time_ = 0;
 
         com_ozcore_remote_status_.analog_x = 127;
@@ -533,7 +530,7 @@ void Bridge::text_keyboard_reader_thread_function( )
         com_ozcore_remote_status_.secu_left = false;
         com_ozcore_remote_status_.secu_right = false;
 
-        while( !stop_main_thread_asked_ and ros :: ok() )
+        while( !stop_main_thread_asked_ )
         {
             uint64_t now_t = get_now_ms();
 
@@ -586,7 +583,7 @@ void Bridge::text_keyboard_reader_thread_function( )
 
     }
     catch ( std::exception e ) {
-        std::cout<<"Exception text_keyboard_reader_thread_function : "<< e.what() << std::endl;
+        ROS_INFO("Exception text_keyboard_reader_thread_function : %s", e.what());
     }
 }
 
@@ -595,10 +592,7 @@ void Bridge::text_keyboard_reader_thread_function( )
 void Bridge::graphic_thread( )
 {
     try{
-
-        ROS_ERROR("Bridge::graphic_thread %d", gettid() );
-
-        std::cout << "Starting graphic_thread." << std::endl;
+        ROS_INFO("Starting graphic_thread.");
 
         for ( int i = 0 ; i < SDL_NUM_SCANCODES ; i++ )
         {
@@ -848,7 +842,8 @@ void Bridge::draw_text( char buffer[100], int x, int y )
 
         SDL_DestroyTexture(messageAccel);
     }
-    catch ( std::exception e ) {
+    catch ( std::exception e )
+    {
         std::cout<<"Exception draw_text catch : "<< e.what() << std::endl;
     }
 }
@@ -857,7 +852,8 @@ void Bridge::draw_text( char buffer[100], int x, int y )
 //
 void Bridge::draw_lidar( uint16_t lidar_distance_[ 271 ] )
 {
-    try {
+    try
+    {
         for (int i = 0; i < 271; i++) {
             double dist = static_cast<double>( lidar_distance_[i] ) / 10.0f;
 
@@ -884,7 +880,8 @@ void Bridge::draw_lidar( uint16_t lidar_distance_[ 271 ] )
             }
         }
     }
-    catch ( std::exception e ) {
+    catch ( std::exception e )
+    {
         std::cout<<"Exception draw lidar catch : "<< e.what() << std::endl;
     }
 }
@@ -1019,8 +1016,7 @@ void Bridge::draw_images( )
 SDL_Window* Bridge::init_sdl(const char *name, int szX, int szY)
 {
     try {
-        std::cout << "Init SDL";
-
+        ROS_INFO("Init SDL");
 
         SDL_Window *screen;
         std::cout << ".";
@@ -1052,7 +1048,7 @@ SDL_Window* Bridge::init_sdl(const char *name, int szX, int szY)
             std::cerr << "Failed to load SDL Font! Error: " << TTF_GetError() << '\n';
         }
 
-        std::cout << "DONE" << std::endl;
+        ROS_INFO("DONE" );
 
         return screen;
 
@@ -1456,7 +1452,7 @@ void Bridge::image_thread()
         {
             if (asked_image_displayer_start_)
             {
-                std::cout << "Starting image displayer" << std::endl;
+                ROS_INFO("Starting image displayer");
 
                 stop_image_thread_asked_ = false;
 
@@ -1477,7 +1473,7 @@ void Bridge::image_thread()
 
                 stop_image_thread_asked_ = false;
 
-                std::cout << "Exiting image displayer" << std::endl;
+                ROS_INFO("Exiting image displayer" );
 
                 asked_image_displayer_start_ = false;
             }
@@ -1500,7 +1496,7 @@ void Bridge::image_thread()
 void Bridge::image_preparer_thread( )
 {
     try {
-        std::cout << "Starting image_preparer_thread." << std::endl;
+        ROS_INFO("Starting image_preparer_thread.");
 
         image_prepared_thread_started_ = true;
         stop_image_preparer_thread_asked_ = false;
@@ -1565,9 +1561,9 @@ void Bridge::image_preparer_thread( )
         stop_image_preparer_thread_asked_ = false;
         image_prepared_thread_started_ = false;
 
-        std::cout << "Exiting image_preparer_thread" << std::endl;
+        ROS_INFO("Exiting image_preparer_thread");
     }
-    catch ( std::exception e ) {
+    catch ( std::exception e ) {÷
         std::cout<<"Exception image_preparer_thread catch : "<< e.what() << std::endl;
     }
 
@@ -1699,9 +1695,7 @@ void Bridge::com_ozcore_read_serial_thread_function( )
 {
     try{
 
-        ROS_ERROR("Bridge::com_ozcore_read_serial_thread_function %d", gettid() );
-
-        std::cout << "Starting read serial thread" << std::endl;
+        ROS_INFO("Starting read serial thread");
 
         unsigned char b[200];
 
@@ -1778,7 +1772,7 @@ void Bridge::com_ozcore_read_serial_thread_function( )
 
         }
 
-        std::cout << "Stopping read serial thread." << std::endl;
+        ROS_INFO("stopping read serial thread.");
 
     }
     catch ( std::exception e ) {
@@ -1790,8 +1784,6 @@ void Bridge::com_ozcore_read_serial_thread_function( )
 
 void Bridge::ozcore_lidar_thread_function( ) {
     try {
-
-        ROS_ERROR("Bridge::ozcore_lidar_thread_function %d", gettid());
 
         using namespace std::chrono_literals;
 
@@ -1810,46 +1802,58 @@ void Bridge::ozcore_lidar_thread_function( ) {
         uint16_t nbMesures = 1;
         uint16_t nbTelegrammes = 1;
 
-        while (!stop_main_thread_asked_) {
-            if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0) {
+        while (!stop_main_thread_asked_)
+        {
+            if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
+            {
                 ozcore_lidar_socket_desc_ = DriverSocket::waitConnect(ozcore_lidar_server_socket_desc_);
                 std::this_thread::sleep_for(50ms);
 
-                if (ozcore_lidar_socket_desc_ > 0) {
+                if (ozcore_lidar_socket_desc_ > 0)
+                {
                     ozcore_lidar_socket_connected_ = true;
 
                     ROS_ERROR("Bridge connected to OzCore Lidar Port");
-                    printf("Bridge connected to OzCore Lidar Port \n");
 
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                     last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
                 }
             }
 
-            if (ozcore_lidar_socket_connected_) {
+            if (ozcore_lidar_socket_connected_)
+            {
                 milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 int64_t now = static_cast<int64_t>( lidar_now_ms.count());
 
-                if (now - last_ozcore_lidar_socket_activity_time_ > 5000) {
+                if (now - last_ozcore_lidar_socket_activity_time_ > 5000)
+                {
                     ozcore_lidar_disconnected();
                     ROS_ERROR("Bridge disconnected to OzCore Lidar Port");
-                } else {
+                }
+                else
+                {
+                    memset( received_buffer, '\0', 1000 );
+
                     ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
 
                     ozcore_lidar_socket_access_.unlock();
 
-                    if (size > 0) {
+                    if (size > 0)
+                    {
+                        buffer[ size ] = '\0';
+
                         milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                         last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
 
-                        if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer,
-                                    strlen("\x02sRN LMDscandata 1\x03")) == 0) {
+                        if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
+                        {
                             struct timespec timeInit;
                             clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
 
                             ha_lidar_packet_ptr_access_.lock();
 
-                            if (ha_lidar_packet_ptr_ != nullptr) {
+                            if (ha_lidar_packet_ptr_ != nullptr)
+                            {
                                 for (int i = 0; i < 271; i++) {
                                     lidar[i] = ha_lidar_packet_ptr_->distance[i];
                                     albedo[i] = ha_lidar_packet_ptr_->albedo[i];
@@ -1867,7 +1871,8 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
                             ssize_t write_size = write(ozcore_lidar_socket_desc_, trame, strlen(trame));
 
-                            if (write_size != strlen(trame)) {
+                            if (write_size != strlen(trame))
+                            {
                                 ROS_ERROR("Error sending lidar trame");
                             }
 
@@ -1877,6 +1882,7 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 }
                 std::this_thread::sleep_for(10ms);
             }
+
             close(ozcore_lidar_server_socket_desc_);
 
             ozcore_lidar_thread_started_ = false;
@@ -1901,28 +1907,6 @@ void Bridge::ozcore_lidar_disconnected()
     ROS_ERROR("OzCore Lidar Socket Disconnected");
 }
 
-//        char trame[ 10000 ];
-//
-//        int lidar[271];
-//        int albedo[271];
-//
-//        uint16_t nbMesures = 1;
-//        uint16_t nbTelegrammes = 1;
-//
-//
-//        while ( !stop_main_thread_asked_)
-//        {
-//            memset( buffer, '\0', 1000 );
-//
-//            int size = read( sockLidarRobot, buffer, 1000 );
-//
-//            if ( size > 0 )
-//            {
-//                buffer[ size ] = '\0';
-//
-//                if ( strncmp( "\x02sRN LMDscandata 1\x03", ( char* )buffer, strlen( "\x02sRN LMDscandata 1\x03" ) ) == 0 )
-
-
 // ##################################################################################################
 
 void Bridge::com_ozcore_connect_can( )
@@ -1938,7 +1922,7 @@ void Bridge::com_ozcore_connect_can( )
 
         // Create the CAN socket
         com_ozcore_can_socket_ = socket( PF_CAN, SOCK_RAW, CAN_RAW );
-        std::cout<<"Can sock : "<< com_ozcore_can_socket_ <<std::endl;
+        ROS_INFO("Can sock : %d", com_ozcore_can_socket_ );
 
         strcpy( ifr.ifr_name, ifname );
         ioctl( com_ozcore_can_socket_, SIOCGIFINDEX, &ifr );
@@ -1956,6 +1940,7 @@ void Bridge::com_ozcore_connect_can( )
 
         com_ozcore_can_connected_ = true;
 
+        ROS_ERROR("Can connected");
         //return 0;
     }
     catch ( std::exception e ) {
@@ -2115,8 +2100,6 @@ void Bridge::com_ozcore_remote_thread_function( )
 {
     try {
 
-        ROS_ERROR("Bridge::com_ozcore_remote_thread_function %d", gettid() );
-
         while (!stop_main_thread_asked_ and ros :: ok() ) {
 
             send_remote_can_packet(CAN_TELECO_KEYS);
@@ -2140,9 +2123,6 @@ void Bridge::com_ozcore_remote_thread_function( )
 void Bridge::com_ozcore_read_can_thread_function( )
 {
     try{
-
-        ROS_ERROR("Bridge::com_ozcore_read_can_thread_function %d", gettid() );
-
         ssize_t bytesRead;
 
         struct can_frame frame;
@@ -2408,8 +2388,6 @@ int64_t Bridge::get_now_ms( )
 void Bridge::gps_manager_thread_function( )
 {
     try{
-
-        ROS_ERROR("Bridge::gps_manager_thread_function %d", gettid() );
 
         uint64_t tick_duration_ms = 1000;
 

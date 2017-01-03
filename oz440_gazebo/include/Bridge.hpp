@@ -136,6 +136,7 @@ public:
     void clear_packet_list_to_send();
     bool get_com_ozcore_can_connected();
     bool get_bridge_connected();
+    bool get_stop_main_thread_asked();
     void set_stop_main_thread_asked(bool stop_main_thread_asked);
     bool get_image_displayer_asked();
 
