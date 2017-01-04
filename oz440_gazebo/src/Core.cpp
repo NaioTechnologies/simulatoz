@@ -58,7 +58,7 @@ int main( int argc, char **argv )
 
 Core::Core( int argc, char **argv )
 {
-    ros::init( argc, argv, "core", ros::init_options::NoSigintHandler);
+    ros::init( argc, argv, "Core");
 
     ros::NodeHandle n;
 
@@ -156,7 +156,6 @@ void Core::run( int argc, char **argv )
                 }
 
                 packet_to_send_list_.clear();
-
             }
 
             packet_to_send_list_access_.unlock();
@@ -178,7 +177,7 @@ void Core::run( int argc, char **argv )
 
     std::this_thread::sleep_for(500ms);
 
-    ros::shuttingdown();
+    ros::shutdown();
 }
 
 // *********************************************************************************************************************
@@ -221,10 +220,11 @@ void Core::read_thread_function( )
         while ( !terminate_ )
         {
             terminate_ = bridge_ptr_->get_stop_main_thread_asked();
+
             if(terminate_)
             {
                 ROS_ERROR("Terminate_ from bridge");
-                ros::shuttingdown();
+                ros::shutdown();
             }
 
             received_packet_list_ = bridge_ptr_->get_packet_list_to_send();

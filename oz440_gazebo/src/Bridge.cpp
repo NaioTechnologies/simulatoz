@@ -256,6 +256,8 @@ void Bridge::init( bool graphical_display_on, std::string can )
     com_ozcore_remote_thread_.join();
     gps_manager_thread_.join();
 
+    (void) (system("sudo pkill socat") + 1);
+
 }
 
 // ##################################################################################################
@@ -420,7 +422,7 @@ void Bridge::main_thread( )
 
         ROS_ERROR("Stopping main thread");
 
-        (void) (system("pkill socat") + 1);
+//        (void) (system("sudo pkill socat") + 1);
 
     }
     catch ( std::exception e ) {
@@ -1563,7 +1565,7 @@ void Bridge::image_preparer_thread( )
 
         ROS_INFO("Exiting image_preparer_thread");
     }
-    catch ( std::exception e ) {÷
+    catch ( std::exception e ) {
         std::cout<<"Exception image_preparer_thread catch : "<< e.what() << std::endl;
     }
 
@@ -1660,23 +1662,23 @@ void Bridge::stop_image_display()
 
 void Bridge::com_ozcore_create_virtual_can( )
 {
-    (void)( system( "ifconfig can0 down"));
+//    (void)( system( "sudo ifconfig can0 down"));
 
     if ( use_virtual_can_  )
     {
-        (void)( system( "modprobe can" ) + 1 );
-        (void)( system( "modprobe can_raw" ) + 1 );
-        (void)( system( "modprobe vcan" ) + 1 );
-        (void)( system( "ip link add dev can0 type vcan" ) + 1 );
-        (void)( system( "ip link set up can0" ) + 1 );
+//        (void)( system( "sudo modprobe can" ) + 1 );
+//        (void)( system( "sudo modprobe can_raw" ) + 1 );
+//        (void)( system( "sudo modprobe vcan" ) + 1 );
+//        (void)( system( "sudo ip link add dev can0 type vcan" ) + 1 );
+//        (void)( system( "sudo ip link set up can0" ) + 1 );
     }
     else
     {
         ROS_ERROR("pcan");
-        (void)( system( "modprobe pcan"));
-        (void)( system( "modprobe pcan assign=pcan32:can0"));
-        (void)( system( "ip link set can0 type can bitrate 1000000"));
-        (void)( system( "ifconfig can0 up"));
+//        (void)( system( "sudo modprobe pcan"));
+//        (void)( system( "sudo modprobe pcan assign=pcan32:can0"));
+//        (void)( system( "sudo ip link set can0 type can bitrate 1000000"));
+//        (void)( system( "sudo ifconfig can0 up"));
     }
 }
 
@@ -1684,7 +1686,7 @@ void Bridge::com_ozcore_create_virtual_can( )
 
 void Bridge::com_ozcore_create_serial_thread_function( )
 {
-    (void)( system( "sudo socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
+//    (void)( system( "sudo socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
 }
 
 // ##################################################################################################
@@ -1840,7 +1842,7 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
                     if (size > 0)
                     {
-                        buffer[ size ] = '\0';
+                        received_buffer[ size ] = '\0';
 
                         milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                         last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
