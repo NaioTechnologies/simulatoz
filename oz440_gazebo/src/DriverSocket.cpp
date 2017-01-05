@@ -149,19 +149,24 @@ SOCKET DriverSocket::waitConnect(SOCKET sockfd){
 
 }
 
+
+
 //Attend qu'un client se connecte
-SOCKET DriverSocket::waitConnectTimer(SOCKET sockfd){
+SOCKET DriverSocket::waitConnectTimer(SOCKET sockfd, std::atomic<bool>& terminate_ptr){
     socklen_t clilen;
     SOCKADDR_IN cli_addr;
     SOCKET newsockfd;
 
     listen(sockfd,5);
     clilen = sizeof(cli_addr);
-
-    newsockfd = accept(sockfd, (SOCKADDR *) &cli_addr, &clilen);
+    do {
+        newsockfd = accept(sockfd, (SOCKADDR *) &cli_addr, &clilen);
+        usleep(1000);
+    } while (newsockfd < 0 and !(terminate_ptr));
 
     if (newsockfd < 0){
-        error("ERROR on accept");
+        printf("ERROR on accept");
+        return(-1);
     }
 
     int flag = 1;
@@ -170,11 +175,12 @@ SOCKET DriverSocket::waitConnectTimer(SOCKET sockfd){
                             TCP_NODELAY,     /* name of option */
                             (char *) &flag,  /* the cast is historical cruft */
                             sizeof(int));    /* length of option value */
-    if (result < 0){
+    if (result < 0) {
         error("error on No_Delay");
     }
     int flags = fcntl(newsockfd, F_GETFL, 0);
     fcntl(newsockfd, F_SETFL, flags | O_NONBLOCK);
+
 
     return newsockfd;
 

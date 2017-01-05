@@ -256,7 +256,7 @@ void Bridge::init( bool graphical_display_on, std::string can )
     com_ozcore_remote_thread_.join();
     gps_manager_thread_.join();
 
-    (void) (system("sudo pkill socat") + 1);
+    (void) (system("pkill socat") + 1);
 
 }
 
@@ -278,10 +278,9 @@ void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 
 // Ask to stop main thread
 
-void Bridge::set_stop_main_thread_asked(bool stop_main_thread_asked)
+void Bridge::stop_main_thread_asked()
 {
-    stop_main_thread_asked_ = stop_main_thread_asked;
-
+    stop_main_thread_asked_ = true;
 }
 
 // ##################################################################################################
@@ -420,9 +419,9 @@ void Bridge::main_thread( )
         main_thread_started_ = false;
         stop_main_thread_asked_ = false;
 
-        ROS_ERROR("Stopping main thread");
+        ROS_INFO("Stopping bridge main thread");
 
-//        (void) (system("sudo pkill socat") + 1);
+        (void) (system("pkill socat") + 1);
 
     }
     catch ( std::exception e ) {
@@ -1662,23 +1661,23 @@ void Bridge::stop_image_display()
 
 void Bridge::com_ozcore_create_virtual_can( )
 {
-//    (void)( system( "sudo ifconfig can0 down"));
+    (void)( system( "ifconfig can0 down"));
 
     if ( use_virtual_can_  )
     {
-//        (void)( system( "sudo modprobe can" ) + 1 );
-//        (void)( system( "sudo modprobe can_raw" ) + 1 );
-//        (void)( system( "sudo modprobe vcan" ) + 1 );
-//        (void)( system( "sudo ip link add dev can0 type vcan" ) + 1 );
-//        (void)( system( "sudo ip link set up can0" ) + 1 );
+        (void)( system( "modprobe can" ) + 1 );
+        (void)( system( "modprobe can_raw" ) + 1 );
+        (void)( system( "modprobe vcan" ) + 1 );
+        (void)( system( "ip link add dev can0 type vcan" ) + 1 );
+        (void)( system( "ip link set up can0" ) + 1 );
     }
     else
     {
         ROS_ERROR("pcan");
-//        (void)( system( "sudo modprobe pcan"));
-//        (void)( system( "sudo modprobe pcan assign=pcan32:can0"));
-//        (void)( system( "sudo ip link set can0 type can bitrate 1000000"));
-//        (void)( system( "sudo ifconfig can0 up"));
+        (void)( system( "modprobe pcan"));
+        (void)( system( "modprobe pcan assign=pcan32:can0"));
+        (void)( system( "ip link set can0 type can bitrate 1000000"));
+        (void)( system( "ifconfig can0 up"));
     }
 }
 
@@ -1686,7 +1685,7 @@ void Bridge::com_ozcore_create_virtual_can( )
 
 void Bridge::com_ozcore_create_serial_thread_function( )
 {
-//    (void)( system( "sudo socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
+    (void)( system( "socat PTY,link=/dev/ttyS0,raw,echo=0 PTY,link=/tmp/ttyS1,raw,echo=0" ) + 1 );
 }
 
 // ##################################################################################################
@@ -1716,7 +1715,7 @@ void Bridge::com_ozcore_read_serial_thread_function( )
             std::cout << "connected to /tmp/ttyS1" << std::endl;
         }
 
-        while ( !stop_main_thread_asked_ and ros :: ok() )
+        while ( !stop_main_thread_asked_ )
         {
             ssize_t serial_read_size = read( serialPort, b, 1 );
 
@@ -1785,6 +1784,7 @@ void Bridge::com_ozcore_read_serial_thread_function( )
 //**********************************************************************************************************************
 
 void Bridge::ozcore_lidar_thread_function( ) {
+
     try {
 
         using namespace std::chrono_literals;
@@ -1806,9 +1806,11 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
         while (!stop_main_thread_asked_)
         {
+
             if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
             {
-                ozcore_lidar_socket_desc_ = DriverSocket::waitConnect(ozcore_lidar_server_socket_desc_);
+
+                ozcore_lidar_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_lidar_server_socket_desc_, stop_main_thread_asked_);
                 std::this_thread::sleep_for(50ms);
 
                 if (ozcore_lidar_socket_desc_ > 0)
@@ -1824,6 +1826,7 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
             if (ozcore_lidar_socket_connected_)
             {
+
                 milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 int64_t now = static_cast<int64_t>( lidar_now_ms.count());
 
@@ -1837,7 +1840,6 @@ void Bridge::ozcore_lidar_thread_function( ) {
                     memset( received_buffer, '\0', 1000 );
 
                     ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
-
                     ozcore_lidar_socket_access_.unlock();
 
                     if (size > 0)
@@ -1880,17 +1882,20 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
                             ozcore_lidar_socket_access_.unlock();
                         }
+
                     }
                 }
-                std::this_thread::sleep_for(10ms);
+
+                std::this_thread::sleep_for(1ms);
             }
 
-            close(ozcore_lidar_server_socket_desc_);
-
-            ozcore_lidar_thread_started_ = false;
         }
-    }
+        close(ozcore_lidar_server_socket_desc_);
 
+        ozcore_lidar_thread_started_ = false;
+
+        ozcore_lidar_disconnected();
+    }
     catch (std::exception e)
     {
         std::cout << "Exception ozcore_lidar_thread_function catch : " << e.what() << std::endl;
@@ -1906,7 +1911,7 @@ void Bridge::ozcore_lidar_disconnected()
 
     ozcore_lidar_socket_connected_ = false;
 
-    ROS_ERROR("OzCore Lidar Socket Disconnected");
+    ROS_INFO("OzCore Lidar Socket Disconnected");
 }
 
 // ##################################################################################################
@@ -1924,6 +1929,7 @@ void Bridge::com_ozcore_connect_can( )
 
         // Create the CAN socket
         com_ozcore_can_socket_ = socket( PF_CAN, SOCK_RAW, CAN_RAW );
+        fcntl(com_ozcore_can_socket_, F_SETFL, fcntl(com_ozcore_can_socket_, F_GETFL, 0) | O_NONBLOCK);
         ROS_INFO("Can sock : %d", com_ozcore_can_socket_ );
 
         strcpy( ifr.ifr_name, ifname );
@@ -1942,7 +1948,7 @@ void Bridge::com_ozcore_connect_can( )
 
         com_ozcore_can_connected_ = true;
 
-        ROS_ERROR("Can connected");
+        ROS_INFO("Can connected");
         //return 0;
     }
     catch ( std::exception e ) {
@@ -2102,7 +2108,7 @@ void Bridge::com_ozcore_remote_thread_function( )
 {
     try {
 
-        while (!stop_main_thread_asked_ and ros :: ok() ) {
+        while (!stop_main_thread_asked_) {
 
             send_remote_can_packet(CAN_TELECO_KEYS);
 
@@ -2135,7 +2141,6 @@ void Bridge::com_ozcore_read_can_thread_function( )
         {
             if( com_ozcore_can_connected_ )
             {
-
                 bytesRead = recv( com_ozcore_can_socket_, &frame, sizeof( frame ), 0 );
 
                 if ( bytesRead > 0 )

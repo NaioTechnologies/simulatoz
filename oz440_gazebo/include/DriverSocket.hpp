@@ -2,6 +2,7 @@
 #define MY_SOCKET_H
 
 #include <sys/ioctl.h>
+#include <atomic>
 
 #include <netdb.h>
 #include <sys/socket.h>
@@ -34,7 +35,7 @@ public:
 
     //Attend qu'un joueur se connecte
     static SOCKET waitConnect(SOCKET sockfd);
-    static SOCKET waitConnectTimer(SOCKET sockfd);
+    static SOCKET waitConnectTimer(SOCKET sockfd, std::atomic<bool>& terminate_ptr);
 
 
     //Lit une entrée joueur. Retourne 1 si lecture OK, 0 si rien

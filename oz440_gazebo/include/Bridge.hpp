@@ -137,7 +137,7 @@ public:
     bool get_com_ozcore_can_connected();
     bool get_bridge_connected();
     bool get_stop_main_thread_asked();
-    void set_stop_main_thread_asked(bool stop_main_thread_asked);
+    void stop_main_thread_asked();
     bool get_image_displayer_asked();
 
 
@@ -198,10 +198,6 @@ private:
 
     double get_north_bearing( double lat1, double lon1, double lat2, double lon2 );
 
-public:
-
-    bool stop_main_thread_asked_;
-
 private:
 
     // Communication with Core
@@ -224,6 +220,7 @@ private:
     // thread part
     bool main_thread_started_;
     std::thread main_thread_;
+    std::atomic<bool> stop_main_thread_asked_;
 
     bool stop_read_thread_asked_;
     bool read_thread_started_;

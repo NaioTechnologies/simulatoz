@@ -3,7 +3,7 @@
  	 <param name="naio01_server_port" type="int" value="5555" />
  
  	 <!--<node name="Core" pkg="oz440_gazebo" type="Core"/>-->
-	<node name="Core" pkg="oz440_gazebo" type="Core" launch-prefix="sudo"/>
+	<node name="Core" pkg="oz440_gazebo" type="Core" launch-prefix="sudo -E"/>
 
 
 	<!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->

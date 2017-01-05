@@ -23,6 +23,7 @@
 #include "oz440_api/ApiMoveActuatorPacket.hpp"
 
 #include <vector>
+#include <atomic>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -40,7 +41,7 @@ static pid_t gettid( void )
     return syscall( __NR_gettid );
 }
 
-bool terminate_;
+std::atomic<bool> terminate_;
 
 
 // *********************************************************************************************************************
@@ -165,7 +166,7 @@ void Core::run( int argc, char **argv )
 
     }
 
-    bridge_ptr_->set_stop_main_thread_asked(true);
+    bridge_ptr_->stop_main_thread_asked();
 
     terminate_ = true;
 
@@ -174,10 +175,8 @@ void Core::run( int argc, char **argv )
     ozcore_image_read_thread_.join();
     ozcore_image_thread_.join();
     read_thread_.join();
-
     std::this_thread::sleep_for(500ms);
-
-    ros::shutdown();
+    ROS_INFO("Core run thread stopped");
 }
 
 // *********************************************************************************************************************
@@ -219,10 +218,11 @@ void Core::read_thread_function( )
     {
         while ( !terminate_ )
         {
-            terminate_ = bridge_ptr_->get_stop_main_thread_asked();
+            bool stop_main_thread_asked = bridge_ptr_->get_stop_main_thread_asked();
 
-            if(terminate_)
+            if(stop_main_thread_asked)
             {
+                terminate_ = true;
                 ROS_ERROR("Terminate_ from bridge");
                 ros::shutdown();
             }
@@ -362,7 +362,8 @@ void Core::ozcore_image_thread_function( )
     {
         if ( not ozcore_image_socket_connected_ and ozcore_image_server_socket_desc_ > 0 )
         {
-            ozcore_image_socket_desc_ = DriverSocket::waitConnect( ozcore_image_server_socket_desc_ );
+            ozcore_image_socket_desc_ = DriverSocket::waitConnectTimer( ozcore_image_server_socket_desc_, terminate_ );
+
             std::this_thread::sleep_for( 50ms );
 
             if ( ozcore_image_socket_desc_ > 0 )
@@ -444,7 +445,7 @@ void Core::ozcore_image_thread_function( )
 
 void Core::bridge_thread_function()
 {
-    std::this_thread::sleep_for( 5000ms );
+    std::this_thread::sleep_for( 2000ms );
 
     bridge_ptr_->init(graphics_on_, can_ );
 
