@@ -1156,6 +1156,7 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 1) {
+
             com_ozcore_remote_status_.analog_x = 250;
 
             left = 63;
@@ -1586,7 +1587,7 @@ void Bridge::start_image_display()
         {
             last_image_displayer_action_time_ms_ = now;
 
-            if(!image_thread_started_ and !image_prepared_thread_started_)
+            if(image_thread_started_ and !image_prepared_thread_started_)
             {
                 asked_image_displayer_start_ = true;
             }
@@ -2239,6 +2240,7 @@ void Bridge::send_remote_can_packet( ComSimuCanMessageType message_type )
 
             if( com_ozcore_remote_status_.pad_up )
             {
+
                 directional_cross = ( directional_cross | ( 0x01 << 3 ) );
             }
 

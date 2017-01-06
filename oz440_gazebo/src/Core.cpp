@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/syscall.h>
 #include <signal.h>
+#include <std_srvs/Empty.h>
 
 #include "../include/Bridge.hpp"
 
@@ -98,6 +99,8 @@ Core::~Core( )
 void Core::run( int argc, char **argv )
 {
     using namespace std::chrono_literals;
+
+    std::this_thread::sleep_for(1000ms);
 
     ros::NodeHandle n;
 
@@ -189,7 +192,8 @@ void Core::ozcore_image_disconnected()
 
     ROS_ERROR("OzCore Image Socket Disconnected");
 
-    system("rosservice call gazebo/reset_world");
+    std_srvs::Empty message;
+    ros::service::call("gazebo/reset_world", message);
 }
 
 // *********************************************************************************************************************
