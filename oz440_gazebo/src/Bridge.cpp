@@ -1662,15 +1662,15 @@ void Bridge::stop_image_display()
 
 void Bridge::com_ozcore_create_virtual_can( )
 {
-    (void)( system( "ifconfig can0 down"));
+//    (void)( system( "ifconfig can0 down"));
 
     if ( use_virtual_can_  )
     {
-        (void)( system( "modprobe can" ) + 1 );
-        (void)( system( "modprobe can_raw" ) + 1 );
-        (void)( system( "modprobe vcan" ) + 1 );
-        (void)( system( "ip link add dev can0 type vcan" ) + 1 );
-        (void)( system( "ip link set up can0" ) + 1 );
+//        (void)( system( "modprobe can" ) + 1 );
+//        (void)( system( "modprobe can_raw" ) + 1 );
+//        (void)( system( "modprobe vcan" ) + 1 );
+//        (void)( system( "ip link add dev can0 type vcan" ) + 1 );
+//        (void)( system( "ip link set up can0" ) + 1 );
     }
     else
     {
@@ -1731,8 +1731,6 @@ void Bridge::com_ozcore_read_serial_thread_function( )
                     if ( motorNumber == 2 )
                     {
                         HaMotorsPacketPtr haMotorsPacketPtr = std::make_shared<HaMotorsPacket>( motors[ 2 ], motors[ 1 ] );
-
-//						std::cout << "Motors : " << static_cast<int>( motors[ 2 ] ) << " : " << static_cast<int>( motors[ 1 ] ) << std::endl;
 
                         packet_list_to_send_access_.lock();
                         packet_list_to_send_.push_back( haMotorsPacketPtr );

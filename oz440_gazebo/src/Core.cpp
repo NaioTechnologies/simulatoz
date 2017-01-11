@@ -124,25 +124,25 @@ void Core::run( int argc, char **argv )
     sync_gps.registerCallback( boost::bind( &Core::send_gps_packet_callback, this, _1, _2 ) );
 
     // subscribe to camera topic
-    message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
-    message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
-    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
-    sync.registerCallback ( boost::bind(&Core::send_camera_packet_callback, this, _1, _2) );
+//    message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
+//    message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
+//    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
+//    sync.registerCallback ( boost::bind(&Core::send_camera_packet_callback, this, _1, _2) );
 
     // creates main thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
 
     // creates ozcore_image thread
-    ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
+//    ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
     // creates ozcore_image thread
-    ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
+//    ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
 
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
 
     // create_bridge_thread
-    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
+//    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
     while (ros::master::check() and !terminate_)
     {
@@ -449,6 +449,8 @@ void Core::ozcore_image_thread_function( )
 
 void Core::bridge_thread_function()
 {
+    using namespace std::chrono_literals;
+
     std::this_thread::sleep_for( 2000ms );
 
     bridge_ptr_->init(graphics_on_, can_ );
