@@ -33,13 +33,13 @@ public:
     void run( int argc, char **argv );
 
     // callback functions
-    void send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
-    void send_actuator_position_callback( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
-    void send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right);
-    void send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg);
-    void send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
+    void callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
+    void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
+    void callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right);
+    void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
+    void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
 
-    void send_odo_packet();
+    void odometry_thread();
     double getPitch( std::string wheel);
     bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
 
@@ -49,8 +49,6 @@ private:
     void read_thread_function( );
     void image_thread_function( );
 
-    void test_thread_function( int argc, char **argv );
-
     void bridge_thread_function();
 
     void disconnected();
@@ -58,7 +56,7 @@ private:
     void ozcore_image_read_thread_function( );
     void ozcore_image_thread_function( );
 
-    void ozcore_image_disconnected();
+    void disconnection_ozcore_image();
 
 private:
 
@@ -75,18 +73,17 @@ private:
 
     std::thread send_odo_thread_;
 
-    bool ozcore_image_read_thread_started_;
-    bool ozcore_image_thread_started_;
-    std::thread ozcore_image_read_thread_;
-    std::thread ozcore_image_thread_;
-
     bool test_thread_started_;
     std::thread test_thread_;
 
     bool bridge_thread_started_;
     std::thread bridge_thread_;
-    std::string can_;
     bool graphics_on_;
+
+    bool ozcore_image_read_thread_started_;
+    bool ozcore_image_thread_started_;
+    std::thread ozcore_image_read_thread_;
+    std::thread ozcore_image_thread_;
 
     std::mutex ozcore_image_socket_access_;
     int ozcore_image_server_socket_desc_;

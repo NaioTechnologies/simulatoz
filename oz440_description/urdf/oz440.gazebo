@@ -52,69 +52,68 @@
     </gazebo>
 
     <!-- plugin pour la camera stereo -->
-    <!--<gazebo reference="camera_stereo_link">-->
-        <!--<sensor type="multicamera" name="stereo_camera">-->
-            <!--<update_rate>20</update_rate>-->
-            <!--<camera name="left">-->
-                <!--<pose>0 0.05 0 0 0 0</pose>-->
-                <!--<horizontal_fov>1.63555623712896 </horizontal_fov>-->
-                <!--<image>-->
-                    <!--<width>752</width>-->
-                    <!--<height>480</height>-->
-                    <!--<height>480</height>-->
-                    <!--<format>BAYER_GBRG8</format>-->
+    <gazebo reference="camera_stereo_link">
+        <sensor type="multicamera" name="stereo_camera">
+            <update_rate>20</update_rate>
+            <camera name="left">
+                <pose>0 0.05 0 0 0 0</pose>
+                <horizontal_fov>1.63555623712896 </horizontal_fov>
+                <image>
+                    <width>752</width>
+                    <height>480</height>
+                    <height>480</height>
+                    <format>BAYER_GBRG8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
 
-                <!--</image>-->
-                <!--<clip>-->
-                    <!--<near>0.02</near>-->
-                    <!--<far>300</far>-->
-                <!--</clip>-->
+            </camera>
+            <camera name="right">
+                <pose>0 -0.05 0 0 0 0</pose>
+                <horizontal_fov>1.63555623712896 </horizontal_fov>
+                <image>
+                    <width>752</width>
+                    <height>480</height>
 
-            <!--</camera>-->
-            <!--<camera name="right">-->
-                <!--<pose>0 -0.05 0 0 0 0</pose>-->
-                <!--<horizontal_fov>1.63555623712896 </horizontal_fov>-->
-                <!--<image>-->
-                    <!--<width>752</width>-->
-                    <!--<height>480</height>-->
-
-                    <!--<format>BAYER_GBRG8</format>-->
-                <!--</image>-->
-                <!--<clip>-->
-                    <!--<near>0.02</near>-->
-                    <!--<far>300</far>-->
-                <!--</clip>-->
-                <!--&lt;!&ndash;<distortion>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<k1>0.9</k1>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<k2>0.3291</k2>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<k3>0.23518</k3>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<p1>0.002938</p1>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<p2>-0.00088</p2>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<center>0.5 0.5</center>&ndash;&gt;-->
-                <!--&lt;!&ndash;</distortion>&ndash;&gt;-->
-                <!--&lt;!&ndash;<noise>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<type>gaussian</type>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<mean>0.0</mean>&ndash;&gt;-->
-                    <!--&lt;!&ndash;<stddev>0.007</stddev>&ndash;&gt;-->
-                <!--&lt;!&ndash;</noise>&ndash;&gt;-->
-            <!--</camera>-->
-            <!--<plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">-->
-                <!--<alwaysOn>true</alwaysOn>-->
-                <!--<updateRate>0.0</updateRate>-->
-                <!--<cameraName>oz440/camera</cameraName>-->
-                <!--<imageTopicName>image_raw</imageTopicName>-->
-                <!--<cameraInfoTopicName>camera_info</cameraInfoTopicName>-->
-                <!--<frameName>camera_stereo_link</frameName>-->
-                <!--&lt;!&ndash;<rightFrameName>right_camera_optical_frame</rightFrameName>&ndash;&gt;-->
-                <!--&lt;!&ndash;<hackBaseline>0.1</hackBaseline>&ndash;&gt;-->
-                <!--&lt;!&ndash;<distortionK1>0.000023</distortionK1>&ndash;&gt;-->
-                <!--&lt;!&ndash;<distortionK2>0.025979</distortionK2>&ndash;&gt;-->
-                <!--&lt;!&ndash;<distortionK3>0.039371</distortionK3>&ndash;&gt;-->
-                <!--&lt;!&ndash;<distortionT1>0.001139</distortionT1>&ndash;&gt;-->
-                <!--&lt;!&ndash;<distortionT2>-0.002029</distortionT2>&ndash;&gt;-->
-            <!--</plugin>-->
-        <!--</sensor>-->
-    <!--</gazebo>-->
+                    <format>BAYER_GBRG8</format>
+                </image>
+                <clip>
+                    <near>0.02</near>
+                    <far>300</far>
+                </clip>
+                <!--<distortion>-->
+                    <!--<k1>0.9</k1>-->
+                    <!--<k2>0.3291</k2>-->
+                    <!--<k3>0.23518</k3>-->
+                    <!--<p1>0.002938</p1>-->
+                    <!--<p2>-0.00088</p2>-->
+                    <!--<center>0.5 0.5</center>-->
+                <!--</distortion>-->
+                <!--<noise>-->
+                    <!--<type>gaussian</type>-->
+                    <!--<mean>0.0</mean>-->
+                    <!--<stddev>0.007</stddev>-->
+                <!--</noise>-->
+            </camera>
+            <plugin name="stereo_camera_controller" filename="libgazebo_ros_multicamera.so">
+                <alwaysOn>true</alwaysOn>
+                <updateRate>0.0</updateRate>
+                <cameraName>oz440/camera</cameraName>
+                <imageTopicName>image_raw</imageTopicName>
+                <cameraInfoTopicName>camera_info</cameraInfoTopicName>
+                <frameName>camera_stereo_link</frameName>
+                <!--<rightFrameName>right_camera_optical_frame</rightFrameName>-->
+                <!--<hackBaseline>0.1</hackBaseline>-->
+                <!--<distortionK1>0.000023</distortionK1>-->
+                <!--<distortionK2>0.025979</distortionK2>-->
+                <!--<distortionK3>0.039371</distortionK3>-->
+                <!--<distortionT1>0.001139</distortionT1>-->
+                <!--<distortionT2>-0.002029</distortionT2>-->
+            </plugin>
+        </sensor>
+    </gazebo>
 
     <!-- plugin pour le lidar -->
     <gazebo reference="lidar_link">

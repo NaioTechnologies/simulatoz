@@ -129,15 +129,15 @@ public:
     ~Bridge( );
 
     // launch core
-    void init( bool graphical_display_on, std::string can );
+    void init( bool graphical_display_on );
     void add_received_packet(BaseNaio01PacketPtr packetPtr);
+    void stop_main_thread_asked();
     void set_received_image(BaseNaio01PacketPtr packetPtr);
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
     void clear_packet_list_to_send();
     bool get_com_ozcore_can_connected();
     bool get_bridge_connected();
     bool get_stop_main_thread_asked();
-    void stop_main_thread_asked();
     bool get_image_displayer_asked();
 
 
@@ -148,6 +148,7 @@ private:
 
     //Communication with core
     void read_thread( );
+    void manage_received_packet(BaseNaio01PacketPtr packetPtr);
     void write_thread( );
 
     // images from Core to SDL functions
@@ -155,9 +156,6 @@ private:
     void image_preparer_thread( );
     void start_image_display();
     void stop_image_display();
-
-    // communication
-    void manage_received_packet(BaseNaio01PacketPtr packetPtr);
 
     // graph
     SDL_Window *init_sdl(const char *name, int szX, int szY);
@@ -170,32 +168,24 @@ private:
     void draw_text( char gyro_buff[100], int x, int y );
     void draw_images( );
 
-    // COM SIMU
-    void com_ozcore_create_virtual_can( );
-    void com_ozcore_create_serial_thread_function( );
-    void com_ozcore_read_serial_thread_function( );
+    // COM OZCORE
+
+    void ozcore_read_serial_thread( );
 
     void ozcore_lidar_thread_function( );
-    void ozcore_lidar_disconnected();
 
-    void com_ozcore_connect_can( );
-    void com_ozcore_transform_and_write_to_can( BaseNaio01PacketPtr packetPtr );
-    void com_ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
+    void ozcore_connect_can_thread( );
+    void ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
+    void ozcore_read_can_thread( );
+    void ozcore_remote_thread();
 
-    void com_ozcore_remote_thread_function( );
-
-    void com_ozcore_read_can_thread_function( );
-
-    void send_remote_can_packet( ComSimuCanMessageType message_type );
-
-    void send_keypad_can_packet( );
+    void disconnection_lidar();
+    void disconnection_can();
+    void disconnection_serial();
 
     int64_t get_now_ms();
 
-    void text_keyboard_reader_thread_function( );
-
     void gps_manager_thread_function( );
-
     double get_north_bearing( double lat1, double lon1, double lat2, double lon2 );
 
 private:
@@ -203,18 +193,6 @@ private:
     // Communication with Core
     bool bridge_connected_;
 
-    std::vector<BaseNaio01PacketPtr> received_packets_;
-    std::mutex received_packets_access_;
-
-    BaseNaio01PacketPtr received_image_;
-    std::mutex received_image_access_;
-
-    std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
-    std::mutex packet_list_to_send_access_;
-
-    // Can
-    bool use_virtual_can_;
-    std::string can_;
     bool graphical_display_on_;
 
     // thread part
@@ -230,10 +208,17 @@ private:
     bool write_thread_started_;
     std::thread write_thread_;
 
-    // sdl part
-    int sdl_key_[SDL_NUM_SCANCODES];
-
     // Packets
+
+    std::vector<BaseNaio01PacketPtr> received_packets_;
+    std::mutex received_packets_access_;
+
+    BaseNaio01PacketPtr received_image_;
+    std::mutex received_image_access_;
+
+    std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
+    std::mutex packet_list_to_send_access_;
+
     std::mutex ha_lidar_packet_ptr_access_;
     HaLidarPacketPtr ha_lidar_packet_ptr_;
 
@@ -251,16 +236,15 @@ private:
 
     std::mutex ha_gps_packet_ptr_access_;
     HaGpsPacketPtr ha_gps_packet_ptr_;
+    std::thread	gps_manager_thread_;
     HaGpsPacketPtr previous_ha_gps_packet_ptr_;
-
-    std::mutex api_stereo_camera_packet_ptr_access_;
-    ApiStereoCameraPacketPtr api_stereo_camera_packet_ptr_;
-    std::mutex last_images_buffer_access_;
-    uint8_t last_images_buffer_[ 4000000 ];
-    ApiStereoCameraPacket::ImageType last_image_type_;
 
     // ia part
     ControlType control_type_;
+
+    // SDL
+
+    int sdl_key_[SDL_NUM_SCANCODES];
 
     SDL_Window* screen_;
     SDL_Renderer* renderer_;
@@ -269,62 +253,86 @@ private:
     SDL_Color sdl_color_white_;
     TTF_Font* ttf_font_;
 
-    bool asked_start_video_;
-    bool asked_stop_video_;
-
-    std::thread image_prepared_thread_;
-
     uint64_t last_motor_time_;
 
-    bool stop_image_thread_asked_;
-    bool image_thread_started_;
-    std::thread image_thread_;
-
-    uint64_t last_image_received_time_;
-
-    // Com with ozcore
-    std::thread com_ozcore_create_serial_thread_;
-    std::thread com_ozcore_read_serial_thread_;
-    bool com_ozcore_serial_connected_;
+    // LIDAR
 
     std::thread ozcore_lidar_thread_;
     bool ozcore_lidar_thread_started_;
 
+    std::mutex ozcore_lidar_socket_access_;
     int ozcore_lidar_server_socket_desc_;
     int ozcore_lidar_socket_desc_;
     bool ozcore_lidar_socket_connected_;
     uint64_t last_ozcore_lidar_socket_activity_time_;
-    std::mutex ozcore_lidar_socket_access_;
 
-    std::thread com_ozcore_read_can_thread_;
-    std::mutex com_ozcore_can_socket_access_;
-    SOCKET com_ozcore_can_socket_;
-    bool com_ozcore_can_connected_;
+    // SERIAL
+
+    bool ozcore_read_serial_thread_started_;
+    std::thread ozcore_read_serial_thread_;
+
+    std::mutex ozcore_serial_socket_access_;
+    int ozcore_serial_server_socket_desc_;
+    int ozcore_serial_socket_desc_;
+    bool ozcore_serial_connected_;
+    uint64_t last_ozcore_serial_socket_activity_time_;
+
+    // CAN
+
+    bool ozcore_can_read_thread_started_;
+    std::thread ozcore_read_can_thread_;
+
+    bool ozcore_connect_can_thread_started_;
+    std::thread ozcore_connect_can_thread_;
+
+    std::mutex ozcore_can_socket_access_;
+    int ozcore_can_server_socket_desc_;
+    int ozcore_can_socket_desc_;
+    bool ozcore_can_socket_connected_;
+    uint64_t last_ozcore_can_socket_activity_time_;
+
+    // ODO
 
     bool com_ozcore_last_odo_ticks_[4];
     HaOdoPacketPtr com_ozcore_last_ha_odo_packet_ptr_;
 
+    // REMOTE
+
     std::mutex com_ozcore_remote_status_access_;
     COM_OZCORE_REMOTE_STATUS com_ozcore_remote_status_;
-    std::thread com_ozcore_remote_thread_;
+    std::thread ozcore_remote_thread_;
+
+    // IHM
 
     char com_ozcore_ihm_line_top_[ 100 ];
     char com_ozcore_ihm_line_bottom_[ 100 ];
 
     COM_OZCORE_IHM_BUTTON_STATUS com_ozcore_ihm_button_status_;
 
+    // IMAGE
     bool stop_image_preparer_thread_asked_;
     bool image_prepared_thread_started_;
+    std::thread image_prepared_thread_;
+
+    bool stop_image_thread_asked_;
+    bool image_thread_started_;
+    std::thread image_thread_;
 
     uint64_t last_image_displayer_action_time_ms_;
     bool asked_image_displayer_start_;
     std::mutex simulatoz_image_actionner_access_;
 
-    std::thread	text_keyboard_reader_thread_;
+    bool asked_start_video_;
+    bool asked_stop_video_;
 
-    uint64_t last_text_keyboard_hit_time_;
+    uint64_t last_image_received_time_;
+    std::mutex api_stereo_camera_packet_ptr_access_;
+    ApiStereoCameraPacketPtr api_stereo_camera_packet_ptr_;
+    std::mutex last_images_buffer_access_;
+    uint8_t last_images_buffer_[ 4000000 ];
+    ApiStereoCameraPacket::ImageType last_image_type_;
 
-    std::thread	gps_manager_thread_;
+    // TOOL POSITION
 
     std::mutex tool_position_access_;
     uint8_t tool_position_;

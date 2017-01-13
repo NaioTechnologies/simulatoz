@@ -81,7 +81,6 @@ Core::Core( int argc, char **argv )
     actuator_position_ = 0.0;
 
     graphics_on_ = true;
-    can_ = "vcan";
 
     // Bridge initialisation
     bridge_ptr_ = std::make_shared<Bridge>();
@@ -109,40 +108,42 @@ void Core::run( int argc, char **argv )
     actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
 
     // subscribe to lidar topic
-    ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::send_lidar_packet_callback, this );
+    ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::callback_lidar, this );
 
     // subscribe to actuator position
-    ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500, &Core::send_actuator_position_callback, this );
+    ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500, &Core::callback_actuator_position, this );
 
     // subscribe to imu topic
-    ros::Subscriber imu_sub = n.subscribe("/oz440/imu/data", 50, &Core::send_imu_packet_callback, this);
+    ros::Subscriber imu_sub = n.subscribe("/oz440/imu/data", 50, &Core::callback_imu, this);
 
     // subscribe to gps topic
     message_filters::Subscriber<sensor_msgs::NavSatFix> gps_fix_sub( n, "/oz440/navsat/fix", 5 );
     message_filters::Subscriber<geometry_msgs::Vector3Stamped> gps_vel_sub( n, "/oz440/navsat/vel", 5 );
     message_filters::TimeSynchronizer<sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped> sync_gps( gps_fix_sub, gps_vel_sub, 10 );
-    sync_gps.registerCallback( boost::bind( &Core::send_gps_packet_callback, this, _1, _2 ) );
+    sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
 
     // subscribe to camera topic
-//    message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
-//    message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
-//    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
-//    sync.registerCallback ( boost::bind(&Core::send_camera_packet_callback, this, _1, _2) );
+    message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
+    message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
+    message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
+    sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
 
     // creates main thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
 
     // creates ozcore_image thread
-//    ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
+    ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
     // creates ozcore_image thread
-//    ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
+    ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
 
     // create_odo_thread
-    send_odo_thread_ = std::thread( &Core::send_odo_packet, this );
+    send_odo_thread_ = std::thread( &Core::odometry_thread, this );
 
     // create_bridge_thread
-//    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
+    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
+
+    std::this_thread::sleep_for(1000ms);
 
     while (ros::master::check() and !terminate_)
     {
@@ -166,7 +167,6 @@ void Core::run( int argc, char **argv )
         }
 
         std::this_thread::sleep_for(100ms);
-
     }
 
     bridge_ptr_->stop_main_thread_asked();
@@ -179,33 +179,23 @@ void Core::run( int argc, char **argv )
     ozcore_image_thread_.join();
     read_thread_.join();
     std::this_thread::sleep_for(500ms);
-    ROS_INFO("Core run thread stopped");
+    ROS_ERROR("Core run thread stopped");
 }
 
-// *********************************************************************************************************************
+//**********************************************************************************************************************
 
-void Core::ozcore_image_disconnected()
+void Core::bridge_thread_function()
 {
-    close( ozcore_image_socket_desc_ );
+    using namespace std::chrono_literals;
 
-    ozcore_image_socket_connected_ = false;
+    std::this_thread::sleep_for( 3000ms );
 
-    ROS_ERROR("OzCore Image Socket Disconnected");
+    bridge_ptr_->init(graphics_on_);
 
-    std_srvs::Empty message;
-    ros::service::call("gazebo/reset_world", message);
-}
-
-// *********************************************************************************************************************
-
-void Core::disconnected()
-{
-    packet_to_send_list_access_.lock();
-
-    packet_to_send_list_.clear();
-
-    packet_to_send_list_access_.unlock();
-
+    while(!terminate_)
+    {
+        std::this_thread::sleep_for( 200ms );
+    }
 }
 
 // *********************************************************************************************************************
@@ -388,7 +378,7 @@ void Core::ozcore_image_thread_function( )
 
             if ( now - last_ozcore_image_socket_activity_time_ > 1000 )
             {
-                ozcore_image_disconnected();
+                disconnection_ozcore_image();
             }
             else
             {
@@ -445,25 +435,9 @@ void Core::ozcore_image_thread_function( )
     ozcore_image_thread_started_ = false;
 }
 
-//**********************************************************************************************************************
-
-void Core::bridge_thread_function()
-{
-    using namespace std::chrono_literals;
-
-    std::this_thread::sleep_for( 2000ms );
-
-    bridge_ptr_->init(graphics_on_, can_ );
-
-    while(!terminate_)
-    {
-        std::this_thread::sleep_for( 200ms );
-    }
-}
-
 // *********************************************************************************************************************
 
-void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
+void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
 
     try
@@ -504,7 +478,7 @@ void Core::send_lidar_packet_callback( const sensor_msgs::LaserScan::ConstPtr& l
 
 // *********************************************************************************************************************
 
-void Core::send_actuator_position_callback( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
+void Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
 {
     try
     {
@@ -529,7 +503,7 @@ void Core::send_actuator_position_callback( const sensor_msgs::JointState::Const
 
 // *********************************************************************************************************************
 
-void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right)
+void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right)
 {
     try
     {
@@ -570,7 +544,7 @@ void Core::send_camera_packet_callback(const sensor_msgs::Image::ConstPtr& image
 
 // *********************************************************************************************************************
 
-void Core::send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg)
+void Core::callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg)
 {
     try {
 
@@ -610,7 +584,7 @@ void Core::send_imu_packet_callback(const sensor_msgs::Imu::ConstPtr& imu_msg)
 
 // *********************************************************************************************************************
 
-void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
+void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
 {
     try
     {
@@ -643,13 +617,15 @@ void Core::send_gps_packet_callback(const sensor_msgs::NavSatFix::ConstPtr& gps_
 
 // *********************************************************************************************************************
 
-void Core::send_odo_packet()
+void Core::odometry_thread()
 {
     using namespace std::chrono_literals;
     uint8_t fr = 0;
     uint8_t br = 0;
     uint8_t bl = 0;
     uint8_t fl = 0;
+
+    std::this_thread::sleep_for(500ms);
 
     while (!terminate_) {
 
@@ -770,5 +746,32 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     }
 
     return tic;
+
+}
+
+
+// *********************************************************************************************************************
+
+void Core::disconnection_ozcore_image()
+{
+    close( ozcore_image_socket_desc_ );
+
+    ozcore_image_socket_connected_ = false;
+
+    ROS_ERROR("OzCore Image Socket Disconnected");
+
+    std_srvs::Empty message;
+    ros::service::call("gazebo/reset_world", message);
+}
+
+// *********************************************************************************************************************
+
+void Core::disconnected()
+{
+    packet_to_send_list_access_.lock();
+
+    packet_to_send_list_.clear();
+
+    packet_to_send_list_access_.unlock();
 
 }
