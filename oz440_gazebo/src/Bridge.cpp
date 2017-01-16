@@ -155,6 +155,8 @@ void Bridge::init( bool graphical_display_on)
             image_thread_ = std::thread(&Bridge::image_thread, this);
         }
 
+        std::this_thread::sleep_for(1500ms);
+
         ozcore_lidar_thread_ = std::thread(&Bridge::ozcore_lidar_thread_function, this);
 
         ozcore_read_serial_thread_ = std::thread(&Bridge::ozcore_read_serial_thread, this);
@@ -1565,6 +1567,8 @@ void Bridge::ozcore_read_serial_thread( )
 
             if (not ozcore_serial_connected_ and ozcore_serial_server_socket_desc_ > 0)
             {
+                ROS_INFO("Waiting for connection port 5554");
+
                 ozcore_serial_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_serial_server_socket_desc_, stop_main_thread_asked_);
 
                 std::this_thread::sleep_for(50ms);
@@ -1573,7 +1577,7 @@ void Bridge::ozcore_read_serial_thread( )
                 {
                     ozcore_serial_connected_ = true;
 
-                    ROS_ERROR("Bridge connected to OzCore Serial Port 5554");
+                    ROS_INFO("SERIAL CONNECTED 5554");
 
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                     last_ozcore_serial_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1586,19 +1590,21 @@ void Bridge::ozcore_read_serial_thread( )
                 milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 int64_t now = static_cast<int64_t>( lidar_now_ms.count());
 
-                if (now - last_ozcore_serial_socket_activity_time_ > 5000)
+                if (now - last_ozcore_serial_socket_activity_time_ > 100000)
                 {
                     disconnection_serial();
-                    ROS_ERROR("Bridge disconnected to OzCore serial Port");
+                    ROS_ERROR( "No serial packet received for 10 seconds" );
                 }
                 else
                 {
+
                     ozcore_serial_socket_access_.lock();
                     ssize_t size = read(ozcore_serial_socket_desc_, b, 1 );
                     ozcore_serial_socket_access_.unlock();
 
                     if (size > 0)
                     {
+
                         milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                         last_ozcore_serial_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
 
@@ -1690,6 +1696,8 @@ void Bridge::ozcore_lidar_thread_function( ) {
             if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
             {
 
+                ROS_INFO("Waiting for connection port 2213");
+
                 ozcore_lidar_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_lidar_server_socket_desc_, stop_main_thread_asked_);
                 std::this_thread::sleep_for(50ms);
 
@@ -1697,7 +1705,7 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 {
                     ozcore_lidar_socket_connected_ = true;
 
-                    ROS_ERROR("Bridge connected to OzCore Lidar Port");
+                    ROS_INFO("Bridge connected to OzCore Lidar Port");
 
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                     last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1710,10 +1718,10 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 int64_t now = static_cast<int64_t>( lidar_now_ms.count());
 
-                if (now - last_ozcore_lidar_socket_activity_time_ > 5000)
+                if (now - last_ozcore_lidar_socket_activity_time_ > 10000)
                 {
                     disconnection_lidar();
-                    ROS_ERROR("Bridge disconnected to OzCore Lidar Port");
+                    ROS_ERROR( "No lidar packet received for 10 seconds" );
                 }
                 else
                 {
@@ -1802,6 +1810,8 @@ void Bridge::ozcore_connect_can_thread( )
         if ( not ozcore_can_socket_connected_ and ozcore_can_server_socket_desc_ > 0 )
 
         {
+            ROS_INFO("Waiting for connection port 5559");
+
             ozcore_can_socket_desc_ = DriverSocket::waitConnectTimer( ozcore_can_server_socket_desc_, stop_main_thread_asked_);
 
             std::this_thread::sleep_for( 50ms );
@@ -1810,7 +1820,7 @@ void Bridge::ozcore_connect_can_thread( )
             {
                 ozcore_can_socket_connected_ = true;
 
-                ROS_ERROR( "OzCore Can Socket Connected" );
+                ROS_INFO( "OzCore Can Socket Connected" );
 
                 milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1822,7 +1832,7 @@ void Bridge::ozcore_connect_can_thread( )
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
 
-            if ( now - last_ozcore_can_socket_activity_time_ > 1000 )
+            if ( now - last_ozcore_can_socket_activity_time_ > 10000 )
             {
                 disconnection_can();
             }
@@ -1899,12 +1909,13 @@ void Bridge::ozcore_read_can_thread( )
         {
             if( ozcore_can_socket_connected_ )
             {
+
                 bytesRead = recv( ozcore_can_socket_desc_, &frame, sizeof( frame ), 0 );
 
                 if ( bytesRead > 0 )
                 {
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                    int64_t last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
+                    last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
 
                     if( ( ( frame.can_id ) >> 7 ) == CAN_ID_IHM )
                     {
@@ -2136,7 +2147,7 @@ void Bridge::disconnection_lidar()
 
     ozcore_lidar_socket_connected_ = false;
 
-    ROS_INFO("OzCore Lidar Socket Disconnected");
+    ROS_ERROR("OzCore Lidar Socket Disconnected 1");
 }
 
 // ##################################################################################################
@@ -2147,7 +2158,7 @@ void Bridge::disconnection_serial()
 
     ozcore_serial_connected_ = false;
 
-    ROS_INFO("OzCore Serial Socket Disconnected");
+    ROS_ERROR("OzCore Serial Socket Disconnected 1");
 }
 
 // ##################################################################################################
@@ -2158,7 +2169,7 @@ void Bridge::disconnection_can()
 
     ozcore_can_socket_connected_ = false;
 
-    ROS_INFO("OzCore can Socket Disconnected");
+    ROS_ERROR("OzCore can Socket Disconnected");
 }
 
 // ##################################################################################################
