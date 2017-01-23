@@ -4,6 +4,7 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <array>
 
 #include "ros/ros.h"
 
@@ -22,6 +23,7 @@
 #include "oz440_socket/ServerSocket.h"
 #include "oz440_api/ApiStereoCameraPacket.hpp"
 #include "Bridge.hpp"
+#include "ThreadsafeQueue.hpp"
 
 class Core
 {
@@ -60,13 +62,12 @@ private:
 
 private:
 
-    bool ozcore_connected_;
-    bool bridge_connected_;
-
     std::shared_ptr<tf::TransformListener> listener_ptr_;
     std::shared_ptr<Bridge> bridge_ptr_;
 
     std::vector< BaseNaio01PacketPtr > received_packet_list_;
+
+    concurrency::ThreadsafeQueue< std::array<uint8_t, 721920 > >  ozcore_image_to_send_;
 
     bool read_thread_started_;
     std::thread read_thread_;
@@ -91,17 +92,7 @@ private:
     bool ozcore_image_socket_connected_;
     uint64_t last_ozcore_image_socket_activity_time_;
 
-    std::mutex packet_to_send_list_access_;
-    std::mutex image_to_send_access_;
-    std::mutex ozcore_image_to_send_access_;
-
-    std::vector< BaseNaio01PacketPtr > packet_to_send_list_;
-    ApiStereoCameraPacketPtr image_to_send_;
-    uint8_t image_buffer_to_send_[ 721920 ];
-
     float actuator_position_;
-
-    bool new_image_received_;
 
     // ROS PART
     ros::Publisher velocity_pub_;

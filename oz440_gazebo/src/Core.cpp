@@ -66,17 +66,11 @@ Core::Core( int argc, char **argv )
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
 
-    read_thread_started_ = false;
-
     ozcore_image_thread_started_ = false;
 
     ozcore_image_socket_connected_ = false;
 
-    ozcore_connected_ = false;
-    bridge_connected_ = false;
-
     terminate_ = false;
-    image_to_send_ = nullptr;
 
     actuator_position_ = 0.0;
 
@@ -98,8 +92,9 @@ Core::~Core( )
 void Core::run( int argc, char **argv )
 {
     using namespace std::chrono_literals;
+    bool last_order_down = 0;
 
-    std::this_thread::sleep_for(1000ms);
+    std::this_thread::sleep_for(1500ms);
 
     ros::NodeHandle n;
 
@@ -128,9 +123,6 @@ void Core::run( int argc, char **argv )
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
     sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
 
-    // creates main thread
-    read_thread_ = std::thread( &Core::read_thread_function, this );
-
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
@@ -141,32 +133,15 @@ void Core::run( int argc, char **argv )
     send_odo_thread_ = std::thread( &Core::odometry_thread, this );
 
     // create_bridge_thread
+    read_thread_ = std::thread( &Core::read_thread_function, this );
+
+    // create_bridge_thread
     bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
-    std::this_thread::sleep_for(1000ms);
-
-    while (ros::master::check() and !terminate_)
+    while ( ros::master::check() and !terminate_ )
     {
-        bridge_connected_ = bridge_ptr_->get_bridge_connected();
-
-        if( bridge_connected_ )
-        {
-            packet_to_send_list_access_.lock();
-
-            if(packet_to_send_list_.size() > 0){
-
-                for ( auto packetPtr : packet_to_send_list_ )
-                {
-                    bridge_ptr_->add_received_packet(packetPtr);
-                }
-
-                packet_to_send_list_.clear();
-            }
-
-            packet_to_send_list_access_.unlock();
-        }
-
-        std::this_thread::sleep_for(100ms);
+        std::this_thread::sleep_for(2ms);
+        ros::spinOnce();
     }
 
     bridge_ptr_->stop_main_thread_asked();
@@ -177,25 +152,9 @@ void Core::run( int argc, char **argv )
     bridge_thread_.join();
     ozcore_image_read_thread_.join();
     ozcore_image_thread_.join();
-    read_thread_.join();
+
     std::this_thread::sleep_for(500ms);
     ROS_ERROR("Core run thread stopped");
-}
-
-//**********************************************************************************************************************
-
-void Core::bridge_thread_function()
-{
-    using namespace std::chrono_literals;
-
-    std::this_thread::sleep_for( 3000ms );
-
-    bridge_ptr_->init(graphics_on_);
-
-    while(!terminate_)
-    {
-        std::this_thread::sleep_for( 200ms );
-    }
 }
 
 // *********************************************************************************************************************
@@ -217,17 +176,15 @@ void Core::read_thread_function( )
             if(stop_main_thread_asked)
             {
                 terminate_ = true;
-                ROS_ERROR("Terminate_ from bridge");
                 ros::shutdown();
             }
 
             received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
-            bridge_ptr_->clear_packet_list_to_send();
 
             for ( auto &&packetPtr : received_packet_list_) // For every packet decoded
             {
-                if (std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr))
-                {
+                if (std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr)) {
+
                     //  When receiving a motor order
                     HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr);
 
@@ -243,49 +200,46 @@ void Core::read_thread_function( )
 
                     velocity_pub_.publish(command);
                 }
-                else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr))
-                {
-                    //  When receiving an actuator order
-                    ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr);
-
-                    geometry_msgs::Vector3 command;
-
-                    if ( ActuatorPacketPtr->position == 1 )
-                    {
-                        command.x = actuator_position_ +0.005;
-                        ROS_INFO("MONTE : %f", actuator_position_ +0.005);
-                        last_order_down = 0;
-
-                    }
-                    else if ( ActuatorPacketPtr->position == 2 )
-                    {
-                        command.x = actuator_position_ -0.005;
-                        ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
-                        last_order_down = 1;
-                    }
-                    else
-                    {
-                        if (last_order_down == 1) {
-                            command.x = actuator_position_ - 0.0001;
-                            std::this_thread::sleep_for(10ms);
-                        }
-                        else
-                        {
-                            command.x = actuator_position_ + 0.0001;
-                            std::this_thread::sleep_for(10ms);
-                        }
-                    }
-                    ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
-
-                    actuator_pub_.publish(command);
-                }
-
+//                else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr))
+//                {
+//                    //  When receiving an actuator order
+//                    ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr);
+//
+//                    geometry_msgs::Vector3 command;
+//
+//                    if ( ActuatorPacketPtr->position == 1 )
+//                    {
+//                        command.x = actuator_position_ +0.005;
+//                        ROS_INFO("MONTE : %f", actuator_position_ +0.005);
+//                        last_order_down = 0;
+//
+//                    }
+//                    else if ( ActuatorPacketPtr->position == 2 )
+//                    {
+//                        command.x = actuator_position_ -0.005;
+//                        ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
+//                        last_order_down = 1;
+//                    }
+//                    else
+//                    {
+//                        if (last_order_down == 1) {
+//                            command.x = actuator_position_ - 0.0001;
+//                            std::this_thread::sleep_for(10ms);
+//                        }
+//                        else
+//                        {
+//                            command.x = actuator_position_ + 0.0001;
+//                            std::this_thread::sleep_for(10ms);
+//                        }
+//                    }
+//                    ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
+//
+//                    actuator_pub_.publish(command);
+//                }
                 received_packet_list_.clear();
+                std::this_thread::sleep_for(5ms);
 
             }
-            std::this_thread::sleep_for(10ms);
-
-            ros::spinOnce();
         }
     }
     catch (SocketException& e )
@@ -293,6 +247,22 @@ void Core::read_thread_function( )
         ROS_INFO( "Read_thread_function exception was caught : %s", e.description().c_str() );
     }
     read_thread_started_ = false;
+}
+
+//**********************************************************************************************************************
+
+void Core::bridge_thread_function()
+{
+    using namespace std::chrono_literals;
+
+    std::this_thread::sleep_for( 3000ms );
+
+    bridge_ptr_->init(graphics_on_);
+
+    while(!terminate_)
+    {
+        std::this_thread::sleep_for( 500ms );
+    }
 }
 
 // *********************************************************************************************************************
@@ -323,7 +293,7 @@ void Core::ozcore_image_read_thread_function()
                     last_ozcore_image_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
                 }
             }
-            std::this_thread::sleep_for(250ms);
+            std::this_thread::sleep_for(500ms);
         }
     }
     catch (SocketException& e )
@@ -348,9 +318,8 @@ void Core::ozcore_image_thread_function( )
 
     ozcore_image_socket_connected_ = false;
 
-    int64_t last_ozcore_image_sent_ms = 0;
-
-    uint8_t image_buffer_to_send[ 721920 ];
+    std::array<uint8_t, 721920 > image_buffer_to_send;
+//     image_buffer_to_send[ 721920 ];
 
     while ( !terminate_ )
     {
@@ -371,7 +340,7 @@ void Core::ozcore_image_thread_function( )
             }
         }
 
-        if ( ozcore_image_socket_connected_ and new_image_received_)
+        if ( ozcore_image_socket_connected_)
         {
             milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
             int64_t now = static_cast<int64_t>( image_now_ms.count());
@@ -382,52 +351,38 @@ void Core::ozcore_image_thread_function( )
             }
             else
             {
+                ozcore_image_to_send_.wait_and_pop(image_buffer_to_send);
+
                 int total_written_bytes = 0;
                 ssize_t write_size = 0;
 
                 int nb_tries = 0;
                 int max_tries = 500;
 
-                ozcore_image_to_send_access_.lock();
-
                 ozcore_image_socket_access_.lock();
 
-                while( total_written_bytes < 721920 and nb_tries < max_tries )
-                {
-                    write_size = send( ozcore_image_socket_desc_, image_buffer_to_send_ + total_written_bytes, 721920 - total_written_bytes, 0 );
-                    std::this_thread::sleep_for( 5ms );
+                while (total_written_bytes < 721920 and nb_tries < max_tries) {
+                    write_size = send(ozcore_image_socket_desc_, image_buffer_to_send.data() + total_written_bytes, 721920 - total_written_bytes, 0);
 
-                    if( write_size < 0 )
-                    {
+                    if (write_size < 0) {
                         nb_tries++;
-                        std::this_thread::sleep_for( 5ms );
-                    }
-                    else
-                    {
+                    } else {
                         total_written_bytes = total_written_bytes + static_cast<int>( write_size );
                         nb_tries = 0;
                     }
+                    std::this_thread::sleep_for(5ms);
                 }
 
                 ozcore_image_socket_access_.unlock();
 
-                new_image_received_ = false;
-
-                ozcore_image_to_send_access_.unlock();
-
-                if( nb_tries >= max_tries )
-                {
+                if (nb_tries >= max_tries) {
                     ROS_ERROR("send packet failed, too many tries");
-                }
-                else
-                {
+                } else {
                     ROS_INFO("Camera packet send to 5558");
                 }
             }
+
         }
-
-        std::this_thread::sleep_for( 10ms );
-
     }
 
     close( ozcore_image_server_socket_desc_ );
@@ -439,7 +394,6 @@ void Core::ozcore_image_thread_function( )
 
 void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
-
     try
     {
         uint16_t distance[ 271 ];
@@ -461,13 +415,10 @@ void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 
         HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
 
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back( lidarPacketPtr );
+        bridge_ptr_->add_received_packet(lidarPacketPtr);
 
         ROS_INFO("Lidar packet enqueued");
 
-        packet_to_send_list_access_.unlock();
     }
     catch ( SocketException& e )
     {
@@ -487,11 +438,7 @@ void Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& 
 
         ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( position_percent );
 
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back( ActuatorPositionPacketPtr );
-
-        packet_to_send_list_access_.unlock();
+        bridge_ptr_->add_received_packet(ActuatorPositionPacketPtr);
 
         ROS_INFO("Actuator position packet enqueued");
     }
@@ -508,30 +455,24 @@ void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const
     try
     {
         // Process image for OzCore
-        ozcore_image_to_send_access_.lock();
 
-        std::memcpy( image_buffer_to_send_, &image_left->data[ 0 ], 360960 );
-        std::memcpy( image_buffer_to_send_+ 360960, &image_right->data[ 0 ], 360960 );
+        std::array < uint8_t, 721920 > image_buffer_to_send;
 
-        new_image_received_ = true;
+        std::memcpy( image_buffer_to_send.data(), &image_left->data[ 0 ], 360960 );
+        std::memcpy( image_buffer_to_send.data() + 360960, &image_right->data[ 0 ], 360960 );
 
-        ozcore_image_to_send_access_.unlock();
+        ozcore_image_to_send_.emplace(std::move(image_buffer_to_send));
 
         // Send image to bridge
         if(bridge_ptr_->get_image_displayer_asked())
         {
             cl_copy::BufferUPtr dataBuffer = cl_copy::unique_buffer( static_cast<size_t>( 721920 ) );
 
-            image_to_send_access_.lock();
-
             std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
             std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
 
-            image_to_send_ = std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) );
+            bridge_ptr_->add_received_image(std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) ));
 
-            bridge_ptr_->set_received_image(image_to_send_);
-
-            image_to_send_access_.unlock();
         }
 
         ROS_INFO("Stereo camera packet managed");
@@ -554,11 +495,7 @@ void Core::callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg)
 
         HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
 
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back(gyroPacketPtr);
-
-        packet_to_send_list_access_.unlock();
+        bridge_ptr_->add_received_packet(gyroPacketPtr);
 
         ROS_INFO("Gyro packet enqueued");
 
@@ -568,11 +505,7 @@ void Core::callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg)
 
         HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared<HaAcceleroPacket>(x_accelero, y_accelero, z_accelero);
 
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back(acceleroPacketPtr);
-
-        packet_to_send_list_access_.unlock();
+        bridge_ptr_->add_received_packet(acceleroPacketPtr);
 
         ROS_INFO("Accelero packet enqueued");
     }
@@ -600,11 +533,7 @@ void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, con
 
         HaGpsPacketPtr gpsPacketPtr = std::make_shared<HaGpsPacket>(time,lat,lon,alt,unit,satUsed,quality,groundSpeed);
 
-        packet_to_send_list_access_.lock();
-
-        packet_to_send_list_.push_back(gpsPacketPtr);
-
-        packet_to_send_list_access_.unlock();
+        bridge_ptr_->add_received_packet(gpsPacketPtr);
 
         ROS_INFO("Gps packet enqueued");
 
@@ -625,11 +554,11 @@ void Core::odometry_thread()
     uint8_t bl = 0;
     uint8_t fl = 0;
 
-    std::this_thread::sleep_for(500ms);
+    std::this_thread::sleep_for(3000ms);
 
     while (!terminate_) {
 
-        if (bridge_connected_) {
+        if (ozcore_image_socket_connected_) {
 
             // Initialisation
             double pitch_bl = getPitch("/back_left_wheel");
@@ -650,6 +579,7 @@ void Core::odometry_thread()
                 bool tic = false;
 
                 while (not tic and !terminate_) {
+
                     std::this_thread::sleep_for(10ms);
 
                     pitch_bl = getPitch("/back_left_wheel");
@@ -665,11 +595,7 @@ void Core::odometry_thread()
 
                 HaOdoPacketPtr odoPacketPtr = std::make_shared<HaOdoPacket>(fr, br, bl, fl);
 
-                packet_to_send_list_access_.lock();
-
-                packet_to_send_list_.push_back(odoPacketPtr);
-
-                packet_to_send_list_access_.unlock();
+                bridge_ptr_->add_received_packet(odoPacketPtr);
 
                 ROS_INFO("Odo Status packet enqueued");
             }
@@ -762,16 +688,4 @@ void Core::disconnection_ozcore_image()
 
     std_srvs::Empty message;
     ros::service::call("gazebo/reset_world", message);
-}
-
-// *********************************************************************************************************************
-
-void Core::disconnected()
-{
-    packet_to_send_list_access_.lock();
-
-    packet_to_send_list_.clear();
-
-    packet_to_send_list_access_.unlock();
-
 }

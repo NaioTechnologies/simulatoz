@@ -38,6 +38,8 @@
 #include "oz440_api/HaAcceleroPacket.hpp"
 #include "DriverSocket.hpp"
 
+#include "ThreadsafeQueue.hpp"
+
 
 class Bridge
 {
@@ -131,12 +133,9 @@ public:
     // launch core
     void init( bool graphical_display_on );
     void add_received_packet(BaseNaio01PacketPtr packetPtr);
+    void add_received_image(BaseNaio01PacketPtr packetPtr);
     void stop_main_thread_asked();
-    void set_received_image(BaseNaio01PacketPtr packetPtr);
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
-    void clear_packet_list_to_send();
-    bool get_com_ozcore_can_connected();
-    bool get_bridge_connected();
     bool get_stop_main_thread_asked();
     bool get_image_displayer_asked();
 
@@ -149,7 +148,6 @@ private:
     //Communication with core
     void read_thread( );
     void manage_received_packet(BaseNaio01PacketPtr packetPtr);
-    void write_thread( );
 
     // images from Core to SDL functions
     void image_thread( );
@@ -204,17 +202,10 @@ private:
     bool read_thread_started_;
     std::thread read_thread_;
 
-    bool stop_write_thread_asked_;
-    bool write_thread_started_;
-    std::thread write_thread_;
-
     // Packets
 
-    std::vector<BaseNaio01PacketPtr> received_packets_;
-    std::mutex received_packets_access_;
-
-    BaseNaio01PacketPtr received_image_;
-    std::mutex received_image_access_;
+    concurrency::ThreadsafeQueue< BaseNaio01PacketPtr > received_packets_;
+    concurrency::ThreadsafeQueue< BaseNaio01PacketPtr > received_image_;
 
     std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
     std::mutex packet_list_to_send_access_;

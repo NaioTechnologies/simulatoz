@@ -48,7 +48,6 @@ Bridge::Bridge( ) :
         stop_main_thread_asked_{ false },
         main_thread_started_{ false },
         read_thread_started_{ false },
-        write_thread_started_{ false },
         main_thread_{ },
         packet_list_to_send_{ },
         ha_lidar_packet_ptr_{ nullptr },
@@ -66,7 +65,12 @@ Bridge::Bridge( ) :
         ozcore_can_socket_connected_{false},
         last_ozcore_lidar_socket_activity_time_{0},
         last_ozcore_can_socket_activity_time_{0},
-        last_ozcore_serial_socket_activity_time_{0}
+        last_ozcore_serial_socket_activity_time_{0},
+        image_thread_started_{false},
+        stop_image_thread_asked_{false},
+        image_prepared_thread_started_{false},
+        stop_image_preparer_thread_asked_{false},
+        bridge_connected_{false}
 {
 
     uint8_t fake = 0;
@@ -120,14 +124,6 @@ Bridge::Bridge( ) :
     com_ozcore_ihm_button_status_.left = false;
     com_ozcore_ihm_button_status_.right = false;
 
-    image_thread_started_ = false;
-    stop_image_thread_asked_ = false;
-
-    image_prepared_thread_started_ = false;
-    stop_image_preparer_thread_asked_ = false;
-
-    bridge_connected_ = false;
-
 }
 
 // ##################################################################################################
@@ -149,9 +145,9 @@ void Bridge::init( bool graphical_display_on)
 
         main_thread_ = std::thread(&Bridge::main_thread, this);
         read_thread_ = std::thread(&Bridge::read_thread, this);
-        write_thread_ = std::thread(&Bridge::write_thread, this);
 
-        if (graphical_display_on_) {
+        if (graphical_display_on_)
+        {
             image_thread_ = std::thread(&Bridge::image_thread, this);
         }
 
@@ -167,19 +163,15 @@ void Bridge::init( bool graphical_display_on)
 
         gps_manager_thread_ = std::thread(&Bridge::gps_manager_thread_function, this);
 
-        std::this_thread::sleep_for(1500ms);
-
         bridge_connected_ = true;
 
         main_thread_.join();
         read_thread_.join();
-        write_thread_.join();
         ozcore_read_serial_thread_.join();
         ozcore_lidar_thread_.join();
         ozcore_read_can_thread_.join();
         ozcore_remote_thread_.join();
         gps_manager_thread_.join();
-
     }
     catch ( std::exception e ) {
         std::cout<<"Exception init catch : "<< e.what() << std::endl;
@@ -192,13 +184,17 @@ void Bridge::init( bool graphical_display_on)
 
 void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 {
-    received_packets_access_.lock();
-
-    received_packets_.push_back(packetPtr);
-
-    received_packets_access_.unlock();
+    received_packets_.emplace(std::move(packetPtr));
 }
 
+// ##################################################################################################
+
+// Enables Core to add a new image
+
+void Bridge::add_received_image(BaseNaio01PacketPtr packetPtr)
+{
+    received_image_.emplace(std::move(packetPtr));
+}
 
 // ##################################################################################################
 
@@ -211,20 +207,6 @@ void Bridge::stop_main_thread_asked()
 
 // ##################################################################################################
 
-// Enables Core to add a new image
-
-void Bridge::set_received_image(BaseNaio01PacketPtr packetPtr)
-{
-    received_image_access_.lock();
-
-    received_image_ = packetPtr;
-
-    received_image_access_.unlock();
-
-}
-
-// ##################################################################################################
-
 // Enables Core to get motor and actuator orders
 
 std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
@@ -232,37 +214,11 @@ std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
     packet_list_to_send_access_.lock();
 
     std::vector< BaseNaio01PacketPtr > list = packet_list_to_send_;
-
-    packet_list_to_send_access_.unlock();
-
-    return( list );
-
-}
-
-// ##################################################################################################
-
-void Bridge::clear_packet_list_to_send()
-{
-    packet_list_to_send_access_.lock();
-
     packet_list_to_send_.clear();
 
     packet_list_to_send_access_.unlock();
 
-}
-
-// ##################################################################################################
-
-bool Bridge::get_com_ozcore_can_connected()
-{
-    return(ozcore_can_socket_connected_);
-}
-
-// ##################################################################################################
-
-bool Bridge::get_bridge_connected()
-{
-    return(bridge_connected_);
+    return( list );
 }
 
 // ##################################################################################################
@@ -277,6 +233,7 @@ bool Bridge::get_stop_main_thread_asked()
 bool Bridge::get_image_displayer_asked()
 {
     return(asked_image_displayer_start_);
+
 }
 
 // ##################################################################################################
@@ -297,8 +254,6 @@ void Bridge::main_thread( )
         {
             graphic_thread();
         }
-
-        std::this_thread::sleep_for(10000ms);
 
         main_thread_started_ = false;
         stop_main_thread_asked_ = false;
@@ -323,22 +278,12 @@ void Bridge::read_thread( )
         ROS_INFO("Starting read thread !");
 
         read_thread_started_ = true;
+        BaseNaio01PacketPtr packetPtr;
 
         while(!stop_main_thread_asked_)
         {
-            received_packets_access_.lock();
-
-            for ( auto &&packetPtr : received_packets_ )
-            {
-                manage_received_packet(packetPtr);
-            }
-
-            received_packets_.clear();
-
-            received_packets_access_.unlock();
-
-            std::this_thread::sleep_for(10ms);
-
+            received_packets_.wait_and_pop(packetPtr);
+            manage_received_packet(packetPtr);
         }
 
         read_thread_started_ = false;
@@ -349,45 +294,6 @@ void Bridge::read_thread( )
     catch ( std::exception e )
     {
         std::cout<<"Exception server_read_thread catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-
-// Sends 0 0 motor orders to the simulator when OzCore is not connected
-
-void Bridge::write_thread( )
-{
-    try{
-
-        ROS_INFO("Starting write_thread.");
-
-        write_thread_started_ = true;
-
-        while( !stop_main_thread_asked_)
-        {
-            packet_list_to_send_access_.lock();
-
-            if ( not ozcore_serial_connected_ )
-            {
-                HaMotorsPacketPtr motor_packet = std::make_shared<HaMotorsPacket>( 0, 0 );
-
-                packet_list_to_send_.push_back( motor_packet );
-
-            }
-
-            packet_list_to_send_access_.unlock();
-
-            std::this_thread::sleep_for( 10ms );
-        }
-
-        write_thread_started_ = false;
-
-        ROS_INFO("Stopping write thread.");
-
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception server_write_thread catch : "<< e.what() << std::endl;
     }
 }
 
@@ -405,6 +311,7 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ha_lidar_packet_ptr_access_.lock();
             ha_lidar_packet_ptr_ = haLidarPacketPtr;
             ha_lidar_packet_ptr_access_.unlock();
+
         }
         else if (std::dynamic_pointer_cast<ApiStereoCameraPacket>(packetPtr))
         {
@@ -460,8 +367,6 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             data[ 5 ] = ( haAcceleroPacketPtr->z >> 0 ) & 0xFF;
 
             ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_ACC, data, 6 );
-
-
         }
         else if (std::dynamic_pointer_cast<HaOdoPacket>(packetPtr))
         {
@@ -521,14 +426,6 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GEN, ComSimuCanMessageType::CAN_MOT_CONS, data, 1 );
 
             com_ozcore_last_ha_odo_packet_ptr_ = haOdoPacketPtr;
-        }
-        else if (std::dynamic_pointer_cast<ApiPostPacket>(packetPtr))
-        {
-            ApiPostPacketPtr apiPostPacketPtr = std::dynamic_pointer_cast<ApiPostPacket>(packetPtr);
-
-            api_post_packet_ptr_access_.lock();
-            api_post_packet_ptr_ = apiPostPacketPtr;
-            api_post_packet_ptr_access_.unlock();
         }
         else if (std::dynamic_pointer_cast<HaGpsPacket>(packetPtr))
         {
@@ -600,14 +497,6 @@ void Bridge::graphic_thread( )
 
                 if(asked_start_video_)
                 {
-                    ApiCommandPacketPtr api_command_packet_zlib_off = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_OFF_IMAGE_ZLIB_COMPRESSION );
-                    ApiCommandPacketPtr api_command_packet_stereo_on = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_ON_API_RAW_STEREO_CAMERA_PACKET );
-
-                    packet_list_to_send_access_.lock();
-                    packet_list_to_send_.emplace_back( api_command_packet_zlib_off );
-                    packet_list_to_send_.emplace_back( api_command_packet_stereo_on );
-                    packet_list_to_send_access_.unlock();
-
                     start_image_display();
 
                     asked_start_video_ = false;
@@ -788,7 +677,7 @@ void Bridge::graphic_thread( )
             read_sdl_keyboard();
             manage_sdl_keyboard();
 
-            std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            std::this_thread::sleep_for( std::chrono::milliseconds( 50) );
 
         }
 
@@ -1083,7 +972,6 @@ Bridge::manage_sdl_keyboard()
         }
 
         if (sdl_key_[SDL_SCANCODE_O] == 1) {
-
             asked_start_video_ = true;
 
             keyPressed = true;
@@ -1326,40 +1214,33 @@ Bridge::manage_sdl_keyboard()
 void Bridge::image_thread()
 {
     try {
-
         image_thread_started_ = true;
+        BaseNaio01PacketPtr packetPtr;
 
         while (!stop_main_thread_asked_)
         {
             if (asked_image_displayer_start_)
             {
+
                 stop_image_thread_asked_ = false;
 
                 image_prepared_thread_ = std::thread(&Bridge::image_preparer_thread, this);
 
-
-                std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 50 )));
+                std::this_thread::sleep_for(50ms);
 
                 while (!stop_image_thread_asked_ and !stop_main_thread_asked_) {
 
-                    received_image_access_.lock();
-
-                    manage_received_packet(received_image_);
-
-                    received_image_access_.unlock();
-
-                    std::this_thread::sleep_for(10ms);
+                    received_image_.wait_and_pop(packetPtr);
+                    manage_received_packet(packetPtr);
                 }
 
                 stop_image_thread_asked_ = false;
+                asked_image_displayer_start_ = false;
 
                 ROS_INFO("Exiting image displayer" );
-
-                asked_image_displayer_start_ = false;
             }
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 200 )));
-
+            std::this_thread::sleep_for(200ms);
         }
     }
     catch ( std::exception e ) {
@@ -1367,7 +1248,6 @@ void Bridge::image_thread()
     }
 
     image_thread_started_ = false;
-
 }
 
 // ##################################################################################################
@@ -1376,6 +1256,7 @@ void Bridge::image_thread()
 void Bridge::image_preparer_thread( )
 {
     try {
+
         ROS_INFO("Starting image_preparer_thread.");
 
         image_prepared_thread_started_ = true;
@@ -1461,7 +1342,6 @@ void Bridge::image_preparer_thread( )
 void Bridge::start_image_display()
 {
     try{
-
         simulatoz_image_actionner_access_.lock();
 
         uint64_t now = get_now_ms();
@@ -1577,7 +1457,7 @@ void Bridge::ozcore_read_serial_thread( )
                 {
                     ozcore_serial_connected_ = true;
 
-                    ROS_INFO("SERIAL CONNECTED 5554");
+                    ROS_ERROR("Serial connected port 5554");
 
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                     last_ozcore_serial_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1587,13 +1467,13 @@ void Bridge::ozcore_read_serial_thread( )
             if (ozcore_serial_connected_)
             {
 
-                milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                int64_t now = static_cast<int64_t>( lidar_now_ms.count());
+                milliseconds serial_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
+                int64_t now = static_cast<int64_t>( serial_now_ms.count());
 
-                if (now - last_ozcore_serial_socket_activity_time_ > 100000)
+                if (now - last_ozcore_serial_socket_activity_time_ > 1000)
                 {
                     disconnection_serial();
-                    ROS_ERROR( "No serial packet received for 10 seconds" );
+                    ROS_INFO( "No serial packet received for 1 second" );
                 }
                 else
                 {
@@ -1650,7 +1530,7 @@ void Bridge::ozcore_read_serial_thread( )
                     }
                 }
 
-                std::this_thread::sleep_for(1ms);
+                std::this_thread::sleep_for(5ms);
             }
 
         }
@@ -1705,7 +1585,7 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 {
                     ozcore_lidar_socket_connected_ = true;
 
-                    ROS_INFO("Bridge connected to OzCore Lidar Port");
+                    ROS_ERROR("Bridge connected to OzCore Lidar Port");
 
                     milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                     last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1718,10 +1598,10 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 int64_t now = static_cast<int64_t>( lidar_now_ms.count());
 
-                if (now - last_ozcore_lidar_socket_activity_time_ > 10000)
+                if (now - last_ozcore_lidar_socket_activity_time_ > 1000)
                 {
                     disconnection_lidar();
-                    ROS_ERROR( "No lidar packet received for 10 seconds" );
+                    ROS_ERROR( "No lidar packet received for 1 seconds" );
                 }
                 else
                 {
@@ -1772,9 +1652,10 @@ void Bridge::ozcore_lidar_thread_function( ) {
                         }
 
                     }
-                }
 
-                std::this_thread::sleep_for(1ms);
+                    std::this_thread::sleep_for(1ms);
+
+                }
             }
 
         }
@@ -1820,7 +1701,7 @@ void Bridge::ozcore_connect_can_thread( )
             {
                 ozcore_can_socket_connected_ = true;
 
-                ROS_INFO( "OzCore Can Socket Connected" );
+                ROS_ERROR( "OzCore Can Socket Connected" );
 
                 milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
                 last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
@@ -1837,7 +1718,7 @@ void Bridge::ozcore_connect_can_thread( )
                 disconnection_can();
             }
 
-            std::this_thread::sleep_for( 100ms );
+            std::this_thread::sleep_for( 500ms );
 
         }
 
@@ -1996,10 +1877,11 @@ void Bridge::ozcore_read_can_thread( )
                         }
                     }
                 }
+
             }
             else
             {
-                std::this_thread::sleep_for( std::chrono::milliseconds( 50 ) );
+                std::this_thread::sleep_for( 50ms);
             }
 
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
@@ -2147,7 +2029,7 @@ void Bridge::disconnection_lidar()
 
     ozcore_lidar_socket_connected_ = false;
 
-    ROS_ERROR("OzCore Lidar Socket Disconnected 1");
+    ROS_INFO("OzCore Lidar Socket Disconnected 1");
 }
 
 // ##################################################################################################
@@ -2158,7 +2040,7 @@ void Bridge::disconnection_serial()
 
     ozcore_serial_connected_ = false;
 
-    ROS_ERROR("OzCore Serial Socket Disconnected 1");
+    ROS_INFO("OzCore Serial Socket Disconnected 1");
 }
 
 // ##################################################################################################
@@ -2169,7 +2051,7 @@ void Bridge::disconnection_can()
 
     ozcore_can_socket_connected_ = false;
 
-    ROS_ERROR("OzCore can Socket Disconnected");
+    ROS_INFO("OzCore can Socket Disconnected");
 }
 
 // ##################################################################################################
@@ -2190,166 +2072,144 @@ void Bridge::gps_manager_thread_function( )
 {
     try{
 
-        uint64_t tick_duration_ms = 1000;
-
-        uint64_t now = get_now_ms();
-        uint64_t next_tick_time = now + tick_duration_ms;
-
         while(!stop_main_thread_asked_ )
         {
-//            now = get_now_ms();
-//
-//            if( now > next_tick_time )
-//            {
-//                ha_gps_packet_ptr_access_.lock();
-//                HaGpsPacketPtr ha_gps_packet_ptr = ha_gps_packet_ptr_;
-//                HaGpsPacketPtr previous_ha_gps_packet_ptr = previous_ha_gps_packet_ptr_;
-//                ha_gps_packet_ptr_access_.unlock();
-//
-//                if( ha_gps_packet_ptr != nullptr )
-//                {
-//                    std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-//
-//                    continue;
-//                }
-//
-//                double track_orientation = 0.0;
-//
-//                if( previous_ha_gps_packet_ptr != nullptr )
-//                {
-//                    // compute speed and track orientation
-//                    track_orientation = get_north_bearing( previous_ha_gps_packet_ptr->lat, previous_ha_gps_packet_ptr->lon, ha_gps_packet_ptr->lat, ha_gps_packet_ptr->lon );
-//                }
-//
-//                //  #####################  RMC ####################
-//
-//                std::time_t rawtime;
-//                std::tm* timeinfo;
-//
-//                char hhmmss[ 80 ];
-//                char ddmmyy[ 80 ];
-//                char to[ 80 ];
-//                char gs[ 80 ];
-//
-//                std::time( &rawtime );
-//                timeinfo = std::localtime( &rawtime );
-//
-//                sprintf( to, "%03.1f", track_orientation );
-//                sprintf( gs, "%03.1f", ha_gps_packet_ptr_->groundSpeed );
-//
-//                std::strftime( hhmmss, 80, "%H%M%S", timeinfo );
-//                std::strftime( ddmmyy, 80, "%d%m%y", timeinfo );
-//
-//                GeoAngle ns = GeoAngle::from_double( ha_gps_packet_ptr->lat );
-//                GeoAngle we = GeoAngle::from_double( ha_gps_packet_ptr->lon );
-//
-//                std::string gprmc =   string( "$GPRMC" ) + string( "," )
-//                                      + string( hhmmss ) + string( "," )
-//                                      + string( "A" ) + string( "," )
-//                                      + ns.to_string( true ) + string( "," )
-//                                      + we.to_string( false ) + string( "," )
-//                                      + string( gs ) + string( "," )
-//                                      + string( to ) + string( "," )
-//                                      + string( ddmmyy ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( "*" );
-//
-//                //  #####################  VTG ####################
-//
-//                std::string gpvtg =   string( "$GPVTG" ) + string( "," )
-//                                      + string( to ) + string( ",T," )
-//                                      + string( to ) + string( ",M," )
-//                                      + string( gs ) + string( ",N," )
-//                                      + string( gs ) + string( ",K," )
-//                                      + string( "*" );
-//
-//
-//                //  #####################  GGA ####################
-//
-//                char quality[ 80 ];
-//                char nos[ 80 ];
-//                char alt[ 80 ];
-//
-//                sprintf( quality, "%d", static_cast<int>( ha_gps_packet_ptr_->quality ) );
-//                sprintf( nos, "%02d", static_cast<int>( ha_gps_packet_ptr_->satUsed ) );
-//                sprintf( alt, "%03.1f", ha_gps_packet_ptr_->alt );
-//
-//                std::string gpgga =   string( "$GPGGA" ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( "#" ) + string( "," )
-//                                      + string( quality ) + string( "," )
-//                                      + string( nos ) + string( "," )
-//                                      + string( "0.9" ) + string( "," )
-//                                      + string( alt ) + string( ",M," )
-//                                      + string( "*" );
-//
-//                // ###############################
-//                // send gprmc
-//                for( int i = 0 ; i < gprmc.size() ; i++ )
-//                {
-//                    uint8_t data[ 1 ];
-//
-//                    data[ 0 ] = static_cast<uint8_t>( gprmc.at( i ) );
-//
-//                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
-//
-//                    usleep( 200 );
-//                }
-//
-//                uint8_t end_data[ 1 ];
-//                end_data[ 0 ] = 10;
-//
-//                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
-//
-//                usleep( 200 );
-//
-//                // ###############################
-//                // send gpvtg
-//                for( int i = 0 ; i < gpvtg.size() ; i++ )
-//                {
-//                    uint8_t data[ 1 ];
-//
-//                    data[ 0 ] = static_cast<uint8_t>( gpvtg.at( i ) );
-//
-//                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
-//
-//                    usleep( 200 );
-//                }
-//
-//                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
-//
-//                usleep( 200 );
-//
-//
-//                // ###############################
-//                // send gpgga
-//                for( int i = 0 ; i < gpgga.size() ; i++ )
-//                {
-//                    uint8_t data[ 1 ];
-//
-//                    data[ 0 ] = static_cast<uint8_t>( gpgga.at( i ) );
-//
-//                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
-//
-//                    usleep( 200 );
-//                }
-//
-//                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
-//
-//                usleep( 200 );
-//
-//                // ##################
-//                next_tick_time = next_tick_time + tick_duration_ms;
-//            }
-//            else
-//            {
-//                uint64_t wait_time = next_tick_time - now;
-//
-//                std::this_thread::sleep_for( std::chrono::milliseconds( wait_time ) );
-//            }
+            ha_gps_packet_ptr_access_.lock();
+            HaGpsPacketPtr ha_gps_packet_ptr = ha_gps_packet_ptr_;
+            HaGpsPacketPtr previous_ha_gps_packet_ptr = previous_ha_gps_packet_ptr_;
+            ha_gps_packet_ptr_access_.unlock();
+
+            if( (ha_gps_packet_ptr == nullptr) or (previous_ha_gps_packet_ptr == nullptr))
+            {
+                std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+            }
+            else
+            {
+                double track_orientation = 0.0;
+
+                // compute speed and track orientation
+                track_orientation = get_north_bearing( previous_ha_gps_packet_ptr->lat, previous_ha_gps_packet_ptr->lon, ha_gps_packet_ptr->lat, ha_gps_packet_ptr->lon );
+
+//                #####################  RMC ####################
+
+                std::time_t rawtime;
+                std::tm* timeinfo;
+
+                char hhmmss[ 80 ];
+                char ddmmyy[ 80 ];
+                char to[ 80 ];
+                char gs[ 80 ];
+
+                std::time( &rawtime );
+                timeinfo = std::localtime( &rawtime );
+
+                sprintf( to, "%03.1f", track_orientation );
+                sprintf( gs, "%03.1f", ha_gps_packet_ptr_->groundSpeed );
+
+                std::strftime( hhmmss, 80, "%H%M%S", timeinfo );
+                std::strftime( ddmmyy, 80, "%d%m%y", timeinfo );
+
+                GeoAngle ns = GeoAngle::from_double( ha_gps_packet_ptr->lat );
+                GeoAngle we = GeoAngle::from_double( ha_gps_packet_ptr->lon );
+
+                std::string gprmc =   string( "$GPRMC" ) + string( "," )
+                                      + string( hhmmss ) + string( "," )
+                                      + string( "A" ) + string( "," )
+                                      + ns.to_string( true ) + string( "," )
+                                      + we.to_string( false ) + string( "," )
+                                      + string( gs ) + string( "," )
+                                      + string( to ) + string( "," )
+                                      + string( ddmmyy ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( "*" );
+
+                //  #####################  VTG ####################
+
+                std::string gpvtg =   string( "$GPVTG" ) + string( "," )
+                                      + string( to ) + string( ",T," )
+                                      + string( to ) + string( ",M," )
+                                      + string( gs ) + string( ",N," )
+                                      + string( gs ) + string( ",K," )
+                                      + string( "*" );
+
+
+                //  #####################  GGA ####################
+
+                char quality[ 80 ];
+                char nos[ 80 ];
+                char alt[ 80 ];
+
+                sprintf( quality, "%d", static_cast<int>( ha_gps_packet_ptr_->quality ) );
+                sprintf( nos, "%02d", static_cast<int>( ha_gps_packet_ptr_->satUsed ) );
+                sprintf( alt, "%03.1f", ha_gps_packet_ptr_->alt );
+
+                std::string gpgga =   string( "$GPGGA" ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( "#" ) + string( "," )
+                                      + string( quality ) + string( "," )
+                                      + string( nos ) + string( "," )
+                                      + string( "0.9" ) + string( "," )
+                                      + string( alt ) + string( ",M," )
+                                      + string( "*" );
+
+                // ###############################
+                // send gprmc
+                for( int i = 0 ; i < gprmc.size() ; i++ )
+                {
+                    uint8_t data[ 1 ];
+
+                    data[ 0 ] = static_cast<uint8_t>( gprmc.at( i ) );
+
+                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+
+                    usleep( 200 );
+                }
+
+                uint8_t end_data[ 1 ];
+                end_data[ 0 ] = 10;
+
+                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+
+                usleep( 200 );
+
+                // ###############################
+                // send gpvtg
+                for( int i = 0 ; i < gpvtg.size() ; i++ )
+                {
+                    uint8_t data[ 1 ];
+
+                    data[ 0 ] = static_cast<uint8_t>( gpvtg.at( i ) );
+
+                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+
+                    usleep( 200 );
+                }
+
+                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+
+                usleep( 200 );
+
+
+                // ###############################
+                // send gpgga
+                for( int i = 0 ; i < gpgga.size() ; i++ )
+                {
+                    uint8_t data[ 1 ];
+
+                    data[ 0 ] = static_cast<uint8_t>( gpgga.at( i ) );
+
+                    ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, data, 1 );
+
+                    usleep( 200 );
+                }
+
+                ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_GPS, ComSimuCanMessageType::CAN_GPS_DATA, end_data, 1 );
+
+                usleep( 20 );
+            }
         }
     }
     catch ( std::exception e ) {
