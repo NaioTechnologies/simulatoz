@@ -119,8 +119,6 @@ public:
 
     const int64_t TIME_BEFORE_IMAGE_LOST_MS = 500;
 
-    const int SIMULATOR_IMAGE_PORT = 5554;
-
     const int OZCORE_LIDAR_PORT = 2213;
 
     const int64_t COM_OZCORE_REMOTE_SEND_RATE_MS = 100;
@@ -133,16 +131,13 @@ public:
     // launch core
     void init( bool graphical_display_on );
     void add_received_packet(BaseNaio01PacketPtr packetPtr);
-    void add_received_image(BaseNaio01PacketPtr packetPtr);
     void stop_main_thread_asked();
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
     bool get_stop_main_thread_asked();
-    bool get_image_displayer_asked();
-
+    bool get_can_connected_();
 
 private:
     // thread function
-    void main_thread( );
     void graphic_thread( );
 
     //Communication with core
@@ -150,22 +145,14 @@ private:
     void manage_received_packet(BaseNaio01PacketPtr packetPtr);
     int last_gyro_packet_send_;
 
-    // images from Core to SDL functions
-    void image_thread( );
-    void image_preparer_thread( );
-    void start_image_display();
-    void stop_image_display();
-
     // graph
     SDL_Window *init_sdl(const char *name, int szX, int szY);
 
     void read_sdl_keyboard();
     bool manage_sdl_keyboard();
 
-    void draw_robot();
-    void draw_lidar( uint16_t lidar_distance_[271] );
     void draw_text( char gyro_buff[100], int x, int y );
-    void draw_images( );
+
 
     // COM OZCORE
 
@@ -193,9 +180,6 @@ private:
 
     bool graphical_display_on_;
 
-    // thread part
-    bool main_thread_started_;
-    std::thread main_thread_;
     std::atomic<bool> stop_main_thread_asked_;
 
     bool stop_read_thread_asked_;
@@ -205,7 +189,6 @@ private:
     // Packets
 
     concurrency::ThreadsafeQueue< BaseNaio01PacketPtr > received_packets_;
-    concurrency::ThreadsafeQueue< BaseNaio01PacketPtr > received_image_;
 
     std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
     std::mutex packet_list_to_send_access_;
@@ -221,9 +204,6 @@ private:
 
     std::mutex ha_odo_packet_ptr_access;
     HaOdoPacketPtr ha_odo_packet_ptr_;
-
-    std::mutex api_post_packet_ptr_access_;
-    ApiPostPacketPtr api_post_packet_ptr_;
 
     std::mutex ha_gps_packet_ptr_access_;
     HaGpsPacketPtr ha_gps_packet_ptr_;
@@ -293,29 +273,6 @@ private:
     char com_ozcore_ihm_line_bottom_[ 100 ];
 
     COM_OZCORE_IHM_BUTTON_STATUS com_ozcore_ihm_button_status_;
-
-    // IMAGE
-    bool stop_image_preparer_thread_asked_;
-    bool image_prepared_thread_started_;
-    std::thread image_prepared_thread_;
-
-    bool stop_image_thread_asked_;
-    bool image_thread_started_;
-    std::thread image_thread_;
-
-    uint64_t last_image_displayer_action_time_ms_;
-    bool asked_image_displayer_start_;
-    std::mutex simulatoz_image_actionner_access_;
-
-    bool asked_start_video_;
-    bool asked_stop_video_;
-
-    uint64_t last_image_received_time_;
-    std::mutex api_stereo_camera_packet_ptr_access_;
-    ApiStereoCameraPacketPtr api_stereo_camera_packet_ptr_;
-    std::mutex last_images_buffer_access_;
-    uint8_t last_images_buffer_[ 4000000 ];
-    ApiStereoCameraPacket::ImageType last_image_type_;
 
     // TOOL POSITION
 

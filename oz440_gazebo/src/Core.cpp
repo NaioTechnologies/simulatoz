@@ -413,18 +413,6 @@ void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const
 
         ozcore_image_to_send_.emplace(std::move(image_buffer_to_send));
 
-        // Send image to bridge
-        if(bridge_ptr_->get_image_displayer_asked())
-        {
-            cl_copy::BufferUPtr dataBuffer = cl_copy::unique_buffer( static_cast<size_t>( 721920 ) );
-
-            std::memcpy( &(*dataBuffer)[ 0 ], &image_left->data[ 0 ], 360960 );
-            std::memcpy( &(*dataBuffer)[ 0 ] + 360960, &image_right->data[ 0 ], 360960 );
-
-            bridge_ptr_->add_received_image(std::make_shared<ApiStereoCameraPacket>( ApiStereoCameraPacket::ImageType::RAW_IMAGES, std::move( dataBuffer ) ));
-
-        }
-
         ROS_INFO("Stereo camera packet managed");
     }
     catch (SocketException& e )
@@ -508,7 +496,7 @@ void Core::odometry_thread()
 
     while (!terminate_) {
 
-        if (ozcore_image_socket_connected_) {
+        if (bridge_ptr_->get_can_connected_()) {
 
             // Initialisation
             double pitch_bl = getPitch("/back_left_wheel");
@@ -546,8 +534,6 @@ void Core::odometry_thread()
                 HaOdoPacketPtr odoPacketPtr = std::make_shared<HaOdoPacket>(fr, br, bl, fl);
 
                 bridge_ptr_->add_received_packet(odoPacketPtr);
-
-                ROS_ERROR("Odo Status packet enqueued");
             }
         }
         else{

@@ -47,44 +47,20 @@ static pid_t gettid( void )
 
 Bridge::Bridge( ) :
         stop_main_thread_asked_{ false },
-        main_thread_started_{ false },
         read_thread_started_{ false },
-        main_thread_{ },
         packet_list_to_send_{ },
         ha_lidar_packet_ptr_{ nullptr },
         ha_odo_packet_ptr_{ nullptr },
-        api_post_packet_ptr_{nullptr },
         ha_gps_packet_ptr_{ nullptr },
         control_type_{ ControlType::CONTROL_TYPE_MANUAL },
         last_motor_time_{ 0L },
-        last_image_received_time_{ 0 },
-        last_image_displayer_action_time_ms_{ 0 },
-        asked_image_displayer_start_{ false },
         received_packets_{},
         ozcore_serial_connected_{false},
         ozcore_lidar_socket_connected_{false},
         ozcore_can_socket_connected_{false},
-        image_thread_started_{false},
-        stop_image_thread_asked_{false},
-        image_prepared_thread_started_{false},
-        stop_image_preparer_thread_asked_{false},
         bridge_connected_{false},
         last_gyro_packet_send_{0}
 {
-
-    uint8_t fake = 0;
-
-    for ( int i = 0 ; i < 1000000 ; i++ )
-    {
-        if( fake >= 255 )
-        {
-            fake = 0;
-        }
-
-        last_images_buffer_[ i ] = fake;
-
-        fake++;
-    }
 
     com_ozcore_last_odo_ticks_[0] = false;
     com_ozcore_last_odo_ticks_[1] = false;
@@ -140,15 +116,12 @@ void Bridge::init( bool graphical_display_on)
 {
     try
     {
+        uint64_t last_screen_output_time = 0;
+        uint64_t last_key_time = 0;
+
         graphical_display_on_ = graphical_display_on;
 
-        main_thread_ = std::thread(&Bridge::main_thread, this);
         read_thread_ = std::thread(&Bridge::read_thread, this);
-
-        if (graphical_display_on_)
-        {
-            image_thread_ = std::thread(&Bridge::image_thread, this);
-        }
 
         std::this_thread::sleep_for(1500ms);
 
@@ -163,7 +136,12 @@ void Bridge::init( bool graphical_display_on)
 
         bridge_connected_ = true;
 
-        main_thread_.join();
+        // creates graphic thread
+        if (graphical_display_on_)
+        {
+            graphic_thread();
+        }
+
         read_thread_.join();
         ozcore_read_serial_thread_.join();
         ozcore_lidar_thread_.join();
@@ -185,15 +163,6 @@ void Bridge::init( bool graphical_display_on)
 void Bridge::add_received_packet(BaseNaio01PacketPtr packetPtr)
 {
     received_packets_.emplace(std::move(packetPtr));
-}
-
-// ##################################################################################################
-
-// Enables Core to add a new image
-
-void Bridge::add_received_image(BaseNaio01PacketPtr packetPtr)
-{
-    received_image_.emplace(std::move(packetPtr));
 }
 
 // ##################################################################################################
@@ -230,43 +199,10 @@ bool Bridge::get_stop_main_thread_asked()
 
 // ##################################################################################################
 
-bool Bridge::get_image_displayer_asked()
+bool Bridge::get_can_connected_()
 {
-    return(asked_image_displayer_start_);
-
+    return(ozcore_can_socket_connected_);
 }
-
-// ##################################################################################################
-
-// Creates graphic thread or sends teleco keys and ihm...
-
-void Bridge::main_thread( )
-{
-    try {
-        main_thread_started_ = true;
-        stop_main_thread_asked_ = false;
-
-        uint64_t last_screen_output_time = 0;
-        uint64_t last_key_time = 0;
-
-        // creates graphic thread
-        if (graphical_display_on_)
-        {
-            graphic_thread();
-        }
-
-        main_thread_started_ = false;
-        stop_main_thread_asked_ = false;
-
-        ROS_ERROR("Stopping bridge main thread");
-
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception main_thread catch : "<< e.what() << std::endl;
-    }
-
-}
-
 // ##################################################################################################
 
 // thread function : read from simulator socket and calls manage_received_packets
@@ -312,18 +248,6 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
             ha_lidar_packet_ptr_ = haLidarPacketPtr;
             ha_lidar_packet_ptr_access_.unlock();
 
-        }
-        else if (std::dynamic_pointer_cast<ApiStereoCameraPacket>(packetPtr))
-        {
-            ApiStereoCameraPacketPtr api_stereo_camera_packet_ptr = std::dynamic_pointer_cast<ApiStereoCameraPacket>(
-                    packetPtr);
-
-            milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-            last_image_received_time_ = static_cast<int64_t>( now_ms.count());
-
-            api_stereo_camera_packet_ptr_access_.lock();
-            api_stereo_camera_packet_ptr_ = api_stereo_camera_packet_ptr;
-            api_stereo_camera_packet_ptr_access_.unlock();
         }
         else if (std::dynamic_pointer_cast<HaGyroPacket>(packetPtr))
         {
@@ -485,48 +409,8 @@ void Bridge::graphic_thread( )
         // create graphics
         screen_ = init_sdl("Simulatoz Bridge", 800, 730);
 
-        // prepare timers for real time operations
-        milliseconds ms = duration_cast< milliseconds >( system_clock::now().time_since_epoch() );
-
-        int64_t now = static_cast<int64_t>( ms.count() );
-        int64_t duration = MAIN_GRAPHIC_DISPLAY_RATE_MS;
-        int64_t nextTick = now + duration;
-
         while( !stop_main_thread_asked_)
         {
-
-            ms = duration_cast< milliseconds >( system_clock::now().time_since_epoch() );
-            now = static_cast<int64_t>( ms.count() );
-
-            // Test keyboard input.
-            // send commands related to keyboard.
-            if( now >= nextTick )
-            {
-                nextTick = now + duration;
-
-                if(asked_start_video_)
-                {
-                    start_image_display();
-
-                    asked_start_video_ = false;
-
-                }
-
-                if(asked_stop_video_)
-                {
-                    ApiCommandPacketPtr api_command_packet_stereo_off = std::make_shared<ApiCommandPacket>( ApiCommandPacket::CommandType::TURN_OFF_API_RAW_STEREO_CAMERA_PACKET );
-
-                    packet_list_to_send_access_.lock();
-                    packet_list_to_send_.emplace_back( api_command_packet_stereo_off );
-                    packet_list_to_send_access_.unlock();
-
-                    stop_image_display();
-
-                    asked_stop_video_ = false;
-
-                }
-            }
-
             read_sdl_keyboard();
             manage_sdl_keyboard();
 
@@ -540,149 +424,14 @@ void Bridge::graphic_thread( )
 
             SDL_RenderFillRect( renderer_, &background );
 
-            draw_robot();
-
-            uint16_t lidar_distance_[ 271 ];
-
-            ha_lidar_packet_ptr_access_.lock();
-
-            if( ha_lidar_packet_ptr_ != nullptr )
-            {
-
-                for( int i = 0; i < 271 ; i++ )
-                {
-                    lidar_distance_[ i ] = ha_lidar_packet_ptr_->distance[ i ];
-                }
-            }
-            else
-            {
-                for( int i = 0; i < 271 ; i++ )
-                {
-                    lidar_distance_[ i ] = 5000;
-                }
-            }
-
-            ha_lidar_packet_ptr_access_.unlock();
-
-            draw_lidar( lidar_distance_ );
-
-            draw_images( );
-
-            // ##############################################
-
-            char gyro_buff[ 100 ];
-
-            ha_gyro_packet_ptr_access_.lock();
-            HaGyroPacketPtr ha_gyro_packet_ptr = ha_gyro_packet_ptr_;
-            ha_gyro_packet_ptr_access_.unlock();
-
-            if( ha_gyro_packet_ptr != nullptr )
-            {
-
-                snprintf( gyro_buff, sizeof( gyro_buff ), "Gyro  : %d ; %d, %d", ha_gyro_packet_ptr->x, ha_gyro_packet_ptr->y, ha_gyro_packet_ptr->z );
-            }
-            else
-            {
-                snprintf( gyro_buff, sizeof( gyro_buff ), "Gyro  : N/A ; N/A, N/A" );
-            }
-
-            ha_accel_packet_ptr_access_.lock();
-            HaAcceleroPacketPtr ha_accel_packet_ptr = ha_accel_packet_ptr_;
-            ha_accel_packet_ptr_access_.unlock();
-
-            char accel_buff[100];
-            if( ha_accel_packet_ptr != nullptr )
-            {
-
-                snprintf( accel_buff, sizeof( accel_buff ), "Accel : %d ; %d, %d", ha_accel_packet_ptr->x, ha_accel_packet_ptr->y, ha_accel_packet_ptr->z );
-            }
-            else
-            {
-                snprintf(accel_buff, sizeof(accel_buff), "Accel : N/A ; N/A, N/A" );
-            }
-
-            ha_odo_packet_ptr_access.lock();
-            HaOdoPacketPtr ha_odo_packet_ptr = ha_odo_packet_ptr_;
-            ha_odo_packet_ptr_access.unlock();
-
-            char odo_buff[100];
-            if( ha_odo_packet_ptr != nullptr )
-            {
-
-                snprintf( odo_buff, sizeof( odo_buff ), "ODO -> RF : %d ; RR : %d ; RL : %d, FL : %d", ha_odo_packet_ptr->fr, ha_odo_packet_ptr->rr, ha_odo_packet_ptr->rl, ha_odo_packet_ptr->fl );
-
-            }
-            else
-            {
-                snprintf( odo_buff, sizeof( odo_buff ), "ODO -> RF : N/A ; RR : N/A ; RL : N/A, FL : N/A" );
-            }
-
-            ha_gps_packet_ptr_access_.lock();
-            HaGpsPacketPtr ha_gps_packet_ptr = ha_gps_packet_ptr_;
-            ha_gps_packet_ptr_access_.unlock();
-
-            char gps1_buff[ 100 ];
-            char gps2_buff[ 100 ];
-            if( ha_gps_packet_ptr_ != nullptr )
-            {
-
-                snprintf( gps1_buff, sizeof( gps1_buff ), "GPS -> lat : %lf ; lon : %lf ; alt : %lf", ha_gps_packet_ptr->lat, ha_gps_packet_ptr->lon, ha_gps_packet_ptr->alt ) ;
-                snprintf( gps2_buff, sizeof( gps2_buff ), "GPS -> nbsat : %d ; fixlvl : %d ; speed : %lf ", ha_gps_packet_ptr->satUsed,ha_gps_packet_ptr->quality, ha_gps_packet_ptr->groundSpeed ) ;
-            }
-            else
-            {
-                snprintf( gps1_buff, sizeof( gps1_buff ), "GPS -> lat : N/A ; lon : N/A ; alt : N/A" );
-                snprintf( gps2_buff, sizeof( gps2_buff ), "GPS -> lnbsat : N/A ; fixlvl : N/A ; speed : N/A" );
-            }
-
-            draw_text( gyro_buff, 10, 410 );
-            draw_text( accel_buff, 10, 420 );
-            draw_text( odo_buff, 10, 430 );
-            draw_text( gps1_buff, 10, 440 );
-            draw_text( gps2_buff, 10, 450 );
-
             draw_text( com_ozcore_ihm_line_top_, 500, 410 );
             draw_text( com_ozcore_ihm_line_bottom_, 500, 420 );
 
-
             // ##############################################
-
-            static int flying_pixel_x = 0;
-
-            if( flying_pixel_x > 800 )
-            {
-                flying_pixel_x = 0;
-            }
-
-            SDL_SetRenderDrawColor( renderer_, 200, 150, 125, 255 );
-            SDL_Rect flying_pixel;
-            flying_pixel.w = 1;
-            flying_pixel.h = 1;
-            flying_pixel.y = 482;
-            flying_pixel.x = flying_pixel_x;
-
-            flying_pixel_x++;
-
-            SDL_RenderFillRect(renderer_, &flying_pixel);
 
             SDL_RenderPresent( renderer_ );
 
-            // compute wait time
-            milliseconds end_ms = duration_cast< milliseconds >( system_clock::now().time_since_epoch() );
-            int64_t end_now = static_cast<int64_t>( end_ms.count() );
-            int64_t wait_time = nextTick - end_now;
-
-            if( wait_time <= 0 )
-            {
-                wait_time = 10;
-            }
-
             // repeat keyboard reading for smoother command inputs
-            read_sdl_keyboard();
-            manage_sdl_keyboard();
-
-            std::this_thread::sleep_for( std::chrono::milliseconds( wait_time ) );
-
             read_sdl_keyboard();
             manage_sdl_keyboard();
 
@@ -721,169 +470,6 @@ void Bridge::draw_text( char buffer[100], int x, int y )
     catch ( std::exception e )
     {
         std::cout<<"Exception draw_text catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-//
-void Bridge::draw_lidar( uint16_t lidar_distance_[ 271 ] )
-{
-    try
-    {
-        for (int i = 0; i < 271; i++) {
-            double dist = static_cast<double>( lidar_distance_[i] ) / 10.0f;
-
-            if (dist < 3.0f) {
-                dist = 5000.0f;
-            }
-
-            if (i > 45) {
-                double x_cos = dist * cos(static_cast<double>((i - 45) * M_PI / 180. ));
-                double y_sin = dist * sin(static_cast<double>((i - 45) * M_PI / 180. ));
-
-                double x = 400.0 - x_cos;
-                double y = 400.0 - y_sin;
-
-                SDL_SetRenderDrawColor(renderer_, 255, 255, 255, 255);
-                SDL_Rect lidar_pixel;
-
-                lidar_pixel.w = 1;
-                lidar_pixel.h = 1;
-                lidar_pixel.x = static_cast<int>( x );
-                lidar_pixel.y = static_cast<int>( y );
-
-                SDL_RenderFillRect(renderer_, &lidar_pixel);
-            }
-        }
-    }
-    catch ( std::exception e )
-    {
-        std::cout<<"Exception draw lidar catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-
-void Bridge::draw_robot()
-{
-    try {
-        SDL_SetRenderDrawColor(renderer_, 200, 200, 200, 255);
-
-        SDL_Rect main;
-        main.w = 42;
-        main.h = 80;
-        main.y = 480 - main.h;
-        main.x = 400 - (main.w / 2);
-
-        SDL_RenderFillRect(renderer_, &main);
-
-        SDL_SetRenderDrawColor(renderer_, 100, 100, 100, 255);
-        SDL_Rect flw;
-        flw.w = 8;
-        flw.h = 20;
-        flw.y = 480 - 75;
-        flw.x = 400 - 21;
-
-        SDL_RenderFillRect(renderer_, &flw);
-
-        SDL_SetRenderDrawColor(renderer_, 100, 100, 100, 255);
-        SDL_Rect frw;
-        frw.w = 8;
-        frw.h = 20;
-        frw.y = 480 - 75;
-        frw.x = 400 + 21 - 8;
-
-        SDL_RenderFillRect(renderer_, &frw);
-
-        SDL_SetRenderDrawColor(renderer_, 100, 100, 100, 255);
-        SDL_Rect rlw;
-        rlw.w = 8;
-        rlw.h = 20;
-        rlw.y = 480 - 5 - 20;
-        rlw.x = 400 - 21;
-
-        SDL_RenderFillRect(renderer_, &rlw);
-
-        SDL_SetRenderDrawColor(renderer_, 100, 100, 100, 255);
-        SDL_Rect rrw;
-        rrw.w = 8;
-        rrw.h = 20;
-        rrw.y = 480 - 5 - 20;
-        rrw.x = 400 + 21 - 8;
-
-        SDL_RenderFillRect(renderer_, &rrw);
-
-        SDL_SetRenderDrawColor(renderer_, 120, 120, 120, 255);
-        SDL_Rect lidar;
-        lidar.w = 8;
-        lidar.h = 8;
-        lidar.y = 480 - 80 - 8;
-        lidar.x = 400 - 4;
-
-        SDL_RenderFillRect(renderer_, &lidar);
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception draw robot catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-
-void Bridge::draw_images( )
-{
-    try {
-        SDL_Surface *left_image;
-
-
-        SDL_Surface *right_image;
-
-#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-        Uint32 rmask = 0xff000000;
-        Uint32 gmask = 0x00ff0000;
-        Uint32 bmask = 0x0000ff00;
-        Uint32 amask = 0x000000ff;
-#else
-        Uint32 rmask = 0x000000ff;
-        Uint32 gmask = 0x0000ff00;
-        Uint32 bmask = 0x00ff0000;
-        Uint32 amask = 0xff000000;
-#endif
-
-        last_images_buffer_access_.lock();
-
-        uint8_t last_images_buffer_to_display[752 * 480 * 3 * 2];
-
-        std::memcpy(&(last_images_buffer_to_display[0]), &(last_images_buffer_[0]), 752 * 480 * 3 * 2);
-
-        last_images_buffer_access_.unlock();
-
-        if (last_image_type_ == ApiStereoCameraPacket::ImageType::RAW_IMAGES or
-            last_image_type_ == ApiStereoCameraPacket::ImageType::RAW_IMAGES_ZLIB) {
-            left_image = SDL_CreateRGBSurfaceFrom(last_images_buffer_to_display, 752, 480, 3 * 8, 752 * 3, rmask, gmask,
-                                                  bmask, amask);
-            right_image = SDL_CreateRGBSurfaceFrom(last_images_buffer_to_display + (752 * 480 * 3), 752, 480, 3 * 8,
-                                                   752 * 3, rmask, gmask, bmask, amask);
-        } else {
-            left_image = SDL_CreateRGBSurfaceFrom(last_images_buffer_to_display, 376, 240, 3 * 8, 376 * 3, rmask, gmask,
-                                                  bmask, amask);
-            right_image = SDL_CreateRGBSurfaceFrom(last_images_buffer_to_display + (376 * 240 * 3), 376, 240, 3 * 8,
-                                                   376 * 3, rmask, gmask, bmask, amask);
-        }
-
-        SDL_Rect left_rect = {400 - 376 - 10, 485, 376, 240};
-
-        SDL_Rect right_rect = {400 + 10, 485, 376, 240};
-
-        SDL_Texture *left_texture = SDL_CreateTextureFromSurface(renderer_, left_image);
-
-        SDL_Texture *right_texture = SDL_CreateTextureFromSurface(renderer_, right_image);
-
-        SDL_RenderCopy(renderer_, left_texture, NULL, &left_rect);
-
-        SDL_RenderCopy(renderer_, right_texture, NULL, &right_rect);
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception draw images catch : "<< e.what() << std::endl;
     }
 }
 
@@ -978,18 +564,6 @@ Bridge::manage_sdl_keyboard()
             bridge_connected_ = false;
 
             return true;
-        }
-
-        if (sdl_key_[SDL_SCANCODE_O] == 1) {
-            asked_start_video_ = true;
-
-            keyPressed = true;
-        }
-
-        if (sdl_key_[SDL_SCANCODE_F] == 1) {
-            asked_stop_video_ = true;
-
-            keyPressed = true;
         }
 
         if (sdl_key_[SDL_SCANCODE_UP] == 1 and sdl_key_[SDL_SCANCODE_LEFT] == 1) {
@@ -1218,218 +792,6 @@ Bridge::manage_sdl_keyboard()
 
 // ##################################################################################################
 
-//Starts image_read_thread, image_write_thread and image_preparer_thread
-
-void Bridge::image_thread()
-{
-    try {
-        image_thread_started_ = true;
-        BaseNaio01PacketPtr packetPtr;
-
-        while (!stop_main_thread_asked_)
-        {
-            if (asked_image_displayer_start_)
-            {
-
-                stop_image_thread_asked_ = false;
-
-                image_prepared_thread_ = std::thread(&Bridge::image_preparer_thread, this);
-
-                std::this_thread::sleep_for(50ms);
-
-                while (!stop_image_thread_asked_ and !stop_main_thread_asked_) {
-
-                    received_image_.wait_and_pop(packetPtr);
-                    manage_received_packet(packetPtr);
-                }
-
-                stop_image_thread_asked_ = false;
-                asked_image_displayer_start_ = false;
-
-                ROS_INFO("Exiting image displayer" );
-            }
-
-            std::this_thread::sleep_for(200ms);
-        }
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception image_thread catch : "<< e.what() << std::endl;
-    }
-
-    image_thread_started_ = false;
-}
-
-// ##################################################################################################
-
-// Prepare image for SDL
-void Bridge::image_preparer_thread( )
-{
-    try {
-
-        ROS_INFO("Starting image_preparer_thread.");
-
-        image_prepared_thread_started_ = true;
-        stop_image_preparer_thread_asked_ = false;
-
-        while (!stop_image_preparer_thread_asked_ and !stop_main_thread_asked_) {
-
-            api_stereo_camera_packet_ptr_access_.lock();
-
-            if (api_stereo_camera_packet_ptr_ == nullptr) {
-                int64_t now = get_now_ms();
-
-                int64_t diff_time = now - last_image_received_time_;
-
-                if (diff_time > TIME_BEFORE_IMAGE_LOST_MS) {
-                    last_image_received_time_ = now;
-
-                    uint8_t fake = 0;
-
-                    last_images_buffer_access_.lock();
-
-                    for (int i = 0; i < 721920 * 3; i++) {
-                        if (fake >= 255) {
-                            fake = 0;
-                        }
-
-                        last_images_buffer_[i] = fake;
-
-                        fake++;
-                    }
-
-                    last_images_buffer_access_.unlock();
-                }
-            }
-            else {
-
-
-                last_image_type_ = api_stereo_camera_packet_ptr_->imageType;
-
-                size_t buffer_size = api_stereo_camera_packet_ptr_->dataBuffer->size();
-
-                cl_copy::BufferUPtr prepared_image_buffer = cl_copy::unique_buffer(buffer_size);
-
-                for (int i = 0; i < buffer_size; i++) {
-                    (*prepared_image_buffer)[i] = api_stereo_camera_packet_ptr_->dataBuffer->at(i);
-                }
-
-                last_images_buffer_access_.lock();
-
-                // don't know how to display 8bits image with sdl...
-                for (uint i = 0; i < prepared_image_buffer->size(); i++) {
-
-                    last_images_buffer_[(i * 3) + 0] = prepared_image_buffer->at(i);
-                    last_images_buffer_[(i * 3) + 1] = prepared_image_buffer->at(i);
-                    last_images_buffer_[(i * 3) + 2] = prepared_image_buffer->at(i);
-                }
-
-                last_images_buffer_access_.unlock();
-
-                api_stereo_camera_packet_ptr_ = nullptr;
-            }
-
-            api_stereo_camera_packet_ptr_access_.unlock();
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(static_cast<int64_t>( 20 )));
-        }
-
-        stop_image_preparer_thread_asked_ = false;
-        image_prepared_thread_started_ = false;
-
-        ROS_INFO("Exiting image_preparer_thread");
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception image_preparer_thread catch : "<< e.what() << std::endl;
-    }
-
-}
-
-// ##################################################################################################
-
-// Ask image_displayer_start_ if image threads not already started
-
-void Bridge::start_image_display()
-{
-    try{
-        simulatoz_image_actionner_access_.lock();
-
-        uint64_t now = get_now_ms();
-
-        if( now - last_image_displayer_action_time_ms_ > 1000 )
-        {
-            last_image_displayer_action_time_ms_ = now;
-
-            if(image_thread_started_ and !image_prepared_thread_started_)
-            {
-                asked_image_displayer_start_ = true;
-            }
-        }
-
-        simulatoz_image_actionner_access_.unlock();
-    }
-
-    catch ( std::exception e ) {
-        std::cout<<"Exception start_image_display catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-
-// Stop image displayer
-
-void Bridge::stop_image_display()
-{
-    try{
-        simulatoz_image_actionner_access_.lock();
-
-        uint64_t now = get_now_ms();
-
-        if( now - last_image_displayer_action_time_ms_ > 1000 )
-        {
-            last_image_displayer_action_time_ms_ = now;
-
-            std::cout << "Stopping image displayer" << std::endl;
-
-            if( image_thread_started_  and image_prepared_thread_started_ )
-            {
-                stop_image_preparer_thread_asked_ = true;
-                stop_image_thread_asked_ = true;
-
-                int cpt = 0;
-
-                while( !stop_main_thread_asked_ and ( image_prepared_thread_started_ ) and cpt < 100  )
-                {
-                    std::this_thread::sleep_for( std::chrono::milliseconds( static_cast<int64_t>( 1 ) ) );
-                    cpt++;
-                }
-                uint8_t fake = 0;
-
-                for ( int i = 0 ; i < 4000000 ; i++ )
-                {
-                    if( fake >= 255 )
-                    {
-                        fake = 0;
-                    }
-
-                    last_images_buffer_[ i ] = fake;
-
-                    fake++;
-                }
-
-                image_prepared_thread_.join();
-            }
-        }
-
-        simulatoz_image_actionner_access_.unlock();
-    }
-
-    catch ( std::exception e ) {
-        std::cout<<"Exception stop_image display catch : "<< e.what() << std::endl;
-    }
-}
-
-// ##################################################################################################
-
 // Reads motor orders from OzCore on the Serial and add them to packet_list_to_send
 
 void Bridge::ozcore_read_serial_thread( )
@@ -1455,13 +817,11 @@ void Bridge::ozcore_read_serial_thread( )
         {
             if (not ozcore_serial_connected_ and ozcore_serial_server_socket_desc_ > 0)
             {
-                ROS_ERROR("Waiting for Serial connection port 5554");
-
                 ozcore_serial_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_serial_server_socket_desc_, stop_main_thread_asked_);
 
                 std::this_thread::sleep_for(50ms);
 
-                if (ozcore_serial_server_socket_desc_ > 0)
+                if (ozcore_serial_socket_desc_ > 0)
                 {
                     ozcore_serial_connected_ = true;
 
@@ -1477,7 +837,12 @@ void Bridge::ozcore_read_serial_thread( )
 
                 if(size < 0)
                 {
-                    if(errno == 32){
+                    if( errno == 32 ){
+                        disconnection_serial();
+                    }
+                }
+                else if ( size == 0){
+                    if( errno == 11 or errno == 32 ){
                         disconnection_serial();
                     }
                 }
@@ -1521,7 +886,6 @@ void Bridge::ozcore_read_serial_thread( )
                     {
                         posInEntete = 1;
                     }
-
                 }
             }
 
@@ -1566,12 +930,8 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
         while (!stop_main_thread_asked_)
         {
-
-            if (not ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
+            if ( !ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
             {
-
-                ROS_INFO("Waiting for connection port 2213");
-
                 ozcore_lidar_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_lidar_server_socket_desc_, stop_main_thread_asked_);
                 std::this_thread::sleep_for(50ms);
 
@@ -1580,7 +940,6 @@ void Bridge::ozcore_lidar_thread_function( ) {
                     ozcore_lidar_socket_connected_ = true;
 
                     ROS_ERROR("Bridge connected to OzCore Lidar Port");
-
                 }
             }
 
@@ -1595,6 +954,11 @@ void Bridge::ozcore_lidar_thread_function( ) {
                 if(size < 0)
                 {
                     if(errno == 32){
+                        disconnection_lidar();
+                    }
+                }
+                else if ( size == 0){
+                    if( errno == 11 or errno == 32 ){
                         disconnection_lidar();
                     }
                 }
@@ -1632,16 +996,11 @@ void Bridge::ozcore_lidar_thread_function( ) {
                         {
                             ROS_ERROR("Error sending lidar trame");
                         }
-
                         ozcore_lidar_socket_access_.unlock();
+                        std::this_thread::sleep_for(5ms);
                     }
-
                 }
-
-                std::this_thread::sleep_for(1ms);
-
             }
-
         }
 
         close(ozcore_lidar_server_socket_desc_);
@@ -1748,7 +1107,11 @@ void Bridge::ozcore_read_can_thread( )
                     if(errno == 32){
                         disconnection_can();
                     }
-
+                }
+                else if (bytesRead == 0){
+                    if( errno == 11 or errno == 32 ){
+                        disconnection_can();
+                    }
                 }
                 else if ( bytesRead > 0 )
                 {
@@ -1984,7 +1347,7 @@ void Bridge::disconnection_lidar()
 
     ozcore_lidar_socket_connected_ = false;
 
-    ROS_INFO("OzCore Lidar Socket Disconnected 1");
+    ROS_ERROR("OzCore Lidar Socket Disconnected");
 }
 
 // ##################################################################################################
@@ -1995,7 +1358,7 @@ void Bridge::disconnection_serial()
 
     ozcore_serial_connected_ = false;
 
-    ROS_INFO("OzCore Serial Socket Disconnected 1");
+    ROS_ERROR("OzCore Serial Socket Disconnected");
 }
 
 // ##################################################################################################
@@ -2006,7 +1369,7 @@ void Bridge::disconnection_can()
 
     ozcore_can_socket_connected_ = false;
 
-    ROS_INFO("OzCore can Socket Disconnected");
+    ROS_ERROR("OzCore can Socket Disconnected");
 }
 
 // ##################################################################################################
