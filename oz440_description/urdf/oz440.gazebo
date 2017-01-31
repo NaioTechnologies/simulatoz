@@ -154,20 +154,49 @@
     </gazebo>
 
     <!-- plugin pour l'IMU  -->
+    <!--<gazebo>-->
+        <!--<plugin name="imu_plugin" filename="libgazebo_ros_imu.so">-->
+            <!--<robotNamespace>/oz440/</robotNamespace>-->
+            <!--<alwaysOn>true</alwaysOn>-->
+            <!--<bodyName>IMU_link</bodyName>-->
+            <!--<topicName>imu/data</topicName>-->
+            <!--<serviceName>imu_service</serviceName>-->
+            <!--<gaussianNoise>0.00005</gaussianNoise>-->
+            <!--<updateRate>80.0</updateRate>-->
+        <!--</plugin>-->
+    <!--</gazebo>-->
+
+    <!--<gazebo>-->
+        <!--<plugin name="gazebo_ros_imu_direct" filename="libgazebo_ros_imu_direct.so">-->
+            <!--<robotNamespace>/oz440/</robotNamespace>-->
+            <!--<updateRate>80.0</updateRate>-->
+            <!--<bodyName>IMU_link</bodyName>-->
+            <!--<topicName>imu/data</topicName>-->
+            <!--<accelDrift>0.0005 0.0005 0.0005</accelDrift>-->
+            <!--<accelGaussianNoise>0.0005 0.005 0.0005</accelGaussianNoise>-->
+            <!--<rateDrift>0.00005 0.00005 0.00005 </rateDrift>-->
+            <!--<rateGaussianNoise>0.0005 0.0005 0.0005 </rateGaussianNoise>-->
+            <!--<headingDrift>0.00005</headingDrift>-->
+            <!--<headingGaussianNoise>0.00005</headingGaussianNoise>-->
+        <!--</plugin>-->
+    <!--</gazebo>-->
+
+    <!-- plugin pour l'IMU  -->
     <gazebo>
         <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
             <robotNamespace>/oz440/</robotNamespace>
-            <updateRate>100.0</updateRate>
+            <updateRate>80.0</updateRate>
             <bodyName>IMU_link</bodyName>
             <topicName>imu/data</topicName>
             <accelDrift>0.0005 0.0005 0.0005</accelDrift>
-            <accelGaussianNoise>0.0005 0.005 0.0005</accelGaussianNoise>
-            <rateDrift>0.00005 0.00005 0.00005 </rateDrift>
-            <rateGaussianNoise>0.0005 0.0005 0.0005 </rateGaussianNoise>
-            <headingDrift>0.00005</headingDrift>
-            <headingGaussianNoise>0.00005</headingGaussianNoise>
+            <accelGaussianNoise>0.005 0.005 0.005</accelGaussianNoise>
+            <rateDrift>0.0005 0.0005 0.0005 </rateDrift>
+            <rateGaussianNoise>0.005 0.005 0.005 </rateGaussianNoise>
+            <headingDrift>0.0005</headingDrift>
+            <headingGaussianNoise>0.0005</headingGaussianNoise>
         </plugin>
     </gazebo>
+
 
     <!-- plugin pour le GPS -->
     <gazebo>

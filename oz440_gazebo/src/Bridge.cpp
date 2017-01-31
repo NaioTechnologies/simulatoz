@@ -14,6 +14,7 @@
 #include <linux/can/raw.h>
 #include <cstring>
 #include <pthread.h>
+#include <errno.h>
 
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -63,14 +64,12 @@ Bridge::Bridge( ) :
         ozcore_serial_connected_{false},
         ozcore_lidar_socket_connected_{false},
         ozcore_can_socket_connected_{false},
-        last_ozcore_lidar_socket_activity_time_{0},
-        last_ozcore_can_socket_activity_time_{0},
-        last_ozcore_serial_socket_activity_time_{0},
         image_thread_started_{false},
         stop_image_thread_asked_{false},
         image_prepared_thread_started_{false},
         stop_image_preparer_thread_asked_{false},
-        bridge_connected_{false}
+        bridge_connected_{false},
+        last_gyro_packet_send_{0}
 {
 
     uint8_t fake = 0;
@@ -157,7 +156,6 @@ void Bridge::init( bool graphical_display_on)
 
         ozcore_read_serial_thread_ = std::thread(&Bridge::ozcore_read_serial_thread, this);
 
-        ozcore_connect_can_thread_ = std::thread(&Bridge::ozcore_connect_can_thread, this);
         ozcore_read_can_thread_ = std::thread(&Bridge::ozcore_read_can_thread, this);
         ozcore_remote_thread_ = std::thread(&Bridge::ozcore_remote_thread, this);
 
@@ -172,6 +170,8 @@ void Bridge::init( bool graphical_display_on)
         ozcore_read_can_thread_.join();
         ozcore_remote_thread_.join();
         gps_manager_thread_.join();
+
+        ROS_ERROR("End of bridge thread");
     }
     catch ( std::exception e ) {
         std::cout<<"Exception init catch : "<< e.what() << std::endl;
@@ -346,6 +346,15 @@ void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
 
             ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_IMU, ComSimuCanMessageType::CAN_IMU_GYRO, data, 6 );
 
+//            uint64_t now = get_now_ms();
+//
+//            int duree_entre_deux_packets = (int)now - last_gyro_packet_send_ ;
+//
+//            if(duree_entre_deux_packets > 15){
+//                ROS_ERROR("Duree %d", duree_entre_deux_packets);
+//            }
+//
+//            last_gyro_packet_send_ = now;
         }
         else if (std::dynamic_pointer_cast<HaAcceleroPacket>(packetPtr))
         {
@@ -1444,10 +1453,9 @@ void Bridge::ozcore_read_serial_thread( )
 
         while (!stop_main_thread_asked_)
         {
-
             if (not ozcore_serial_connected_ and ozcore_serial_server_socket_desc_ > 0)
             {
-                ROS_INFO("Waiting for connection port 5554");
+                ROS_ERROR("Waiting for Serial connection port 5554");
 
                 ozcore_serial_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_serial_server_socket_desc_, stop_main_thread_asked_);
 
@@ -1458,83 +1466,69 @@ void Bridge::ozcore_read_serial_thread( )
                     ozcore_serial_connected_ = true;
 
                     ROS_ERROR("Serial connected port 5554");
-
-                    milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                    last_ozcore_serial_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
                 }
             }
 
             if (ozcore_serial_connected_)
             {
+                ozcore_serial_socket_access_.lock();
+                ssize_t size = read(ozcore_serial_socket_desc_, b, 1);
+                ozcore_serial_socket_access_.unlock();
 
-                milliseconds serial_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                int64_t now = static_cast<int64_t>( serial_now_ms.count());
-
-                if (now - last_ozcore_serial_socket_activity_time_ > 1000)
+                if(size < 0)
                 {
-                    disconnection_serial();
-                    ROS_INFO( "No serial packet received for 1 second" );
-                }
-                else
-                {
-
-                    ozcore_serial_socket_access_.lock();
-                    ssize_t size = read(ozcore_serial_socket_desc_, b, 1 );
-                    ozcore_serial_socket_access_.unlock();
-
-                    if (size > 0)
-                    {
-
-                        milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                        last_ozcore_serial_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
-
-                        if ( posInEntete == 2 )
-                        {
-                            motors[ motorNumber ] = ( ( ( char ) b[ 0 ] ) * 2 ) - 128;
-
-                            if ( motorNumber == 2 )
-                            {
-                                HaMotorsPacketPtr haMotorsPacketPtr = std::make_shared<HaMotorsPacket>( motors[ 2 ], motors[ 1 ] );
-
-                                packet_list_to_send_access_.lock();
-                                packet_list_to_send_.push_back( haMotorsPacketPtr );
-                                packet_list_to_send_access_.unlock();
-                            }
-
-                            posInEntete = 0;
-                        }
-
-                        if ( posInEntete == 1 )
-                        {
-                            if ( b[0] == 6 )
-                            {
-                                motorNumber = 1;
-                                posInEntete = 2;
-                            }
-                            else if ( b[0] == 7 )
-                            {
-                                motorNumber = 2;
-                                posInEntete = 2;
-                            }
-                            else
-                            {
-                                posInEntete = 0;
-                            }
-                        }
-
-                        if ( ( posInEntete == 0 ) && ( b[ 0 ] == 128 ) )
-                        {
-                            posInEntete = 1;
-                        }
-
+                    if(errno == 32){
+                        disconnection_serial();
                     }
                 }
+                else if (size > 0){
 
-                std::this_thread::sleep_for(5ms);
+                    if ( posInEntete == 2 )
+                    {
+                        motors[ motorNumber ] = ( ( ( char ) b[ 0 ] ) * 2 ) - 128;
+
+                        if ( motorNumber == 2 )
+                        {
+                            HaMotorsPacketPtr haMotorsPacketPtr = std::make_shared<HaMotorsPacket>( motors[ 2 ], motors[ 1 ] );
+
+                            packet_list_to_send_access_.lock();
+                            packet_list_to_send_.push_back( haMotorsPacketPtr );
+                            packet_list_to_send_access_.unlock();
+                        }
+
+                        posInEntete = 0;
+                    }
+
+                    if ( posInEntete == 1 )
+                    {
+                        if ( b[0] == 6 )
+                        {
+                            motorNumber = 1;
+                            posInEntete = 2;
+                        }
+                        else if ( b[0] == 7 )
+                        {
+                            motorNumber = 2;
+                            posInEntete = 2;
+                        }
+                        else
+                        {
+                            posInEntete = 0;
+                        }
+                    }
+
+                    if ( ( posInEntete == 0 ) && ( b[ 0 ] == 128 ) )
+                    {
+                        posInEntete = 1;
+                    }
+
+                }
             }
 
+            std::this_thread::sleep_for(5ms);
         }
-        close(ozcore_serial_socket_desc_);
+
+        close(ozcore_serial_server_socket_desc_);
 
         ozcore_read_serial_thread_started_ = false;
 
@@ -1587,147 +1581,81 @@ void Bridge::ozcore_lidar_thread_function( ) {
 
                     ROS_ERROR("Bridge connected to OzCore Lidar Port");
 
-                    milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                    last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
                 }
             }
 
             if (ozcore_lidar_socket_connected_)
             {
+                memset( received_buffer, '\0', 1000 );
 
-                milliseconds lidar_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                int64_t now = static_cast<int64_t>( lidar_now_ms.count());
+                ozcore_lidar_socket_access_.lock();
+                ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
+                ozcore_lidar_socket_access_.unlock();
 
-                if (now - last_ozcore_lidar_socket_activity_time_ > 1000)
+                if(size < 0)
                 {
-                    disconnection_lidar();
-                    ROS_ERROR( "No lidar packet received for 1 seconds" );
+                    if(errno == 32){
+                        disconnection_lidar();
+                    }
                 }
-                else
+                else if (size > 0)
                 {
-                    memset( received_buffer, '\0', 1000 );
+                    received_buffer[ size ] = '\0';
 
-                    ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
-                    ozcore_lidar_socket_access_.unlock();
-
-                    if (size > 0)
+                    if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
                     {
-                        received_buffer[ size ] = '\0';
+                        struct timespec timeInit;
+                        clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
 
-                        milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                        last_ozcore_lidar_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
+                        ha_lidar_packet_ptr_access_.lock();
 
-                        if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
+                        if (ha_lidar_packet_ptr_ != nullptr)
                         {
-                            struct timespec timeInit;
-                            clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
-
-                            ha_lidar_packet_ptr_access_.lock();
-
-                            if (ha_lidar_packet_ptr_ != nullptr)
-                            {
-                                for (int i = 0; i < 271; i++) {
-                                    lidar[i] = ha_lidar_packet_ptr_->distance[i];
-                                    albedo[i] = ha_lidar_packet_ptr_->albedo[i];
-                                }
+                            for (int i = 0; i < 271; i++) {
+                                lidar[i] = ha_lidar_packet_ptr_->distance[i];
+                                albedo[i] = ha_lidar_packet_ptr_->albedo[i];
                             }
-
-                            ha_lidar_packet_ptr_access_.unlock();
-
-                            nbMesures++;
-                            nbTelegrammes++;
-
-                            createTrame(lidar, albedo, trame, nbMesures, nbTelegrammes, timeInit);
-
-                            ozcore_lidar_socket_access_.lock();
-
-                            ssize_t write_size = write(ozcore_lidar_socket_desc_, trame, strlen(trame));
-
-                            if (write_size != strlen(trame))
-                            {
-                                ROS_ERROR("Error sending lidar trame");
-                            }
-
-                            ozcore_lidar_socket_access_.unlock();
                         }
 
+                        ha_lidar_packet_ptr_access_.unlock();
+
+                        nbMesures++;
+                        nbTelegrammes++;
+
+                        createTrame(lidar, albedo, trame, nbMesures, nbTelegrammes, timeInit);
+
+                        ozcore_lidar_socket_access_.lock();
+
+                        ssize_t write_size = write(ozcore_lidar_socket_desc_, trame, strlen(trame));
+
+                        if (write_size != strlen(trame))
+                        {
+                            ROS_ERROR("Error sending lidar trame");
+                        }
+
+                        ozcore_lidar_socket_access_.unlock();
                     }
 
-                    std::this_thread::sleep_for(1ms);
-
                 }
+
+                std::this_thread::sleep_for(1ms);
+
             }
 
         }
+
         close(ozcore_lidar_server_socket_desc_);
 
         ozcore_lidar_thread_started_ = false;
 
         disconnection_lidar();
+
     }
     catch (std::exception e)
     {
         std::cout << "Exception ozcore_lidar_thread_function catch : " << e.what() << std::endl;
     }
 
-}
-
-//**********************************************************************************************************************
-
-void Bridge::ozcore_connect_can_thread( )
-{
-    using namespace std::chrono_literals;
-
-    int naio01_ozcore_can_server_port = 5559;
-
-    ozcore_can_server_socket_desc_ = DriverSocket::openSocketServer( naio01_ozcore_can_server_port );
-
-    ozcore_connect_can_thread_started_ = true;
-
-    ozcore_can_socket_connected_ = false;
-
-    while ( !stop_main_thread_asked_ )
-    {
-        if ( not ozcore_can_socket_connected_ and ozcore_can_server_socket_desc_ > 0 )
-
-        {
-            ROS_INFO("Waiting for connection port 5559");
-
-            ozcore_can_socket_desc_ = DriverSocket::waitConnectTimer( ozcore_can_server_socket_desc_, stop_main_thread_asked_);
-
-            std::this_thread::sleep_for( 50ms );
-
-            if ( ozcore_can_socket_desc_ > 0 )
-            {
-                ozcore_can_socket_connected_ = true;
-
-                ROS_ERROR( "OzCore Can Socket Connected" );
-
-                milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
-            }
-        }
-
-        if ( ozcore_can_socket_connected_ )
-        {
-            milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-            int64_t now = static_cast<int64_t>( image_now_ms.count());
-
-            if ( now - last_ozcore_can_socket_activity_time_ > 10000 )
-            {
-                disconnection_can();
-            }
-
-            std::this_thread::sleep_for( 500ms );
-
-        }
-
-        std::this_thread::sleep_for( 5ms );
-    }
-
-    close( ozcore_can_server_socket_desc_ );
-
-    ozcore_connect_can_thread_started_ = false;
 }
 
 // ##################################################################################################
@@ -1780,23 +1708,50 @@ void Bridge::ozcore_read_can_thread( )
 {
     try{
 
+        using namespace std::chrono_literals;
+
+        int naio01_ozcore_can_server_port = 5559;
+
         ssize_t bytesRead;
 
         struct can_frame frame;
 
         memset( &frame, 0, sizeof( frame ) );
 
+        ozcore_can_server_socket_desc_ = DriverSocket::openSocketServer( naio01_ozcore_can_server_port );
+
+        ozcore_read_can_thread_started_ = true;
+
+        ozcore_can_socket_connected_ = false;
+
         while( !stop_main_thread_asked_)
         {
-            if( ozcore_can_socket_connected_ )
+            if ( !ozcore_can_socket_connected_ and ozcore_can_server_socket_desc_ > 0 )
             {
+                ozcore_can_socket_desc_ = DriverSocket::waitConnectTimer( ozcore_can_server_socket_desc_, stop_main_thread_asked_);
 
-                bytesRead = recv( ozcore_can_socket_desc_, &frame, sizeof( frame ), 0 );
+                std::this_thread::sleep_for( 50ms );
 
-                if ( bytesRead > 0 )
+                if ( ozcore_can_socket_desc_ > 0 )
                 {
-                    milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                    last_ozcore_can_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
+                    ozcore_can_socket_connected_ = true;
+
+                    ROS_ERROR( "OzCore Can Socket Connected" );
+                }
+            }
+            else if( ozcore_can_socket_connected_ )
+            {
+                bytesRead = read( ozcore_can_socket_desc_, &frame, sizeof( frame ));
+
+                if(bytesRead < 0)
+                {
+                    if(errno == 32){
+                        disconnection_can();
+                    }
+
+                }
+                else if ( bytesRead > 0 )
+                {
 
                     if( ( ( frame.can_id ) >> 7 ) == CAN_ID_IHM )
                     {
@@ -1873,20 +1828,20 @@ void Bridge::ozcore_read_can_thread( )
 
                             ozcore_send_can_packet( ComSimuCanMessageId::CAN_ID_TELECO, ComSimuCanMessageType::CAN_TELECO_NUM_VERSION, remote_data, 8 );
 
-
                         }
                     }
                 }
 
             }
-            else
-            {
-                std::this_thread::sleep_for( 50ms);
-            }
 
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
 
         }
+        close(ozcore_can_server_socket_desc_);
+
+        disconnection_can();
+
+        ozcore_read_can_thread_started_ = false;
 
     }
     catch ( std::exception e ) {

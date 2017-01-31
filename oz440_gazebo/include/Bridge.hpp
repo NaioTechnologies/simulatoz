@@ -148,6 +148,7 @@ private:
     //Communication with core
     void read_thread( );
     void manage_received_packet(BaseNaio01PacketPtr packetPtr);
+    int last_gyro_packet_send_;
 
     // images from Core to SDL functions
     void image_thread( );
@@ -172,7 +173,6 @@ private:
 
     void ozcore_lidar_thread_function( );
 
-    void ozcore_connect_can_thread( );
     void ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
     void ozcore_read_can_thread( );
     void ozcore_remote_thread();
@@ -246,7 +246,7 @@ private:
 
     uint64_t last_motor_time_;
 
-    // LIDAR
+    //  -- LIDAR --
 
     std::thread ozcore_lidar_thread_;
     bool ozcore_lidar_thread_started_;
@@ -255,9 +255,8 @@ private:
     int ozcore_lidar_server_socket_desc_;
     int ozcore_lidar_socket_desc_;
     bool ozcore_lidar_socket_connected_;
-    uint64_t last_ozcore_lidar_socket_activity_time_;
 
-    // SERIAL
+    //  -- SERIAL --
 
     bool ozcore_read_serial_thread_started_;
     std::thread ozcore_read_serial_thread_;
@@ -266,21 +265,16 @@ private:
     int ozcore_serial_server_socket_desc_;
     int ozcore_serial_socket_desc_;
     bool ozcore_serial_connected_;
-    uint64_t last_ozcore_serial_socket_activity_time_;
 
-    // CAN
+    //  -- CAN --
 
-    bool ozcore_can_read_thread_started_;
+    bool ozcore_read_can_thread_started_;
     std::thread ozcore_read_can_thread_;
-
-    bool ozcore_connect_can_thread_started_;
-    std::thread ozcore_connect_can_thread_;
 
     std::mutex ozcore_can_socket_access_;
     int ozcore_can_server_socket_desc_;
     int ozcore_can_socket_desc_;
     bool ozcore_can_socket_connected_;
-    uint64_t last_ozcore_can_socket_activity_time_;
 
     // ODO
 

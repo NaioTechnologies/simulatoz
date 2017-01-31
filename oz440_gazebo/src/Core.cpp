@@ -22,6 +22,7 @@
 #include "oz440_api/HaOdoPacket.hpp"
 #include "oz440_api/ApiMoveActuatorPacket.hpp"
 
+#include <errno.h>
 #include <vector>
 #include <atomic>
 #include <stdlib.h>
@@ -126,9 +127,6 @@ void Core::run( int argc, char **argv )
     // creates ozcore_image thread
     ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
 
-    // creates ozcore_image thread
-    ozcore_image_read_thread_ = std::thread( &Core::ozcore_image_read_thread_function, this );
-
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::odometry_thread, this );
 
@@ -140,7 +138,7 @@ void Core::run( int argc, char **argv )
 
     while ( ros::master::check() and !terminate_ )
     {
-        std::this_thread::sleep_for(2ms);
+        std::this_thread::sleep_for(5ms);
         ros::spinOnce();
     }
 
@@ -150,7 +148,6 @@ void Core::run( int argc, char **argv )
 
     send_odo_thread_.join();
     bridge_thread_.join();
-    ozcore_image_read_thread_.join();
     ozcore_image_thread_.join();
 
     std::this_thread::sleep_for(500ms);
@@ -265,45 +262,6 @@ void Core::bridge_thread_function()
     }
 }
 
-// *********************************************************************************************************************
-
-void Core::ozcore_image_read_thread_function()
-{
-    using namespace std::chrono_literals;
-
-    uint8_t received_buffer[ 4096 ];
-
-    ozcore_image_read_thread_started_ = true;
-
-    try
-    {
-        while (!terminate_ )
-        {
-            if( ozcore_image_socket_connected_ )
-            {
-                ozcore_image_socket_access_.lock();
-
-                ssize_t size = read( ozcore_image_socket_desc_, received_buffer, 4096 );
-
-                ozcore_image_socket_access_.unlock();
-
-                if (size > 0)
-                {
-                    milliseconds now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                    last_ozcore_image_socket_activity_time_ = static_cast<int64_t>( now_ms.count());
-                }
-            }
-            std::this_thread::sleep_for(500ms);
-        }
-    }
-    catch (SocketException& e )
-    {
-        ROS_INFO( "Image_read_thread_function exception was caught : %s", e.description().c_str() );
-    }
-
-    ozcore_image_read_thread_started_ = false;
-}
-
 //**********************************************************************************************************************
 
 void Core::ozcore_image_thread_function( )
@@ -319,7 +277,6 @@ void Core::ozcore_image_thread_function( )
     ozcore_image_socket_connected_ = false;
 
     std::array<uint8_t, 721920 > image_buffer_to_send;
-//     image_buffer_to_send[ 721920 ];
 
     while ( !terminate_ )
     {
@@ -334,57 +291,50 @@ void Core::ozcore_image_thread_function( )
                 ozcore_image_socket_connected_ = true;
 
                 ROS_ERROR( "OzCore Image Socket Connected" );
-
-                milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-                last_ozcore_image_socket_activity_time_ = static_cast<int64_t>( image_now_ms.count());
             }
         }
 
         if ( ozcore_image_socket_connected_)
         {
-            milliseconds image_now_ms = duration_cast<milliseconds>(system_clock::now().time_since_epoch());
-            int64_t now = static_cast<int64_t>( image_now_ms.count());
+            ozcore_image_to_send_.wait_and_pop(image_buffer_to_send);
 
-            if ( now - last_ozcore_image_socket_activity_time_ > 1000 )
-            {
-                disconnection_ozcore_image();
-            }
-            else
-            {
-                ozcore_image_to_send_.wait_and_pop(image_buffer_to_send);
+            int total_written_bytes = 0;
+            ssize_t write_size = 0;
 
-                int total_written_bytes = 0;
-                ssize_t write_size = 0;
+            int nb_tries = 0;
+            int max_tries = 500;
 
-                int nb_tries = 0;
-                int max_tries = 500;
+            ozcore_image_socket_access_.lock();
 
-                ozcore_image_socket_access_.lock();
+            while (total_written_bytes < 721920 and nb_tries < max_tries) {
+                write_size = send(ozcore_image_socket_desc_, image_buffer_to_send.data() + total_written_bytes, 721920 - total_written_bytes, 0);
 
-                while (total_written_bytes < 721920 and nb_tries < max_tries) {
-                    write_size = send(ozcore_image_socket_desc_, image_buffer_to_send.data() + total_written_bytes, 721920 - total_written_bytes, 0);
+                if (write_size < 0) {
 
-                    if (write_size < 0) {
-                        nb_tries++;
-                    } else {
-                        total_written_bytes = total_written_bytes + static_cast<int>( write_size );
-                        nb_tries = 0;
+                    if(errno == 32){
+                        disconnection_ozcore_image();
                     }
-                    std::this_thread::sleep_for(5ms);
-                }
 
-                ozcore_image_socket_access_.unlock();
-
-                if (nb_tries >= max_tries) {
-                    ROS_ERROR("send packet failed, too many tries");
+                    nb_tries++;
                 } else {
-                    ROS_INFO("Camera packet send to 5558");
+                    total_written_bytes = total_written_bytes + static_cast<int>( write_size );
+                    nb_tries = 0;
                 }
+                std::this_thread::sleep_for(5ms);
             }
 
+            ozcore_image_socket_access_.unlock();
+
+            if (nb_tries >= max_tries) {
+                ROS_ERROR("send packet failed, too many tries");
+            } else {
+                ROS_INFO("Camera packet send to 5558");
+            }
         }
+
     }
 
+    disconnection_ozcore_image();
     close( ozcore_image_server_socket_desc_ );
 
     ozcore_image_thread_started_ = false;
@@ -597,7 +547,7 @@ void Core::odometry_thread()
 
                 bridge_ptr_->add_received_packet(odoPacketPtr);
 
-                ROS_INFO("Odo Status packet enqueued");
+                ROS_ERROR("Odo Status packet enqueued");
             }
         }
         else{
@@ -605,6 +555,8 @@ void Core::odometry_thread()
             br = 0;
             bl = 0;
             fl = 0;
+
+            std::this_thread::sleep_for(100ms);
         }
     }
 }

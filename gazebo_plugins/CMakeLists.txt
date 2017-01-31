@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   rospy
   std_msgs
   gazebo_ros
+  hector_gazebo_plugins
 )
 
 find_package(gazebo REQUIRED 
@@ -17,13 +18,17 @@ include_directories(${Boost_INCLUDE_DIR} ${catkin_INCLUDE_DIRS} include ${GAZEBO
 add_library(gazebo_ros_side_drive src/gazebo_ros_side_drive.cpp
 
 )
-
+#add_library(gazebo_ros_imu_direct src/gazebo_ros_imu_direct.cpp
+#
+#)
 add_library(gazebo_ros_actuator src/gazebo_ros_actuator.cpp
 
         )
 
 target_link_libraries( gazebo_ros_actuator  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
- )
+        )
+#target_link_libraries( gazebo_ros_imu_direct  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
+#        )
 target_link_libraries( gazebo_ros_side_drive  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
         )
 

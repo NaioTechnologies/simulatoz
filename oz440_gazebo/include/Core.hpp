@@ -55,7 +55,6 @@ private:
 
     void disconnected();
 
-    void ozcore_image_read_thread_function( );
     void ozcore_image_thread_function( );
 
     void disconnection_ozcore_image();
@@ -81,9 +80,7 @@ private:
     std::thread bridge_thread_;
     bool graphics_on_;
 
-    bool ozcore_image_read_thread_started_;
     bool ozcore_image_thread_started_;
-    std::thread ozcore_image_read_thread_;
     std::thread ozcore_image_thread_;
 
     std::mutex ozcore_image_socket_access_;
