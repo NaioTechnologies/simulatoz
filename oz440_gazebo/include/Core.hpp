@@ -5,6 +5,8 @@
 #include <thread>
 #include <mutex>
 #include <array>
+#include <atomic>
+
 
 #include "ros/ros.h"
 
@@ -23,6 +25,8 @@
 #include "oz440_socket/ServerSocket.h"
 #include "oz440_api/ApiStereoCameraPacket.hpp"
 #include "Bridge.hpp"
+#include "Camera.h"
+#include "Lidar.h"
 #include "ThreadsafeQueue.hpp"
 
 class Core
@@ -61,33 +65,32 @@ private:
 
 private:
 
+    bool terminate_ ;
+
     std::shared_ptr<tf::TransformListener> listener_ptr_;
     std::shared_ptr<Bridge> bridge_ptr_;
 
-    std::vector< BaseNaio01PacketPtr > received_packet_list_;
+    bool use_camera_;
+    std::shared_ptr<Camera> camera_ptr_;
+    int camera_port_;
 
-    concurrency::ThreadsafeQueue< std::array<uint8_t, 721920 > >  ozcore_image_to_send_;
+    bool use_lidar_;
+    std::shared_ptr<Lidar> lidar_ptr_;
+    int lidar_port_;
+
+    bool use_can_;
+//    std::shared_ptr<Bridge> bridge_ptr_;
+
+    std::vector< BaseNaio01PacketPtr > received_packet_list_;
 
     bool read_thread_started_;
     std::thread read_thread_;
 
-    std::thread send_odo_thread_;
-
-    bool test_thread_started_;
-    std::thread test_thread_;
+    std::thread send_odo_thread_;;
 
     bool bridge_thread_started_;
     std::thread bridge_thread_;
     bool graphics_on_;
-
-    bool ozcore_image_thread_started_;
-    std::thread ozcore_image_thread_;
-
-    std::mutex ozcore_image_socket_access_;
-    int ozcore_image_server_socket_desc_;
-    int ozcore_image_socket_desc_;
-    bool ozcore_image_socket_connected_;
-    uint64_t last_ozcore_image_socket_activity_time_;
 
     float actuator_position_;
 

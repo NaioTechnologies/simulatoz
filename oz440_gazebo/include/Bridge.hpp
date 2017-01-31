@@ -24,8 +24,6 @@
 #include <SDL2/SDL_system.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_ttf.h>
-#include <oz440_api/HaLidarPacket.hpp>
-#include <oz440_api/ApiLidarPacket.hpp>
 #include <oz440_api/HaOdoPacket.hpp>
 #include <oz440_api/ApiPostPacket.hpp>
 #include <oz440_api/ApiGpsPacket.hpp>
@@ -158,13 +156,10 @@ private:
 
     void ozcore_read_serial_thread( );
 
-    void ozcore_lidar_thread_function( );
-
     void ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
     void ozcore_read_can_thread( );
     void ozcore_remote_thread();
 
-    void disconnection_lidar();
     void disconnection_can();
     void disconnection_serial();
 
@@ -192,9 +187,6 @@ private:
 
     std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
     std::mutex packet_list_to_send_access_;
-
-    std::mutex ha_lidar_packet_ptr_access_;
-    HaLidarPacketPtr ha_lidar_packet_ptr_;
 
     std::mutex ha_gyro_packet_ptr_access_;
     HaGyroPacketPtr ha_gyro_packet_ptr_;
@@ -225,16 +217,6 @@ private:
     TTF_Font* ttf_font_;
 
     uint64_t last_motor_time_;
-
-    //  -- LIDAR --
-
-    std::thread ozcore_lidar_thread_;
-    bool ozcore_lidar_thread_started_;
-
-    std::mutex ozcore_lidar_socket_access_;
-    int ozcore_lidar_server_socket_desc_;
-    int ozcore_lidar_socket_desc_;
-    bool ozcore_lidar_socket_connected_;
 
     //  -- SERIAL --
 

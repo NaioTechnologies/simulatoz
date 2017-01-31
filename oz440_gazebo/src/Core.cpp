@@ -24,7 +24,6 @@
 
 #include <errno.h>
 #include <vector>
-#include <atomic>
 #include <stdlib.h>
 #include <sys/types.h>
 #include <sys/syscall.h>
@@ -60,6 +59,22 @@ int main( int argc, char **argv )
 // *********************************************************************************************************************
 
 Core::Core( int argc, char **argv )
+    : use_camera_ {true}
+    , camera_ptr_ {nullptr}
+    , camera_port_ {5558}
+    , use_lidar_ {true}
+    , lidar_ptr_ {nullptr}
+    , lidar_port_ {2213}
+    , use_can_ {true}
+    , terminate_ {false}
+    , received_packet_list_ {}
+    , read_thread_started_ {false}
+    , read_thread_ {}
+    , send_odo_thread_ {}
+    , bridge_thread_started_ {false}
+    , bridge_thread_ {}
+    , graphics_on_ {true}
+    , actuator_position_ {0.0}
 {
     ros::init( argc, argv, "Core");
 
@@ -67,19 +82,8 @@ Core::Core( int argc, char **argv )
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
 
-    ozcore_image_thread_started_ = false;
-
-    ozcore_image_socket_connected_ = false;
-
-    terminate_ = false;
-
-    actuator_position_ = 0.0;
-
-    graphics_on_ = true;
-
     // Bridge initialisation
     bridge_ptr_ = std::make_shared<Bridge>();
-
 }
 
 // *********************************************************************************************************************
@@ -103,8 +107,17 @@ void Core::run( int argc, char **argv )
     velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
     actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
 
-    // subscribe to lidar topic
-    ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::callback_lidar, this );
+    if( use_lidar_ )
+    {
+        lidar_ptr_ = std::make_shared<Lidar>(lidar_port_);
+    }
+
+    if( use_camera_ )
+    {
+        camera_ptr_ = std::make_shared<Camera>(camera_port_);
+    }
+
+    ros::Subscriber lidar_sub = n.subscribe("/oz440/laser/scan", 500, &Core::callback_lidar, this);
 
     // subscribe to actuator position
     ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500, &Core::callback_actuator_position, this );
@@ -118,19 +131,18 @@ void Core::run( int argc, char **argv )
     message_filters::TimeSynchronizer<sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped> sync_gps( gps_fix_sub, gps_vel_sub, 10 );
     sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
 
-    // subscribe to camera topic
     message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
     message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
     sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
 
-    // creates ozcore_image thread
-    ozcore_image_thread_ = std::thread( &Core::ozcore_image_thread_function, this );
+//    std_srvs::Empty message;
+//    ros::service::call("gazebo/reset_world", message);
 
     // create_odo_thread
     send_odo_thread_ = std::thread( &Core::odometry_thread, this );
 
-    // create_bridge_thread
+    // create_read_thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
 
     // create_bridge_thread
@@ -142,13 +154,14 @@ void Core::run( int argc, char **argv )
         ros::spinOnce();
     }
 
-    bridge_ptr_->stop_main_thread_asked();
+    bridge_ptr_-> stop_main_thread_asked();
+    camera_ptr_->ask_stop();
+    lidar_ptr_->ask_stop();
 
     terminate_ = true;
 
     send_odo_thread_.join();
     bridge_thread_.join();
-    ozcore_image_thread_.join();
 
     std::this_thread::sleep_for(500ms);
     ROS_ERROR("Core run thread stopped");
@@ -262,113 +275,33 @@ void Core::bridge_thread_function()
     }
 }
 
-//**********************************************************************************************************************
-
-void Core::ozcore_image_thread_function( )
-{
-    using namespace std::chrono_literals;
-
-    int naio01_ozcore_image_server_port = 5558;
-
-    ozcore_image_thread_started_ = true;
-
-    ozcore_image_server_socket_desc_ = DriverSocket::openSocketServer( 5558 );
-
-    ozcore_image_socket_connected_ = false;
-
-    std::array<uint8_t, 721920 > image_buffer_to_send;
-
-    while ( !terminate_ )
-    {
-        if ( not ozcore_image_socket_connected_ and ozcore_image_server_socket_desc_ > 0 )
-        {
-            ozcore_image_socket_desc_ = DriverSocket::waitConnectTimer( ozcore_image_server_socket_desc_, terminate_ );
-
-            std::this_thread::sleep_for( 50ms );
-
-            if ( ozcore_image_socket_desc_ > 0 )
-            {
-                ozcore_image_socket_connected_ = true;
-
-                ROS_ERROR( "OzCore Image Socket Connected" );
-            }
-        }
-
-        if ( ozcore_image_socket_connected_)
-        {
-            ozcore_image_to_send_.wait_and_pop(image_buffer_to_send);
-
-            int total_written_bytes = 0;
-            ssize_t write_size = 0;
-
-            int nb_tries = 0;
-            int max_tries = 500;
-
-            ozcore_image_socket_access_.lock();
-
-            while (total_written_bytes < 721920 and nb_tries < max_tries) {
-                write_size = send(ozcore_image_socket_desc_, image_buffer_to_send.data() + total_written_bytes, 721920 - total_written_bytes, 0);
-
-                if (write_size < 0) {
-
-                    if(errno == 32){
-                        disconnection_ozcore_image();
-                    }
-
-                    nb_tries++;
-                } else {
-                    total_written_bytes = total_written_bytes + static_cast<int>( write_size );
-                    nb_tries = 0;
-                }
-                std::this_thread::sleep_for(5ms);
-            }
-
-            ozcore_image_socket_access_.unlock();
-
-            if (nb_tries >= max_tries) {
-                ROS_ERROR("send packet failed, too many tries");
-            } else {
-                ROS_INFO("Camera packet send to 5558");
-            }
-        }
-
-    }
-
-    disconnection_ozcore_image();
-    close( ozcore_image_server_socket_desc_ );
-
-    ozcore_image_thread_started_ = false;
-}
-
 // *********************************************************************************************************************
 
 void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
     try
     {
-        uint16_t distance[ 271 ];
-        uint8_t albedo[ 271 ];
-
-        for (int i = 0; i < 271; ++i)
+        if( use_lidar_ and lidar_ptr_->connected() )
         {
-            if( i >= 45 and i < 226 )
-            {
-                distance[ i ] = lidar_msg->ranges[ 270 - i ] * 1000; //Convert meters to millimeters
-            }
-            else
-            {
-                distance[ i ] = 0;
+            uint16_t distance[271];
+            uint8_t albedo[271];
+
+            for (int i = 0; i < 271; ++i) {
+                if (i >= 45 and i < 226) {
+                    distance[i] = lidar_msg->ranges[270 - i] * 1000; //Convert meters to millimeters
+                } else {
+                    distance[i] = 0;
+                }
+
+                albedo[i] = 0;
             }
 
-            albedo[ i ] = 0;
+            HaLidarPacketPtr lidarPacketPtr = std::make_shared<HaLidarPacket>(distance, albedo);
+
+            lidar_ptr_->set_packet(lidarPacketPtr);
+
+            ROS_INFO("Lidar packet enqueued");
         }
-
-        HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
-
-        bridge_ptr_->add_received_packet(lidarPacketPtr);
-
-        ROS_INFO("Lidar packet enqueued");
-
     }
     catch ( SocketException& e )
     {
@@ -404,16 +337,17 @@ void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const
 {
     try
     {
-        // Process image for OzCore
+        if( use_camera_ and camera_ptr_->connected() )
+        {
+            std::array < uint8_t, 721920 > image_buffer_to_send;
 
-        std::array < uint8_t, 721920 > image_buffer_to_send;
+            std::memcpy( image_buffer_to_send.data(), &image_left->data[ 0 ], 360960 );
+            std::memcpy( image_buffer_to_send.data() + 360960, &image_right->data[ 0 ], 360960 );
 
-        std::memcpy( image_buffer_to_send.data(), &image_left->data[ 0 ], 360960 );
-        std::memcpy( image_buffer_to_send.data() + 360960, &image_right->data[ 0 ], 360960 );
+            camera_ptr_->set_image(image_buffer_to_send);
 
-        ozcore_image_to_send_.emplace(std::move(image_buffer_to_send));
-
-        ROS_INFO("Stereo camera packet managed");
+            ROS_INFO("Stereo camera packet managed");
+        }
     }
     catch (SocketException& e )
     {
@@ -610,20 +544,4 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     }
 
     return tic;
-
-}
-
-
-// *********************************************************************************************************************
-
-void Core::disconnection_ozcore_image()
-{
-    close( ozcore_image_socket_desc_ );
-
-    ozcore_image_socket_connected_ = false;
-
-    ROS_ERROR("OzCore Image Socket Disconnected");
-
-    std_srvs::Empty message;
-    ros::service::call("gazebo/reset_world", message);
 }

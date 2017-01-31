@@ -29,7 +29,6 @@
 // com_ozcore
 #include "../include/DriverSerial.hpp"
 #include "../include/DriverSocket.hpp"
-#include "../include/createLidarTrame.hpp"
 #include "../include/GeoAngle.hpp"
 
 using namespace std;
@@ -49,14 +48,12 @@ Bridge::Bridge( ) :
         stop_main_thread_asked_{ false },
         read_thread_started_{ false },
         packet_list_to_send_{ },
-        ha_lidar_packet_ptr_{ nullptr },
         ha_odo_packet_ptr_{ nullptr },
         ha_gps_packet_ptr_{ nullptr },
         control_type_{ ControlType::CONTROL_TYPE_MANUAL },
         last_motor_time_{ 0L },
         received_packets_{},
         ozcore_serial_connected_{false},
-        ozcore_lidar_socket_connected_{false},
         ozcore_can_socket_connected_{false},
         bridge_connected_{false},
         last_gyro_packet_send_{0}
@@ -125,8 +122,6 @@ void Bridge::init( bool graphical_display_on)
 
         std::this_thread::sleep_for(1500ms);
 
-        ozcore_lidar_thread_ = std::thread(&Bridge::ozcore_lidar_thread_function, this);
-
         ozcore_read_serial_thread_ = std::thread(&Bridge::ozcore_read_serial_thread, this);
 
         ozcore_read_can_thread_ = std::thread(&Bridge::ozcore_read_can_thread, this);
@@ -144,7 +139,6 @@ void Bridge::init( bool graphical_display_on)
 
         read_thread_.join();
         ozcore_read_serial_thread_.join();
-        ozcore_lidar_thread_.join();
         ozcore_read_can_thread_.join();
         ozcore_remote_thread_.join();
         gps_manager_thread_.join();
@@ -235,21 +229,13 @@ void Bridge::read_thread( )
 
 // ##################################################################################################
 
-// Manages all the packets received from Core : Lidar, gyro, accelero, odo, post, Gps, sends actuator position to OzCore (via CAN)
+// Manages all the packets received from Core : gyro, accelero, odo, post, Gps, sends actuator position to OzCore (via CAN)
 
 void Bridge::manage_received_packet(BaseNaio01PacketPtr packetPtr)
 {
     try {
 
-        if (std::dynamic_pointer_cast<HaLidarPacket>(packetPtr)) {
-            HaLidarPacketPtr haLidarPacketPtr = std::dynamic_pointer_cast<HaLidarPacket>(packetPtr);
-
-            ha_lidar_packet_ptr_access_.lock();
-            ha_lidar_packet_ptr_ = haLidarPacketPtr;
-            ha_lidar_packet_ptr_access_.unlock();
-
-        }
-        else if (std::dynamic_pointer_cast<HaGyroPacket>(packetPtr))
+        if (std::dynamic_pointer_cast<HaGyroPacket>(packetPtr))
         {
             HaGyroPacketPtr haGyroPacketPtr = std::dynamic_pointer_cast<HaGyroPacket>(packetPtr);
 
@@ -900,119 +886,7 @@ void Bridge::ozcore_read_serial_thread( )
     }
     catch (std::exception e)
     {
-        std::cout << "Exception ozcore_lidar_thread_function catch : " << e.what() << std::endl;
-    }
-
-}
-
-//**********************************************************************************************************************
-
-void Bridge::ozcore_lidar_thread_function( ) {
-
-    try {
-
-        using namespace std::chrono_literals;
-
-        ozcore_lidar_thread_started_ = true;
-        ozcore_lidar_socket_connected_ = false;
-
-        ozcore_lidar_server_socket_desc_ = DriverSocket::openSocketServer(OZCORE_LIDAR_PORT);
-
-        char received_buffer[4096];
-
-        char trame[10000];
-
-        int lidar[271];
-        int albedo[271];
-
-        uint16_t nbMesures = 1;
-        uint16_t nbTelegrammes = 1;
-
-        while (!stop_main_thread_asked_)
-        {
-            if ( !ozcore_lidar_socket_connected_ and ozcore_lidar_server_socket_desc_ > 0)
-            {
-                ozcore_lidar_socket_desc_ = DriverSocket::waitConnectTimer(ozcore_lidar_server_socket_desc_, stop_main_thread_asked_);
-                std::this_thread::sleep_for(50ms);
-
-                if (ozcore_lidar_socket_desc_ > 0)
-                {
-                    ozcore_lidar_socket_connected_ = true;
-
-                    ROS_ERROR("Bridge connected to OzCore Lidar Port");
-                }
-            }
-
-            if (ozcore_lidar_socket_connected_)
-            {
-                memset( received_buffer, '\0', 1000 );
-
-                ozcore_lidar_socket_access_.lock();
-                ssize_t size = read(ozcore_lidar_socket_desc_, received_buffer, 4096);
-                ozcore_lidar_socket_access_.unlock();
-
-                if(size < 0)
-                {
-                    if(errno == 32){
-                        disconnection_lidar();
-                    }
-                }
-                else if ( size == 0){
-                    if( errno == 11 or errno == 32 ){
-                        disconnection_lidar();
-                    }
-                }
-                else if (size > 0)
-                {
-                    received_buffer[ size ] = '\0';
-
-                    if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
-                    {
-                        struct timespec timeInit;
-                        clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
-
-                        ha_lidar_packet_ptr_access_.lock();
-
-                        if (ha_lidar_packet_ptr_ != nullptr)
-                        {
-                            for (int i = 0; i < 271; i++) {
-                                lidar[i] = ha_lidar_packet_ptr_->distance[i];
-                                albedo[i] = ha_lidar_packet_ptr_->albedo[i];
-                            }
-                        }
-
-                        ha_lidar_packet_ptr_access_.unlock();
-
-                        nbMesures++;
-                        nbTelegrammes++;
-
-                        createTrame(lidar, albedo, trame, nbMesures, nbTelegrammes, timeInit);
-
-                        ozcore_lidar_socket_access_.lock();
-
-                        ssize_t write_size = write(ozcore_lidar_socket_desc_, trame, strlen(trame));
-
-                        if (write_size != strlen(trame))
-                        {
-                            ROS_ERROR("Error sending lidar trame");
-                        }
-                        ozcore_lidar_socket_access_.unlock();
-                        std::this_thread::sleep_for(5ms);
-                    }
-                }
-            }
-        }
-
-        close(ozcore_lidar_server_socket_desc_);
-
-        ozcore_lidar_thread_started_ = false;
-
-        disconnection_lidar();
-
-    }
-    catch (std::exception e)
-    {
-        std::cout << "Exception ozcore_lidar_thread_function catch : " << e.what() << std::endl;
+        std::cout << "Exception ozcore_serial_thread_function catch : " << e.what() << std::endl;
     }
 
 }
@@ -1336,18 +1210,6 @@ void Bridge::ozcore_remote_thread( )
     catch ( std::exception e ) {
         std::cout<<"Exception remote_thread catch : "<< e.what() << std::endl;
     }
-}
-
-
-// ##################################################################################################
-
-void Bridge::disconnection_lidar()
-{
-    close( ozcore_lidar_socket_desc_ );
-
-    ozcore_lidar_socket_connected_ = false;
-
-    ROS_ERROR("OzCore Lidar Socket Disconnected");
 }
 
 // ##################################################################################################
