@@ -22,26 +22,15 @@
 #include "oz440_api/HaOdoPacket.hpp"
 #include "oz440_api/ApiMoveActuatorPacket.hpp"
 
-#include <errno.h>
-#include <vector>
-#include <stdlib.h>
-#include <sys/types.h>
-#include <sys/syscall.h>
-#include <signal.h>
 #include <std_srvs/Empty.h>
-
-#define IMAGE_SIZE 752*480
-#define HEADER_SIZE 15
 
 using namespace std::chrono;
 
-static pid_t gettid( void )
-{
-    return syscall( __NR_gettid );
-}
-
-std::atomic<bool> terminate_;
-
+//static pid_t gettid( void )
+//{
+//    return syscall( __NR_gettid );
+//}
+//
 
 // *********************************************************************************************************************
 
@@ -183,7 +172,7 @@ void Core::read_thread_function( )
 {
     using namespace std::chrono_literals;
 
-    bool last_order_down = 0;
+//    bool last_order_down = 0;
 
     read_thread_started_ = true;
 
@@ -200,6 +189,7 @@ void Core::read_thread_function( )
             }
 
             received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
+            ApiMoveActuatorPacketPtr actuator_packet_ptr = can_ptr_->get_actuator_packet_ptr();
 
             for ( auto &&packetPtr : received_packet_list_) // For every packet decoded
             {
@@ -277,7 +267,7 @@ void Core::bridge_thread_function()
 
     std::this_thread::sleep_for( 3000ms );
 
-    bridge_ptr_->init(graphics_on_);
+    bridge_ptr_->init();
 
     while(!terminate_)
     {
@@ -298,7 +288,7 @@ void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 
             for (int i = 0; i < 271; ++i) {
                 if (i >= 45 and i < 226) {
-                    distance[i] = lidar_msg->ranges[270 - i] * 1000; //Convert meters to millimeters
+                    distance[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000); //Convert meters to millimeters
                 } else {
                     distance[i] = 0;
                 }
@@ -328,9 +318,9 @@ void Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& 
     {
         if( use_can_ and can_ptr_->connected() )
         {
-            actuator_position_ = joint_states_msg->position[0];
+            actuator_position_ = (float) ( joint_states_msg->position[0] );
 
-            uint8_t position_percent = std::round(actuator_position_ * (-100.0 / 0.15));
+            uint8_t position_percent = (uint8_t) ( std::round(actuator_position_ * (-100.0 / 0.15)) );
 
             ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared<ApiMoveActuatorPacket>(
                     position_percent);
@@ -412,7 +402,7 @@ void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, con
     {
         if( use_can_ and can_ptr_->connected() ) {
 
-            ulong time = gps_fix_msg->header.stamp.toSec() * 1000;
+            ulong time = (ulong) (gps_fix_msg->header.stamp.toSec() * 1000 );
             double lat = gps_fix_msg->latitude;
             double lon = gps_fix_msg->longitude;
             double alt = gps_fix_msg->altitude;
@@ -550,7 +540,7 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     if (forward_backward == 1 and (pitch - pitch_last_tic >= angle_tic or pitch - pitch_last_tic <= 0)) {
         pitch_last_tic = pitch;
         tic = true;
-        odo_wheel = odo_wheel + 1 %2;
+        odo_wheel = (uint8_t) ( odo_wheel + 1 %2 );
         forward_backward = 0;
     }
 
@@ -558,7 +548,7 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     if (forward_backward == -1 and (pitch - pitch_last_tic <= -angle_tic or pitch - pitch_last_tic >= 0)) {
         pitch_last_tic = pitch;
         tic = true;
-        odo_wheel = odo_wheel + 1 %2;
+        odo_wheel = (uint8_t) ( odo_wheel + 1 %2 );
         forward_backward = 0;
     }
 

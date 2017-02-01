@@ -13,6 +13,7 @@
 #include <mutex>
 #include <atomic>
 #include <thread>
+
 #include "../include/GeoAngle.hpp"
 
 #include <../include/oz440_api/ApiMoveActuatorPacket.hpp>
@@ -67,6 +68,7 @@ public:
     void add_packet(BaseNaio01PacketPtr packet_ptr);
     void ask_stop();
     bool connected();
+    ApiMoveActuatorPacketPtr get_actuator_packet_ptr();
 
 private:
     void init();
@@ -76,7 +78,7 @@ private:
     void manage_thread();
 
     void manage_packet( BaseNaio01PacketPtr packet_ptr );
-    void send_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
+    void send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], uint8_t len );
     void disconnect();
 
     void gps_manager();
@@ -86,6 +88,7 @@ private:
 
     std::atomic<bool> stop_asked_;
 
+    //  -- THREADS  --
     bool connect_thread_started_;
     std::thread connect_thread_;
 
@@ -95,12 +98,14 @@ private:
     bool manage_thread_started_;
     std::thread manage_thread_;
 
+    //  --  SOCKET  --
     int server_port_;
     bool socket_connected_;
     int server_socket_desc_;
     int socket_desc_;
     std::mutex socket_access_;
 
+    //  -- PACKETS  --
     std::vector< BaseNaio01PacketPtr > packets_ptr_;
     std::mutex packets_access_;
 
@@ -111,8 +116,8 @@ private:
     //  --  TOOL POSITION  --
     std::mutex tool_position_access_;
     uint8_t tool_position_;
-    std::mutex tool_command_access_;
-    uint8_t tool_command_;
+    std::mutex actuator_packet_access_;
+    ApiMoveActuatorPacketPtr actuator_packet_ptr_;
 
     //  --  GPS  --
     std::mutex gps_packet_access_;

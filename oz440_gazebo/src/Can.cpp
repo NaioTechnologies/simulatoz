@@ -2,6 +2,8 @@
 #include "../include/DriverSocket.hpp"
 #include "../include/Can.h"
 
+#include <linux/can.h>
+
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
@@ -13,13 +15,25 @@ Can::Can(int server_port)
         , connect_thread_ { }
         , read_thread_started_ { false }
         , read_thread_ { }
-        , socket_connected_ { false }
+        , manage_thread_started_ { false }
+        , manage_thread_ { }
         , server_port_ {server_port}
+        , socket_connected_ { false }
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
-        , socket_access_ {}
+        , socket_access_ { }
         , packets_ptr_ { nullptr }
-        , packets_access_ {}
+        , packets_access_ { }
+        , last_odo_packet_ptr_ { nullptr }
+        , tool_position_access_ { }
+        , tool_position_ { 0 }
+        , actuator_packet_access_ { }
+        , actuator_packet_ptr_ { nullptr }
+        , gps_packet_access_ { }
+        , gps_packet_ptr_ { nullptr }
+        , gps_manager_thread_ { }
+        , last_gps_packet_ptr_ { nullptr }
+
 {
     last_odo_ticks_[0] = false;
     last_odo_ticks_[1] = false;
@@ -54,10 +68,20 @@ void Can::init()
 void Can::add_packet( BaseNaio01PacketPtr packet_ptr )
 {
     packets_access_.lock();
-    packets_ptr_.emplace( std::move(packet_ptr) );
+    packets_ptr_.emplace( packets_ptr_.begin(), packet_ptr );
     packets_access_.unlock();
 }
 
+//*****************************************  --  GET ACTUATOR PACKET  --  *******************************************************
+
+ApiMoveActuatorPacketPtr Can::get_actuator_packet_ptr()
+{
+    actuator_packet_access_.lock();
+    ApiMoveActuatorPacketPtr actuator_packet_ptr = actuator_packet_ptr_;
+    actuator_packet_access_.unlock();
+
+    return actuator_packet_ptr;
+}
 //*****************************************  --  ASK STOP  --  *********************************************************
 
 void Can::ask_stop()
@@ -108,8 +132,6 @@ void Can::read_thread(){
 
     read_thread_started_ = true;
 
-    ssize_t bytesRead;
-
     struct can_frame frame;
 
     memset( &frame, 0, sizeof( frame ) );while ( !stop_asked_ )
@@ -128,13 +150,9 @@ void Can::read_thread(){
                 {
                     if( ( ( frame.can_id ) % 16 ) == CAN_VER_CONS )
                     {
-                        tool_command_access_.lock();
-                        tool_command_ = frame.data[ 0 ];
-                        tool_command_access_.unlock();
-
-                        ApiMoveActuatorPacketPtr api_move_actuator_packet = std::make_shared<ApiMoveActuatorPacket>( frame.data[ 0 ] );
-
-                        //TODO send packet to simu
+                        actuator_packet_access_.lock();
+                        actuator_packet_ptr_ = std::make_shared<ApiMoveActuatorPacket>( frame.data[ 0 ] );
+                        actuator_packet_access_.unlock();
                     }
                     else if( ( ( frame.can_id ) % 16 ) == CAN_VER_POS )
                     {
@@ -221,7 +239,7 @@ void Can::manage_thread(){
             manage_packet( packet_ptr);
             packets_ptr_.pop_back();
 
-            ROS_ERROR("size packets : %d", packets_ptr_.size());
+            ROS_ERROR("size packets : %d", (int) (packets_ptr_.size()));
 
             packets_access_.unlock();
 
@@ -431,10 +449,8 @@ void Can::gps_manager()
 
         if( ( gps_packet_ptr != nullptr ) and ( last_gps_packet_ptr != nullptr ))
         {
-            double track_orientation = 0.0;
-
             // compute speed and track orientation
-            track_orientation = north_bearing( last_gps_packet_ptr->lat, last_gps_packet_ptr->lon, gps_packet_ptr->lat, gps_packet_ptr->lon );
+            double track_orientation = north_bearing( last_gps_packet_ptr->lat, last_gps_packet_ptr->lon, gps_packet_ptr->lat, gps_packet_ptr->lon );
 
 //          ********************************  RMC ********************************
 
@@ -458,25 +474,25 @@ void Can::gps_manager()
             GeoAngle ns = GeoAngle::from_double( gps_packet_ptr->lat );
             GeoAngle we = GeoAngle::from_double( gps_packet_ptr->lon );
 
-            std::string gprmc =   string( "$GPRMC" ) + string( "," )
-                                  + string( hhmmss ) + string( "," )
-                                  + string( "A" ) + string( "," )
-                                  + ns.to_string( true ) + string( "," )
-                                  + we.to_string( false ) + string( "," )
-                                  + string( gs ) + string( "," )
-                                  + string( to ) + string( "," )
-                                  + string( ddmmyy ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( "*" );
+            std::string gprmc =   std::string( "$GPRMC" ) + std::string( "," )
+                                  + std::string( hhmmss ) + std::string( "," )
+                                  + std::string( "A" ) + std::string( "," )
+                                  + ns.to_string( true ) + std::string( "," )
+                                  + we.to_string( false ) + std::string( "," )
+                                  + std::string( gs ) + std::string( "," )
+                                  + std::string( to ) + std::string( "," )
+                                  + std::string( ddmmyy ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( "*" );
 
 //          ********************************  VTG  ********************************
 
-            std::string gpvtg =   string( "$GPVTG" ) + string( "," )
-                                  + string( to ) + string( ",T," )
-                                  + string( to ) + string( ",M," )
-                                  + string( gs ) + string( ",N," )
-                                  + string( gs ) + string( ",K," )
-                                  + string( "*" );
+            std::string gpvtg =   std::string( "$GPVTG" ) + std::string( "," )
+                                  + std::string( to ) + std::string( ",T," )
+                                  + std::string( to ) + std::string( ",M," )
+                                  + std::string( gs ) + std::string( ",N," )
+                                  + std::string( gs ) + std::string( ",K," )
+                                  + std::string( "*" );
 
 
 //          ********************************  GGA  ********************************
@@ -489,17 +505,17 @@ void Can::gps_manager()
             sprintf( nos, "%02d", static_cast<int>( gps_packet_ptr_->satUsed ) );
             sprintf( alt, "%03.1f", gps_packet_ptr_->alt );
 
-            std::string gpgga =   string( "$GPGGA" ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( "#" ) + string( "," )
-                                  + string( quality ) + string( "," )
-                                  + string( nos ) + string( "," )
-                                  + string( "0.9" ) + string( "," )
-                                  + string( alt ) + string( ",M," )
-                                  + string( "*" );
+            std::string gpgga =   std::string( "$GPGGA" ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( "#" ) + std::string( "," )
+                                  + std::string( quality ) + std::string( "," )
+                                  + std::string( nos ) + std::string( "," )
+                                  + std::string( "0.9" ) + std::string( "," )
+                                  + std::string( alt ) + std::string( ",M," )
+                                  + std::string( "*" );
 
 //          ********************************  SEND GPRMC  ********************************
 
@@ -507,7 +523,7 @@ void Can::gps_manager()
             {
                 uint8_t data[ 1 ];
 
-                data[ 0 ] = static_cast<uint8_t>( gprmc.at( i ) );
+                data[ 0 ] = static_cast<uint8_t>( gprmc.at( (uint8_t) i ) );
 
                 send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
 
@@ -527,7 +543,7 @@ void Can::gps_manager()
             {
                 uint8_t data[ 1 ];
 
-                data[ 0 ] = static_cast<uint8_t>( gpvtg.at( i ) );
+                data[ 0 ] = static_cast<uint8_t>( gpvtg.at( (uint8_t) i ) );
 
                 send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
 
@@ -545,7 +561,7 @@ void Can::gps_manager()
             {
                 uint8_t data[ 1 ];
 
-                data[ 0 ] = static_cast<uint8_t>( gpgga.at( i ) );
+                data[ 0 ] = static_cast<uint8_t>( gpgga.at( (uint8_t) i ) );
 
                 send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
 
@@ -568,27 +584,24 @@ void Can::gps_manager()
 double Can::north_bearing( double lat1, double lon1, double lat2, double lon2 )
 {
     double startLat = lat1 * M_PI / 180.0;
-    double startLon = lon1  * M_PI / 180.0;
+    double startLon = lon1 * M_PI / 180.0;
 
     double endLat = lat2 * M_PI / 180.0;
-    double endLon = lon2  * M_PI / 180.0;
+    double endLon = lon2 * M_PI / 180.0;
 
     double dLong = endLon - startLon;
 
-    double dPhi = std::log( std::tan( endLat / 2.0 + M_PI / 4.0 ) / std::tan( startLat / 2.0 + M_PI / 4.0 ) );
+    double dPhi = std::log(std::tan(endLat / 2.0 + M_PI / 4.0) / std::tan(startLat / 2.0 + M_PI / 4.0));
 
-    if( std::abs( dLong ) > M_PI )
-    {
-        if( dLong > 0.0 )
-        {
-            dLong = -( 2.0 * M_PI - dLong );
-        }
-        else
-        {
-            dLong = ( 2.0 * M_PI - dLong );
+    if (std::abs(dLong) > M_PI) {
+        if (dLong > 0.0) {
+            dLong = -(2.0 * M_PI - dLong);
+        } else {
+            dLong = (2.0 * M_PI - dLong);
         }
     }
 
-    double brng = fmod( ( std::atan2( dLong, dPhi ) / M_PI * 180.0  ) + 360.0 , 360.0 );
+    double brng = fmod((std::atan2(dLong, dPhi) / M_PI * 180.0) + 360.0, 360.0);
 
     return brng;
+}

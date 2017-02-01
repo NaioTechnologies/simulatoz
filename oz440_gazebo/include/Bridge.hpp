@@ -45,35 +45,6 @@ public:
         CONTROL_TYPE_MANUAL = 0x01,
     };
 
-    enum ComSimuCanMessageId : unsigned char
-    {
-        CAN_ID_GEN = 0x00,
-        CAN_ID_IMU = 0x03,
-        CAN_ID_GPS = 0x04,
-        CAN_ID_IHM = 0x07,
-        CAN_ID_VER = 0x08,
-        CAN_ID_TELECO = 0x0b,
-    };
-
-    enum ComSimuCanMessageType  : unsigned char
-    {
-        CAN_MOT_CONS = 0x00,
-
-        CAN_IMU_ACC = 0x00,
-        CAN_IMU_GYRO = 0x01,
-
-        CAN_TELECO_KEYS = 0x01,
-        CAN_TELECO_NUM_VERSION = 0x06,
-
-        CAN_GPS_DATA = 0x00,
-
-        CAN_IHM_LCD = 0x00,
-        CAN_IHM_BUT = 0x01,
-
-        CAN_VER_CONS = 0x02,
-        CAN_VER_POS = 0x01,
-    };
-
     typedef struct _COM_OZCORE_REMOTE_STATUS_
     {
         bool secu_left;
@@ -118,52 +89,30 @@ public:
     ~Bridge( );
 
     // launch core
-    void init( bool graphical_display_on );
-    void add_received_packet(BaseNaio01PacketPtr packetPtr);
+    void init();
     void stop_main_thread_asked();
     std::vector< BaseNaio01PacketPtr > get_packet_list_to_send();
     bool get_stop_main_thread_asked();
-    bool get_can_connected_();
 
 private:
 
 
-    //Communication with core
-    void read_thread( );
-    void manage_received_packet(BaseNaio01PacketPtr packetPtr);
-    int last_gyro_packet_send_;
-
     // COM OZCORE
 
     void ozcore_read_serial_thread( );
-
-    void ozcore_send_can_packet( ComSimuCanMessageId id, ComSimuCanMessageType id_msg, uint8_t data[], uint8_t len );
-    void ozcore_read_can_thread( );
     void ozcore_remote_thread();
-
     void disconnection_serial();
-
-    int64_t get_now_ms();
-
-    void gps_manager_thread_function( );
-    double get_north_bearing( double lat1, double lon1, double lat2, double lon2 );
 
 private:
 
     // Communication with Core
     bool bridge_connected_;
 
-    bool graphical_display_on_;
-
     std::atomic<bool> stop_main_thread_asked_;
 
     bool stop_read_thread_asked_;
-    bool read_thread_started_;
-    std::thread read_thread_;
 
     // Packets
-
-    concurrency::ThreadsafeQueue< BaseNaio01PacketPtr > received_packets_;
 
     std::vector< BaseNaio01PacketPtr > packet_list_to_send_;
     std::mutex packet_list_to_send_access_;
