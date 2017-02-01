@@ -39,13 +39,13 @@ find_library(${OZ_API} liboz440_api)
 find_library(${OZ_SOCKET} liboz440_socket)
 
 add_executable(Core src/Core.cpp
-                    src/Bridge.cpp
                     src/GeoAngle.cpp
                     src/createLidarTrame.cpp
                     src/DriverSerial.cpp
                     src/Camera.cpp
                     src/Lidar.cpp
-                    src/Can.cpp)
+                    src/Can.cpp
+                    src/Serial.cpp)
 
 target_link_libraries(Core ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET}
         -lpthread

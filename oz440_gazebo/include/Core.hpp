@@ -7,7 +7,6 @@
 #include <array>
 #include <atomic>
 
-
 #include "ros/ros.h"
 
 #include "geometry_msgs/Vector3Stamped.h"
@@ -24,20 +23,25 @@
 
 #include "oz440_socket/ServerSocket.h"
 #include "oz440_api/ApiStereoCameraPacket.hpp"
-#include "Bridge.hpp"
+
 #include "Camera.h"
 #include "Lidar.h"
 #include "Can.h"
+#include "Serial.h"
 #include "ThreadsafeQueue.hpp"
 
 class Core
 {
 public:
-    // Constructeur/destructeur
     Core( int argc, char **argv );
     ~Core();
 
-    void run( int argc, char **argv );
+    void run();
+
+private:
+
+    // thread function
+    void read_thread_function( );
 
     // callback functions
     void callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
@@ -46,30 +50,16 @@ public:
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
 
+    // Odometry part
     void odometry_thread();
     double getPitch( std::string wheel);
     bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
-
-
-private:
-    // thread function
-    void read_thread_function( );
-    void image_thread_function( );
-
-    void bridge_thread_function();
-
-    void disconnected();
-
-    void ozcore_image_thread_function( );
-
-    void disconnection_ozcore_image();
 
 private:
 
     bool terminate_ ;
 
     std::shared_ptr<tf::TransformListener> listener_ptr_;
-    std::shared_ptr<Bridge> bridge_ptr_;
 
     bool use_camera_;
     std::shared_ptr<Camera> camera_ptr_;
@@ -83,16 +73,16 @@ private:
     std::shared_ptr<Can> can_ptr_;
     int can_port_;
 
+    std::shared_ptr<Serial> serial_ptr_;
+    int serial_port_;
+
     std::vector< BaseNaio01PacketPtr > received_packet_list_;
 
     bool read_thread_started_;
     std::thread read_thread_;
 
-    std::thread send_odo_thread_;;
-
-    bool bridge_thread_started_;
-    std::thread bridge_thread_;
-    bool graphics_on_;
+    bool odometry_thread_started_;
+    std::thread odometry_thread_;;
 
     float actuator_position_;
 

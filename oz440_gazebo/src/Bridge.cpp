@@ -94,13 +94,8 @@ void Bridge::init()
 {
     try
     {
-        ozcore_read_serial_thread_ = std::thread(&Bridge::ozcore_read_serial_thread, this);
-
 //        ozcore_remote_thread_ = std::thread(&Bridge::ozcore_remote_thread, this);
 
-        bridge_connected_ = true;
-
-        ozcore_read_serial_thread_.join();
 //        ozcore_remote_thread_.join();
 
         ROS_ERROR("End of bridge thread");
@@ -110,14 +105,6 @@ void Bridge::init()
     }
 }
 
-// ##################################################################################################
-
-// Ask to stop main thread
-
-void Bridge::stop_main_thread_asked()
-{
-    stop_main_thread_asked_ = true;
-}
 
 // ##################################################################################################
 
@@ -135,12 +122,7 @@ std::vector< BaseNaio01PacketPtr > Bridge::get_packet_list_to_send()
     return( list );
 }
 
-// ##################################################################################################
 
-bool Bridge::get_stop_main_thread_asked()
-{
-    return(stop_main_thread_asked_);
-}
 
 //######################################################################################################################
 

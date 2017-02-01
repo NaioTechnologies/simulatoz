@@ -1,5 +1,6 @@
+
 #include "../include/Core.hpp"
-#include "DriverSocket.hpp"
+
 #include <chrono>
 #include <pthread.h>
 
@@ -38,7 +39,7 @@ int main( int argc, char **argv )
 {
     Core core( argc, argv );
 
-    core.run(argc, argv);
+    core.run();
 
     return 0;
 }
@@ -46,33 +47,30 @@ int main( int argc, char **argv )
 // *********************************************************************************************************************
 
 Core::Core( int argc, char **argv )
-    : use_camera_ {true}
-    , camera_ptr_ {nullptr}
-    , camera_port_ {5558}
-    , use_lidar_ {true}
-    , lidar_ptr_ {nullptr}
-    , lidar_port_ {2213}
-    , use_can_ {true}
-    , can_ptr_ {nullptr}
-    , can_port_ {5559}
-    , terminate_ {false}
-    , received_packet_list_ {}
-    , read_thread_started_ {false}
-    , read_thread_ {}
-    , send_odo_thread_ {}
-    , bridge_thread_started_ {false}
-    , bridge_thread_ {}
-    , graphics_on_ {true}
-    , actuator_position_ {0.0}
+        : use_camera_ {true}
+        , camera_ptr_ {nullptr}
+        , camera_port_ {5558}
+        , use_lidar_ {true}
+        , lidar_ptr_ {nullptr}
+        , lidar_port_ {2213}
+        , use_can_ {true}
+        , can_ptr_ {nullptr}
+        , can_port_ {5559}
+        , serial_ptr_ {nullptr}
+        , serial_port_ {5554}
+        , terminate_ {false}
+        , received_packet_list_ {}
+        , read_thread_started_ {false}
+        , read_thread_ {}
+        , odometry_thread_ {}
+        , odometry_thread_started_ {false}
+        , actuator_position_ {0.0}
 {
     ros::init( argc, argv, "Core");
 
     ros::NodeHandle n;
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
-
-    // Bridge initialisation
-    bridge_ptr_ = std::make_shared<Bridge>();
 }
 
 // *********************************************************************************************************************
@@ -83,7 +81,7 @@ Core::~Core( )
 
 // *********************************************************************************************************************
 
-void Core::run( int argc, char **argv )
+void Core::run()
 {
     using namespace std::chrono_literals;
 
@@ -105,6 +103,8 @@ void Core::run( int argc, char **argv )
     {
         can_ptr_ = std::make_shared<Can>(can_port_);
     }
+
+    serial_ptr_ =  std::make_shared<Serial>(serial_port_);
 
     // Create motors and actuator commands publishers
     velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
@@ -132,14 +132,11 @@ void Core::run( int argc, char **argv )
     sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
 
     if( use_can_ ){
-        send_odo_thread_ = std::thread( &Core::odometry_thread, this );
+        odometry_thread_ = std::thread( &Core::odometry_thread, this );
     }
 
     // create_read_thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
-
-    // create_bridge_thread
-    bridge_thread_ = std::thread( &Core::bridge_thread_function, this );
 
     while ( ros::master::check() and !terminate_ )
     {
@@ -147,19 +144,15 @@ void Core::run( int argc, char **argv )
         ros::spinOnce();
     }
 
-    bridge_ptr_-> stop_main_thread_asked();
     camera_ptr_->ask_stop();
     lidar_ptr_->ask_stop();
     can_ptr_->ask_stop();
 
     terminate_ = true;
 
-    send_odo_thread_.join();
-    bridge_thread_.join();
-
     std::this_thread::sleep_for(500ms);
-    ROS_ERROR("Core run thread stopped");
 
+    ROS_ERROR("Core run thread stopped");
 
 //    std_srvs::Empty message;
 //    ros::service::call("gazebo/reset_world", message);
@@ -180,28 +173,16 @@ void Core::read_thread_function( )
     {
         while ( !terminate_ )
         {
-            bool stop_main_thread_asked = bridge_ptr_->get_stop_main_thread_asked();
+            if( serial_ptr_->connected() ) {
 
-            if(stop_main_thread_asked)
-            {
-                terminate_ = true;
-                ros::shutdown();
-            }
+                HaMotorsPacketPtr motor_packet_ptr = serial_ptr_->get_packet();
 
-            received_packet_list_ = bridge_ptr_->get_packet_list_to_send();
-            ApiMoveActuatorPacketPtr actuator_packet_ptr = can_ptr_->get_actuator_packet_ptr();
+                if (motor_packet_ptr != nullptr) {
 
-            for ( auto &&packetPtr : received_packet_list_) // For every packet decoded
-            {
-                if (std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr)) {
+                    double rightspeed = static_cast<double>(motor_packet_ptr->right);
+                    double leftspeed = static_cast<double>(motor_packet_ptr->left);
 
-                    //  When receiving a motor order
-                    HaMotorsPacketPtr motorsPacketPtr = std::dynamic_pointer_cast<HaMotorsPacket>(packetPtr);
-
-                    double rightspeed = static_cast<double>(motorsPacketPtr->right);
-                    double leftspeed = static_cast<double>(motorsPacketPtr->left);
-
-                    ROS_INFO("ApiMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
+                    ROS_INFO("HaMotorsPacket received, right: %f left : %f", rightspeed, leftspeed);
 
                     geometry_msgs::Vector3 command;
 
@@ -210,11 +191,14 @@ void Core::read_thread_function( )
 
                     velocity_pub_.publish(command);
                 }
-//                else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr))
-//                {
-//                    //  When receiving an actuator order
-//                    ApiMoveActuatorPacketPtr ActuatorPacketPtr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packetPtr);
-//
+            }
+
+            if ( can_ptr_->connected() ) {
+
+                ApiMoveActuatorPacketPtr actuator_packet_ptr = can_ptr_->get_actuator_packet_ptr();
+
+                if (actuator_packet_ptr != nullptr) {
+
 //                    geometry_msgs::Vector3 command;
 //
 //                    if ( ActuatorPacketPtr->position == 1 )
@@ -242,14 +226,14 @@ void Core::read_thread_function( )
 //                            std::this_thread::sleep_for(10ms);
 //                        }
 //                    }
+//
 //                    ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
 //
 //                    actuator_pub_.publish(command);
-//                }
-                received_packet_list_.clear();
-                std::this_thread::sleep_for(5ms);
-
+                }
             }
+
+            std::this_thread::sleep_for(5ms);
         }
     }
     catch (SocketException& e )
@@ -257,22 +241,6 @@ void Core::read_thread_function( )
         ROS_INFO( "Read_thread_function exception was caught : %s", e.description().c_str() );
     }
     read_thread_started_ = false;
-}
-
-//**********************************************************************************************************************
-
-void Core::bridge_thread_function()
-{
-    using namespace std::chrono_literals;
-
-    std::this_thread::sleep_for( 3000ms );
-
-    bridge_ptr_->init();
-
-    while(!terminate_)
-    {
-        std::this_thread::sleep_for( 500ms );
-    }
 }
 
 // *********************************************************************************************************************
@@ -287,12 +255,12 @@ void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
             uint8_t albedo[271];
 
             for (int i = 0; i < 271; ++i) {
+
                 if (i >= 45 and i < 226) {
                     distance[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000); //Convert meters to millimeters
                 } else {
                     distance[i] = 0;
                 }
-
                 albedo[i] = 0;
             }
 
@@ -429,6 +397,9 @@ void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, con
 
 void Core::odometry_thread()
 {
+
+    odometry_thread_started_ = true;
+
     using namespace std::chrono_literals;
     uint8_t fr = 0;
     uint8_t br = 0;
@@ -488,6 +459,7 @@ void Core::odometry_thread()
             std::this_thread::sleep_for(100ms);
         }
     }
+    odometry_thread_started_ = false;
 }
 
 // *********************************************************************************************************************
@@ -503,6 +475,7 @@ double Core::getPitch( std::string wheel )
     catch (tf::TransformException &ex) {
         ROS_ERROR("%s",ex.what());
     }
+
     transform.getBasis().getRPY(roll, pitch, yaw);
 
     if ( (roll == M_PI and yaw == M_PI) or (roll == -M_PI and yaw == -M_PI) )
