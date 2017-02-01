@@ -6,6 +6,8 @@
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
+//*****************************************  --  CONSTRUCTOR / DESTRUCTOR  --  *****************************************
+
 Lidar::Lidar(int server_port)
         : stop_asked_{ false }
         , connect_thread_started_ { false }
@@ -31,6 +33,8 @@ Lidar::~Lidar()
     close(server_socket_desc_);
 }
 
+//*****************************************  --  INIT  --  *************************************************************
+
 void Lidar::init()
 {
     connect_thread_ = std::thread( &Lidar::connect, this );
@@ -40,14 +44,18 @@ void Lidar::init()
     read_thread_.detach();
 }
 
+//*****************************************  --  SET PACKET  --  *******************************************************
+
 void Lidar::set_packet( HaLidarPacketPtr packet_ptr )
 {
     packet_access_.lock();
     packet_ptr_ = packet_ptr;
     packet_access_.unlock();
 
-//    send_packet();
+    send_packet();
 }
+
+//*****************************************  --  ASK STOP  --  *********************************************************
 
 void Lidar::ask_stop()
 {
@@ -56,15 +64,19 @@ void Lidar::ask_stop()
     close(server_socket_desc_);
 }
 
+//*****************************************  --  CONNECTED?  --  *******************************************************
+
 bool Lidar::connected(){
     return socket_connected_;
 }
+
+//*****************************************  --  CONNECT  --  **********************************************************
 
 void Lidar::connect(){
 
     connect_thread_started_ = true;
 
-    server_socket_desc_ = DriverSocket::openSocketServer( server_port_ );
+    server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t) server_port_ );
 
     while( !stop_asked_ )
     {
@@ -86,6 +98,8 @@ void Lidar::connect(){
 
     connect_thread_started_ = false;
 }
+
+//*****************************************  --  READ THREAD  --  ******************************************************
 
 void Lidar::read_thread(){
 
@@ -109,19 +123,13 @@ void Lidar::read_thread(){
 
                 if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
                 {
-                    send_packet();
+//                    send_packet();
                 }
             }
             else
             {
-
-                if( errno == 32 or errno == 104 ){
+                if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
                     disconnect();
-                    ROS_ERROR("ICI LIDAR");
-                }
-                else if ( size == 0 and errno == 11 ){
-                    disconnect();
-                    ROS_ERROR("LA LIDAR");
                 }
             }
 
@@ -136,6 +144,8 @@ void Lidar::read_thread(){
 
 }
 
+//*****************************************  --  DISCONNECT  --  *******************************************************
+
 void Lidar::disconnect(){
 
     close( socket_desc_ );
@@ -144,6 +154,8 @@ void Lidar::disconnect(){
 
     ROS_ERROR("OzCore Lidar Socket Disconnected");
 }
+
+//*****************************************  --  SEND PACKET  --  ******************************************************
 
 void Lidar::send_packet(){
 
@@ -183,5 +195,4 @@ void Lidar::send_packet(){
             ROS_INFO("Lidar packet send");
         }
     }
-
 }

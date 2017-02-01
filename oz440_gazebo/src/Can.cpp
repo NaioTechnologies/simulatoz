@@ -200,13 +200,8 @@ void Can::read_thread(){
             }
             else
             {
-                if( errno == 32 or errno == 104 ){
+                if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
                     disconnect();
-                    ROS_ERROR("ICI CAN");
-                }
-                else if ( size == 0 and errno == 11 ){
-                    disconnect();
-                    ROS_ERROR("LA CAN");
                 }
             }
             std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
@@ -233,16 +228,27 @@ void Can::manage_thread(){
 
         while( !stop_asked_ )
         {
-            packets_access_.lock();
+            if(socket_connected_) {
 
-            packet_ptr = packets_ptr_.back();
-            manage_packet( packet_ptr);
-            packets_ptr_.pop_back();
+                if ( !packets_ptr_.empty()) {
 
-            ROS_ERROR("size packets : %d", (int) (packets_ptr_.size()));
+                    packets_access_.lock();
 
-            packets_access_.unlock();
+                    packet_ptr = packets_ptr_.back();
+                    manage_packet(packet_ptr);
+                    packets_ptr_.pop_back();
 
+                    packets_access_.unlock();
+                }
+                else{
+                    std::this_thread::sleep_for(1ms);
+                }
+            }
+            else{
+
+                packets_ptr_.clear();
+                std::this_thread::sleep_for(50ms);
+            }
         }
     }
     catch ( std::exception e )

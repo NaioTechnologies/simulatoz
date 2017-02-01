@@ -18,7 +18,7 @@ set(MY_LIB_DIR ${CMAKE_SOURCE_DIR}/../devel/lib/)
 set(OZ_API ${MY_LIB_DIR}liboz440_api.so)
 set(OZ_SOCKET ${MY_LIB_DIR}liboz440_socket.so)
 
-#catkin_package()
+catkin_package()
 
 find_package(gazebo REQUIRED)
 find_package(catkin REQUIRED COMPONENTS

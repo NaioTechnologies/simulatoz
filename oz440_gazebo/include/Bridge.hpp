@@ -20,10 +20,7 @@
 #include <iostream>
 #include <thread>
 #include <mutex>
-#include <SDL2/SDL_video.h>
-#include <SDL2/SDL_system.h>
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_ttf.h>
+
 #include <oz440_api/HaOdoPacket.hpp>
 #include <oz440_api/ApiGpsPacket.hpp>
 #include <oz440_api/HaGpsPacket.hpp>
