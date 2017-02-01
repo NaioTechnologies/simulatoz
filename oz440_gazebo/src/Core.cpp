@@ -30,8 +30,6 @@
 #include <signal.h>
 #include <std_srvs/Empty.h>
 
-#include "../include/Bridge.hpp"
-
 #define IMAGE_SIZE 752*480
 #define HEADER_SIZE 15
 
@@ -66,6 +64,8 @@ Core::Core( int argc, char **argv )
     , lidar_ptr_ {nullptr}
     , lidar_port_ {2213}
     , use_can_ {true}
+    , can_ptr_ {nullptr}
+    , can_port_ {5559}
     , terminate_ {false}
     , received_packet_list_ {}
     , read_thread_started_ {false}
@@ -97,15 +97,10 @@ Core::~Core( )
 void Core::run( int argc, char **argv )
 {
     using namespace std::chrono_literals;
-    bool last_order_down = 0;
 
     std::this_thread::sleep_for(1500ms);
 
     ros::NodeHandle n;
-
-    // Create motors and actuator commands publishers
-    velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
-    actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
 
     if( use_lidar_ )
     {
@@ -117,6 +112,16 @@ void Core::run( int argc, char **argv )
         camera_ptr_ = std::make_shared<Camera>(camera_port_);
     }
 
+    if( use_can_ )
+    {
+        can_ptr_ = std::make_shared<Can>(can_port_);
+    }
+
+    // Create motors and actuator commands publishers
+    velocity_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_vel", 10 );
+    actuator_pub_ = n.advertise<geometry_msgs::Vector3>( "/oz440/cmd_act", 10 );
+
+    // subscribe to lidar topic
     ros::Subscriber lidar_sub = n.subscribe("/oz440/laser/scan", 500, &Core::callback_lidar, this);
 
     // subscribe to actuator position
@@ -131,16 +136,15 @@ void Core::run( int argc, char **argv )
     message_filters::TimeSynchronizer<sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped> sync_gps( gps_fix_sub, gps_vel_sub, 10 );
     sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
 
+    // subscribe to camera topic
     message_filters::Subscriber<sensor_msgs::Image> image_left_sub ( n, "/oz440/camera/left/image_raw", 1 );
     message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
     sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
 
-//    std_srvs::Empty message;
-//    ros::service::call("gazebo/reset_world", message);
-
-    // create_odo_thread
-    send_odo_thread_ = std::thread( &Core::odometry_thread, this );
+    if( use_can_ ){
+        send_odo_thread_ = std::thread( &Core::odometry_thread, this );
+    }
 
     // create_read_thread
     read_thread_ = std::thread( &Core::read_thread_function, this );
@@ -157,6 +161,7 @@ void Core::run( int argc, char **argv )
     bridge_ptr_-> stop_main_thread_asked();
     camera_ptr_->ask_stop();
     lidar_ptr_->ask_stop();
+    can_ptr_->ask_stop();
 
     terminate_ = true;
 
@@ -165,6 +170,11 @@ void Core::run( int argc, char **argv )
 
     std::this_thread::sleep_for(500ms);
     ROS_ERROR("Core run thread stopped");
+
+
+//    std_srvs::Empty message;
+//    ros::service::call("gazebo/reset_world", message);
+
 }
 
 // *********************************************************************************************************************
@@ -316,14 +326,19 @@ void Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& 
 {
     try
     {
-        actuator_position_ = joint_states_msg->position[0] ;
-        uint8_t position_percent = std::round(actuator_position_  * ( -100.0 / 0.15 ));
+        if( use_can_ and can_ptr_->connected() )
+        {
+            actuator_position_ = joint_states_msg->position[0];
 
-        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared< ApiMoveActuatorPacket >( position_percent );
+            uint8_t position_percent = std::round(actuator_position_ * (-100.0 / 0.15));
 
-        bridge_ptr_->add_received_packet(ActuatorPositionPacketPtr);
+            ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared<ApiMoveActuatorPacket>(
+                    position_percent);
 
-        ROS_INFO("Actuator position packet enqueued");
+            can_ptr_->add_packet(ActuatorPositionPacketPtr);
+
+            ROS_INFO("Actuator position packet enqueued");
+        }
     }
     catch ( SocketException& e )
     {
@@ -360,26 +375,28 @@ void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const
 void Core::callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg)
 {
     try {
+        if( use_can_ and can_ptr_->connected() ) {
 
-        int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
-        int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
-        int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 / (2.0 *  M_PI * -30.5) );
+            int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 / (2.0 * M_PI * -30.5));
+            int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 / (2.0 * M_PI * -30.5));
+            int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 / (2.0 * M_PI * -30.5));
 
-        HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
+            HaGyroPacketPtr gyroPacketPtr = std::make_shared<HaGyroPacket>(x_gyro, y_gyro, z_gyro);
 
-        bridge_ptr_->add_received_packet(gyroPacketPtr);
+            can_ptr_->add_packet(gyroPacketPtr);
 
-        ROS_INFO("Gyro packet enqueued");
+            ROS_INFO("Gyro packet enqueued");
 
-        int16_t x_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 / 9.8);
-        int16_t y_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 / 9.8);
-        int16_t z_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 / 9.8);
+            int16_t x_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 / 9.8);
+            int16_t y_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 / 9.8);
+            int16_t z_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 / 9.8);
 
-        HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared<HaAcceleroPacket>(x_accelero, y_accelero, z_accelero);
+            HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared<HaAcceleroPacket>(x_accelero, y_accelero, z_accelero);
 
-        bridge_ptr_->add_received_packet(acceleroPacketPtr);
+            can_ptr_->add_packet(acceleroPacketPtr);
 
-        ROS_INFO("Accelero packet enqueued");
+            ROS_INFO("Accelero packet enqueued");
+        }
     }
     catch (SocketException& e)
     {
@@ -393,21 +410,23 @@ void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, con
 {
     try
     {
+        if( use_can_ and can_ptr_->connected() ) {
 
-        ulong time = gps_fix_msg->header.stamp.toSec()*1000;
-        double lat = gps_fix_msg->latitude;
-        double lon = gps_fix_msg->longitude;
-        double alt = gps_fix_msg->altitude;
-        uint8_t unit = 1;
-        uint8_t satUsed = 3;
-        uint8_t quality = 3;
-        double groundSpeed = sqrt(gps_vel_msg->vector.x*gps_vel_msg->vector.x + gps_vel_msg->vector.y*gps_vel_msg->vector.y );
+            ulong time = gps_fix_msg->header.stamp.toSec() * 1000;
+            double lat = gps_fix_msg->latitude;
+            double lon = gps_fix_msg->longitude;
+            double alt = gps_fix_msg->altitude;
+            uint8_t unit = 1;
+            uint8_t satUsed = 3;
+            uint8_t quality = 3;
+            double groundSpeed = sqrt ( gps_vel_msg->vector.x * gps_vel_msg->vector.x + gps_vel_msg->vector.y * gps_vel_msg->vector.y);
 
-        HaGpsPacketPtr gpsPacketPtr = std::make_shared<HaGpsPacket>(time,lat,lon,alt,unit,satUsed,quality,groundSpeed);
+            HaGpsPacketPtr gpsPacketPtr = std::make_shared<HaGpsPacket>(time, lat, lon, alt, unit, satUsed, quality, groundSpeed);
 
-        bridge_ptr_->add_received_packet(gpsPacketPtr);
+            can_ptr_->add_packet( gpsPacketPtr );
 
-        ROS_INFO("Gps packet enqueued");
+            ROS_INFO("Gps packet enqueued");
+        }
 
     }
     catch (SocketException& e)
@@ -430,8 +449,8 @@ void Core::odometry_thread()
 
     while (!terminate_) {
 
-        if (bridge_ptr_->get_can_connected_()) {
-
+        if( can_ptr_->connected() )
+        {
             // Initialisation
             double pitch_bl = getPitch("/back_left_wheel");
             double pitch_fl = getPitch("/front_left_wheel");
@@ -467,7 +486,7 @@ void Core::odometry_thread()
 
                 HaOdoPacketPtr odoPacketPtr = std::make_shared<HaOdoPacket>(fr, br, bl, fl);
 
-                bridge_ptr_->add_received_packet(odoPacketPtr);
+                can_ptr_->add_packet( odoPacketPtr );
             }
         }
         else{

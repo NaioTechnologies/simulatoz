@@ -3,8 +3,9 @@ project(oz440_gazebo)
 
 # check c++11 / c++0x
 include(CheckCXXCompilerFlag)
+
 CHECK_CXX_COMPILER_FLAG("-std=c++1y" COMPILER_SUPPORTS_CXX11)
-CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+
 if(COMPILER_SUPPORTS_CXX11)
     set(CMAKE_CXX_FLAGS "-std=c++1y")
 elseif(COMPILER_SUPPORTS_CXX0X)
@@ -17,7 +18,7 @@ set(MY_LIB_DIR ${CMAKE_SOURCE_DIR}/../devel/lib/)
 set(OZ_API ${MY_LIB_DIR}liboz440_api.so)
 set(OZ_SOCKET ${MY_LIB_DIR}liboz440_socket.so)
 
-catkin_package()
+#catkin_package()
 
 find_package(gazebo REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
@@ -37,7 +38,15 @@ include_directories(include ${catkin_INCLUDE_DIRS})
 find_library(${OZ_API} liboz440_api)
 find_library(${OZ_SOCKET} liboz440_socket)
 
-add_executable(Core src/Core.cpp src/Bridge.cpp src/GeoAngle.cpp src/createLidarTrame.cpp src/DriverSerial.cpp  src/Camera.cpp src/Lidar.cpp)
+add_executable(Core src/Core.cpp
+                    src/Bridge.cpp
+                    src/GeoAngle.cpp
+                    src/createLidarTrame.cpp
+                    src/DriverSerial.cpp
+                    src/Camera.cpp
+                    src/Lidar.cpp
+                    src/Can.cpp)
+
 target_link_libraries(Core ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET}
         -lpthread
         -lSDL2main

@@ -2,6 +2,8 @@
   <dictionary name="fanny">
     <words>
       <w>attributs</w>
+      <w>methodes</w>
+      <w>odometry</w>
     </words>
   </dictionary>
 </component>

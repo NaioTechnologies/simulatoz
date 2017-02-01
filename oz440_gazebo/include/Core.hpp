@@ -27,6 +27,7 @@
 #include "Bridge.hpp"
 #include "Camera.h"
 #include "Lidar.h"
+#include "Can.h"
 #include "ThreadsafeQueue.hpp"
 
 class Core
@@ -79,7 +80,8 @@ private:
     int lidar_port_;
 
     bool use_can_;
-//    std::shared_ptr<Bridge> bridge_ptr_;
+    std::shared_ptr<Can> can_ptr_;
+    int can_port_;
 
     std::vector< BaseNaio01PacketPtr > received_packet_list_;
 
