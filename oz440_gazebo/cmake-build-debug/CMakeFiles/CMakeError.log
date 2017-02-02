@@ -1,0 +1,55 @@
+Determining if the pthread_create exist failed with the following output:
+Change Dir: /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_d488e/fast"
+/usr/bin/make -f CMakeFiles/cmTC_d488e.dir/build.make CMakeFiles/cmTC_d488e.dir/build
+make[1] : on entre dans le répertoire « /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp »
+Building C object CMakeFiles/cmTC_d488e.dir/CheckSymbolExists.c.o
+/usr/bin/cc     -o CMakeFiles/cmTC_d488e.dir/CheckSymbolExists.c.o   -c /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp/CheckSymbolExists.c
+Linking C executable cmTC_d488e
+/home/fanny/Programmes/clion-2016.3.2/bin/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTC_d488e.dir/link.txt --verbose=1
+/usr/bin/cc       CMakeFiles/cmTC_d488e.dir/CheckSymbolExists.c.o  -o cmTC_d488e -rdynamic 
+CMakeFiles/cmTC_d488e.dir/CheckSymbolExists.c.o : Dans la fonction « main » :
+CheckSymbolExists.c:(.text+0x16) : référence indéfinie vers « pthread_create »
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_d488e.dir/build.make:97 : la recette pour la cible « cmTC_d488e » a échouée
+make[1]: *** [cmTC_d488e] Erreur 1
+make[1] : on quitte le répertoire « /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp »
+Makefile:126 : la recette pour la cible « cmTC_d488e/fast » a échouée
+make: *** [cmTC_d488e/fast] Erreur 2
+
+File /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp/CheckSymbolExists.c:
+/* */
+#include <pthread.h>
+
+int main(int argc, char** argv)
+{
+  (void)argv;
+#ifndef pthread_create
+  return ((int*)(&pthread_create))[argc];
+#else
+  (void)argc;
+  return 0;
+#endif
+}
+
+Determining if the function pthread_create exists in the pthreads failed with the following output:
+Change Dir: /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp
+
+Run Build Command:"/usr/bin/make" "cmTC_da26c/fast"
+/usr/bin/make -f CMakeFiles/cmTC_da26c.dir/build.make CMakeFiles/cmTC_da26c.dir/build
+make[1] : on entre dans le répertoire « /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp »
+Building C object CMakeFiles/cmTC_da26c.dir/CheckFunctionExists.c.o
+/usr/bin/cc    -DCHECK_FUNCTION_EXISTS=pthread_create   -o CMakeFiles/cmTC_da26c.dir/CheckFunctionExists.c.o   -c /home/fanny/Programmes/clion-2016.3.2/bin/cmake/share/cmake-3.6/Modules/CheckFunctionExists.c
+Linking C executable cmTC_da26c
+/home/fanny/Programmes/clion-2016.3.2/bin/cmake/bin/cmake -E cmake_link_script CMakeFiles/cmTC_da26c.dir/link.txt --verbose=1
+/usr/bin/cc   -DCHECK_FUNCTION_EXISTS=pthread_create    CMakeFiles/cmTC_da26c.dir/CheckFunctionExists.c.o  -o cmTC_da26c -rdynamic -lpthreads 
+/usr/bin/ld : ne peut trouver -lpthreads
+collect2: error: ld returned 1 exit status
+CMakeFiles/cmTC_da26c.dir/build.make:97 : la recette pour la cible « cmTC_da26c » a échouée
+make[1]: *** [cmTC_da26c] Erreur 1
+make[1] : on quitte le répertoire « /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeTmp »
+Makefile:126 : la recette pour la cible « cmTC_da26c/fast » a échouée
+make: *** [cmTC_da26c/fast] Erreur 2
+
+

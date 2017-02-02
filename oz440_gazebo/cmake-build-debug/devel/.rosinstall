@@ -1,0 +1,2 @@
+- setup-file:
+    local-name: /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/devel/setup.sh

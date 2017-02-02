@@ -1,0 +1,8 @@
+/home/fanny/Programmes/clion-2016.3.2/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/fanny/catkin_ws/src/simulatoz/oz440_gazebo
+CMake Error at CMakeLists.txt:21 (catkin_package):
+  Unknown CMake command "catkin_package".
+
+
+-- Configuring incomplete, errors occurred!
+See also "/home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeOutput.log".
+See also "/home/fanny/catkin_ws/src/simulatoz/oz440_gazebo/cmake-build-debug/CMakeFiles/CMakeError.log".
