@@ -3,6 +3,8 @@
 
 #include "../include/Serial.h"
 
+#include <std_srvs/Empty.h>
+
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
@@ -183,4 +185,7 @@ void Serial::disconnect(){
     socket_connected_ = false;
 
     ROS_ERROR("OzCore Serial Socket Disconnected");
+
+    std_srvs::Empty message;
+    ros::service::call("gazebo/reset_world", message);
 }

@@ -38,17 +38,17 @@ file.write("<sdf version='1.6'> \n \
 \t \t <scene> \n \
 \t \t \t <background>130 200 255 1 </background>\n \
 \t \t \t <ambient>130 140 140 1</ambient>\n \
-\t \t </scene>\n \n \
-\t \t <include>\n \
-\t \t \t <uri>model://Sign</uri>\n \
-\t \t \t <pose>12 1 0 0 0 0</pose>\n \
-\t \t \t <static>1</static>\n \
-\t \t </include>\n \n \
-\t \t <include>\n \
-\t \t \t <uri>model://Sign</uri>\n \
-\t \t \t <pose>-4 1 0 0 0 0</pose>\n \
-\t \t \t <static>1</static>\n \
-\t \t </include>\n \n")
+\t \t </scene>\n \n ")
+
+# \t \t \t <uri>model://Sign</uri>\n \
+# \t \t \t <pose>12 1 0 0 0 0</pose>\n \
+# \t \t \t <static>1</static>\n \
+# \t \t </include>\n \n \
+# \t \t <include>\n \
+# \t \t \t <uri>model://Sign</uri>\n \
+# \t \t \t <pose>-4 1 0 0 0 0</pose>\n \
+# \t \t \t <static>1</static>\n \
+# \t \t </include>\n \n")
 
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
@@ -284,7 +284,7 @@ elif R == 1 :
         i += 1
 
 # Grass
-G = data["Herbe"] # 0 : pas d'herbe, 1 : herbe eparse, 2 : herbe dense
+G = data["Herbe"] # 0 : pas d'herbe, 1 : allée éparse,  2 : rang, 3 : allée + rang, (10, 20, 30 même en dense)
 
 if G == 1 :
     file.write("\t \t<population name=\"Grass\">\n \
@@ -303,7 +303,89 @@ if G == 1 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*2))
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*3))
+
+if G == 10 :
+    file.write("\t \t<population name=\"Grass\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*6))
+
+if G == 2 :
+    i = 1
+    while i < N+1:
+        file.write("\t \t<population name=\"Grass%d\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.2, L*5))
+        i += 1
+
+if G == 20 :
+    i = 1
+    while i < N+1:
+        file.write("\t \t<population name=\"Grass%d\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*10))
+        i += 1
+
+if G == 3 :
+    file.write("\t \t<population name=\"Grass\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*3))
 
     i = 1
     while i < N+1:
@@ -323,8 +405,49 @@ if G == 1 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.1, L*2))
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.2, L*5))
         i += 1
+
+if G == 30 :
+    i = 1
+    while i < N+1:
+        file.write("\t \t<population name=\"Grass%d\">\n \
+\t \t \t <model name=\"Grass\">\n \
+\t \t \t \t <include>\n \
+\t \t \t \t \t <static>1</static>\n \
+\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t </include>\n \
+\t \t \t </model>\n \
+\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <box>\n \
+\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t </box>\n \
+\t \t \t <model_count>%d</model_count>\n \
+\t \t \t <distribution>\n \
+\t \t \t \t <type>random</type>\n \
+\t \t \t </distribution>\n \
+\t \t </population> \n \n"\
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*10))
+        i += 1
+
+        file.write("\t \t<population name=\"Grass\">\n \
+    \t \t \t <model name=\"Grass\">\n \
+    \t \t \t \t <include>\n \
+    \t \t \t \t \t <static>1</static>\n \
+    \t \t \t \t \t <uri>model://Grass</uri>\n \
+    \t \t \t \t </include>\n \
+    \t \t \t </model>\n \
+    \t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+    \t \t \t <box>\n \
+    \t \t \t \t <size>%d %f 0.05</size>\n \
+    \t \t \t </box>\n \
+    \t \t \t <model_count>%d</model_count>\n \
+    \t \t \t <distribution>\n \
+    \t \t \t \t <type>random</type>\n \
+    \t \t \t </distribution>\n \
+    \t \t </population> \n \n"\
+    %(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*6))
+
 
 #Trees
 file.write("\t \t <population name=\"Trees1\"> \n \
@@ -416,7 +539,7 @@ launchfile = open(launchname, "w")
 
 launchfile.write("<launch> \n \n \
 \t <param name=\"naio01_server_port\" type=\"int\" value=\"5555\" />\n \n \
-\t <node name=\"Core\" pkg=\"oz440_gazebo\" type=\"Core\" launch-prefix=\"sudo -E\"/>\n \n \
+\t <node name=\"Core\" pkg=\"oz440_gazebo\" type=\"Core\"/>\n \n \
 \t <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> \n \
 \t <include file=\"$(find gazebo_ros)/launch/empty_world.launch\">\n \
 \t \t <arg name=\"world_name\" value=\"$(find oz440_gazebo)/worlds/%s\"/> \n \

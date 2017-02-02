@@ -23,7 +23,6 @@
 #include "oz440_api/HaOdoPacket.hpp"
 #include "oz440_api/ApiMoveActuatorPacket.hpp"
 
-#include <std_srvs/Empty.h>
 
 using namespace std::chrono;
 
@@ -140,7 +139,7 @@ void Core::run()
 
     while ( ros::master::check() and !terminate_ )
     {
-        std::this_thread::sleep_for(5ms);
+        std::this_thread::sleep_for(3ms);
         ros::spinOnce();
     }
 
@@ -153,9 +152,6 @@ void Core::run()
     std::this_thread::sleep_for(500ms);
 
     ROS_ERROR("Core run thread stopped");
-
-//    std_srvs::Empty message;
-//    ros::service::call("gazebo/reset_world", message);
 
 }
 

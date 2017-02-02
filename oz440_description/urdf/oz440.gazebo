@@ -54,7 +54,7 @@
     <!-- plugin pour la camera stereo -->
     <gazebo reference="camera_stereo_link">
         <sensor type="multicamera" name="stereo_camera">
-            <update_rate>20</update_rate>
+            <update_rate>15</update_rate>
             <camera name="left">
                 <pose>0 0.05 0 0 0 0</pose>
                 <horizontal_fov>1.63555623712896 </horizontal_fov>
