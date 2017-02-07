@@ -231,7 +231,7 @@ if R == 2 :
 \t \t \t \t \t <uri>model://Rock</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <pose>%f %f -0.03 0 0 0</pose>\n \
 \t \t \t <box>\n \
 \t \t \t \t <size>%d %f 0.01</size>\n \
 \t \t \t </box>\n \
@@ -249,7 +249,7 @@ if R == 2 :
 \t \t \t \t \t <uri>model://Big_rock</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <pose>%f %f -0.02 0 0 0</pose>\n \
 \t \t \t <box>\n \
 \t \t \t \t <size>%d 0.2 0.001</size>\n \
 \t \t \t </box>\n \
@@ -271,16 +271,16 @@ elif R == 1 :
 \t \t \t \t \t <uri>model://Rock</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f %f -0.01 0 0 0</pose>\n \
+\t \t \t <pose>%f %f 0.0 0 0 0</pose>\n \
 \t \t \t <box>\n \
-\t \t \t \t <size>%d %f 0.01</size>\n \
+\t \t \t \t <size>%d %f 0.005</size>\n \
 \t \t \t </box>\n \
 \t \t \t <model_count>%d</model_count>\n \
 \t \t \t <distribution>\n \
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.5 + L/2.0, -(float(i)-0.5)*W + W/2, L+4, W-0.1, L*3.0))
+%(i, 1.5 + L/2.0, -(float(i)-0.5)*W + W/2, L+6, W-0.1, L*10.0))
         i += 1
 
 # Grass
@@ -303,7 +303,7 @@ if G == 1 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*3))
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*5))
 
 if G == 10 :
     file.write("\t \t<population name=\"Grass\">\n \
@@ -322,7 +322,7 @@ if G == 10 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*6))
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*15))
 
 if G == 2 :
     i = 1
@@ -365,7 +365,7 @@ if G == 20 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*10))
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*15))
         i += 1
 
 if G == 3 :

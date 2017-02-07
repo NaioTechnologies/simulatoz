@@ -21,7 +21,7 @@
       <visual name='visual'>
         <geometry>
           <sphere>
-            <radius>0.0149169</radius>
+            <radius>0.029169</radius>
           </sphere>
         </geometry>
         <material>

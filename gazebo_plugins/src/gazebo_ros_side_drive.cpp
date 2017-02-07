@@ -39,6 +39,10 @@ namespace gazebo {
         this->parent = _parent;
         this->world = _parent->GetWorld();
 
+        physics::PhysicsEnginePtr physics = world->GetPhysicsEngine();
+        const std::string frictionModel = "cone_model";
+        physics->SetParam("friction_model", frictionModel);
+
         this->robot_namespace_ = "";
         if (!_sdf->HasElement("robotNamespace")) {
             ROS_INFO("GazeboRosSkidSteerDrive Plugin missing <robotNamespace>, defaults to \"%s\"",

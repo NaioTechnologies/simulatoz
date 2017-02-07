@@ -97,10 +97,11 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
 
         <gazebo reference="${fb}_${lr}_wheel">
             <gravity>true</gravity>
-            <mu1 value="0.99"/>
-            <mu2 value="0.99"/>
+            <mu1 value="10"/>
+            <mu2 value="10"/>
             <kp  value="1e+7" />
-            <kd  value="1.0" />
+            <kd  value="100.0" />
+            <!--<fdir1 value="0 1 0"/>-->
             <material>Gazebo/DarkGrey</material>
         </gazebo>
 

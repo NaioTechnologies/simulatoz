@@ -2,8 +2,8 @@
  
  	 <param name="naio01_server_port" type="int" value="5555" />
  
- 	 <node name="Core" pkg="oz440_gazebo" type="Core" launch-prefix="sudo -E" />
-
+ 	 <node name="Core" pkg="oz440_gazebo" type="Core"/>
+ 
  	 <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> 
  	 <include file="$(find gazebo_ros)/launch/empty_world.launch">
  	 	 <arg name="world_name" value="$(find oz440_gazebo)/worlds/small_json.world"/> 

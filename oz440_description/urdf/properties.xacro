@@ -12,7 +12,7 @@
 
 	<!-- Proprietes de la partie haute du robot -->
 	<xacro:property name="chassis_top_height" value="0.220"/>
-	<xacro:property name="chassis_top_width" value="0.41389"/>
+	<xacro:property name="chassis_top_width" value="0.42"/>
 	<xacro:property name="chassis_top_length" value="0.67454"/>
 	<xacro:property name="chassis_top_mass" value="70"/>
 
@@ -21,7 +21,7 @@
 	<xacro:property name="wheel_diameter" value="0.3092"/>
 	<xacro:property name="wheel_width" value="0.08761"/>
 	<xacro:property name="wheel_transmission_height" value="0.058"/>
-	<xacro:property name="wheel_chassis_bottom_spacing" value="0.01"/>
+	<xacro:property name="wheel_chassis_bottom_spacing" value="0.025"/>
 	<xacro:property name="wheels_spacing" value="0.435"/>
 	<xacro:property name="wheel_mass" value="3"/>
 
