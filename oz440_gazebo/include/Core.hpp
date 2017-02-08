@@ -30,6 +30,16 @@
 #include "Serial.h"
 #include "ThreadsafeQueue.hpp"
 
+#include <opencv2/core/core.hpp>
+#include "opencv2/opencv.hpp"
+#include <opencv2/highgui/highgui.hpp>
+#include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
+#include <image_transport/image_transport.h>
+#include <camera_calibration_parsers/parse.h>
+#include "oz440_api/CLFileSystem.h"
+
+
 class Core
 {
 public:
@@ -49,15 +59,19 @@ private:
     void callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right);
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
+    void callback_top_camera(const sensor_msgs::Image::ConstPtr& image );
 
     // Odometry part
     void odometry_thread();
     double getPitch( std::string wheel);
     bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
+    bool setup_video_folder();
 
 private:
 
     bool terminate_ ;
+
+    std::string log_folder_;
 
     std::shared_ptr<tf::TransformListener> listener_ptr_;
 
@@ -89,6 +103,8 @@ private:
     // ROS PART
     ros::Publisher velocity_pub_;
     ros::Publisher actuator_pub_;
+
+    std::string video_folder_;
 
 };
 

@@ -56,6 +56,8 @@ set(OZ_SOCKET ${MY_LIB_DIR}liboz440_socket.so)
 
 catkin_package()
 
+find_package(  OpenCV 2.4.5 )
+
 find_package(gazebo REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
         roscpp
@@ -89,5 +91,6 @@ target_link_libraries(Core ${catkin_LIBRARIES} ${OZ_API} ${OZ_SOCKET}
         -lSDL2
         -lSDL2_ttf
         -lSDL2_gfx
-        -lz)
+        -lz
+        ${OpenCV_LIBRARIES})
 add_dependencies(Core oz440_api oz440_socket ${catkin_EXPORTED_TARGETS})

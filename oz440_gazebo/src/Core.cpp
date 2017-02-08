@@ -23,7 +23,6 @@
 #include "oz440_api/HaOdoPacket.hpp"
 #include "oz440_api/ApiMoveActuatorPacket.hpp"
 
-
 using namespace std::chrono;
 
 //static pid_t gettid( void )
@@ -31,6 +30,11 @@ using namespace std::chrono;
 //    return syscall( __NR_gettid );
 //}
 //
+
+cv::VideoWriter outputVideo;
+
+int g_count = 0;
+ros::Time g_last_wrote_time = ros::Time(0);
 
 // *********************************************************************************************************************
 
@@ -46,7 +50,9 @@ int main( int argc, char **argv )
 // *********************************************************************************************************************
 
 Core::Core( int argc, char **argv )
-        : use_camera_ {true}
+        : terminate_ {false}
+        , log_folder_ { "/home/fanny/Log_videos" }
+        , use_camera_ {true}
         , camera_ptr_ {nullptr}
         , camera_port_ {5558}
         , use_lidar_ {true}
@@ -57,13 +63,13 @@ Core::Core( int argc, char **argv )
         , can_port_ {5559}
         , serial_ptr_ {nullptr}
         , serial_port_ {5554}
-        , terminate_ {false}
         , received_packet_list_ {}
         , read_thread_started_ {false}
         , read_thread_ {}
         , odometry_thread_ {}
         , odometry_thread_started_ {false}
         , actuator_position_ {0.0}
+        , video_folder_ { "" }
 {
     ros::init( argc, argv, "Core");
 
@@ -87,6 +93,8 @@ void Core::run()
     std::this_thread::sleep_for(1500ms);
 
     ros::NodeHandle n;
+
+//    image_transport::ImageTransport it(n);
 
     if( use_lidar_ )
     {
@@ -129,6 +137,9 @@ void Core::run()
     message_filters::Subscriber<sensor_msgs::Image> image_right_sub ( n, "/oz440/camera/right/image_raw", 1 );
     message_filters::TimeSynchronizer<sensor_msgs::Image, sensor_msgs::Image> sync(image_left_sub, image_right_sub, 10);
     sync.registerCallback ( boost::bind(&Core::callback_camera, this, _1, _2) );
+
+    // subscribe to top_camera topic
+//    image_transport::Subscriber top_camera_sub = it.subscribe("/oz440/top_camera/image_raw", 5, &Core::callback_top_camera, this);
 
     if( use_can_ ){
         odometry_thread_ = std::thread( &Core::odometry_thread, this );
@@ -391,6 +402,63 @@ void Core::callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, con
 
 // *********************************************************************************************************************
 
+void Core::callback_top_camera(const sensor_msgs::Image::ConstPtr& image )
+{
+    if( serial_ptr_ -> connected() ) {
+        if (video_folder_ == "") {
+            bool success = setup_video_folder();
+        }
+
+        if (!outputVideo.isOpened()) {
+
+            std::string codec = "MJPG";
+            cv::Size size(image->width, image->height);
+            std::string filename = video_folder_ + "/output.avi";
+
+            outputVideo.open(filename, CV_FOURCC(codec.c_str()[0], codec.c_str()[1], codec.c_str()[2],
+                                                               codec.c_str()[3]), 5, size, true);
+
+            if (!outputVideo.isOpened()) {
+                ROS_ERROR("Could not create the output video! Check filename and/or support for codec.");
+                exit(-1);
+            }
+
+            ROS_INFO_STREAM("Starting to record " << codec << " video at " << size << "@" << 5 << "fps ");
+
+        }
+
+        if ((image->header.stamp - g_last_wrote_time) < ros::Duration(1 / 5)) {
+            // Skip to get video with correct fps
+            return;
+        }
+
+        try {
+            cv_bridge::CvtColorForDisplayOptions options;
+            options.do_dynamic_scaling = false;
+            options.min_image_value = 0.0;
+            options.max_image_value = 0.0;
+            options.colormap = -1;
+            const cv::Mat image_cv = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image), "rgb8",
+                                                                   options)->image;
+            if (!image_cv.empty()) {
+                outputVideo << image_cv;
+                ROS_ERROR("Recording frame ");
+                g_count++;
+                g_last_wrote_time = image->header.stamp;
+            }
+            else {
+                ROS_WARN("Frame skipped, no data!");
+            }
+        } catch (cv_bridge::Exception) {
+            ROS_ERROR("Unable to convert %s image to %s", image->encoding.c_str(), "MJPG");
+            return;
+        }
+    }
+}
+
+
+// *********************************************************************************************************************
+
 void Core::odometry_thread()
 {
 
@@ -522,4 +590,45 @@ bool Core::odo_wheel( uint8_t & odo_wheel, double& pitch, double& pitch_last_tic
     }
 
     return tic;
+}
+
+// *********************************************************************************************************************
+
+bool Core::setup_video_folder()
+{
+    bool success{ };
+
+    // Check if folder exists.
+    if( cl::filesystem::folder_exists( log_folder_ ) )
+    {
+        // We create a dated folder and two subfolders to write our images.
+        std::time_t t = std::time(NULL);
+        size_t bufferSize{ 256 };
+        char buff[bufferSize];
+        std::string format{ "%F %T %z" };
+        size_t bytesRead = std::strftime( buff, bufferSize, format.c_str(), std::localtime(&t) );
+        std::string date_str = std::string( buff, bytesRead );
+
+        std::replace( date_str.begin(), date_str.end(), ':', '_' );
+
+        std::string dated_folder_path{ cl::filesystem::folder_to_path( log_folder_, date_str ) };
+
+        // Creating the folders.
+        if( !cl::filesystem::folder_exists( dated_folder_path ) )
+        {
+            cl::filesystem::folder_create( dated_folder_path );
+            ROS_ERROR( "Folder  : %s", dated_folder_path.c_str() );
+            video_folder_ = dated_folder_path;
+
+        }
+
+        success = true;
+
+    }
+    else
+    {
+        ROS_ERROR( "Folder does not exist" );
+    }
+
+    return success;
 }

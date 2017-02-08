@@ -58,6 +58,7 @@ set(MY_LIB_SOURCES
    src/Utils.cpp
    src/CLException.cpp
    src/CLBaseException.cpp
+   src/CLFileSystem.cpp
         )
 
 find_package(catkin REQUIRED COMPONENTS

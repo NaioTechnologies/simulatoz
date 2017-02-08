@@ -59,17 +59,14 @@
                 <pose>0 0.0 6.0 0 1.57 1.57</pose>
                 <horizontal_fov>1.4 </horizontal_fov>
                 <image>
-                    <width>440</width>
-                    <height>220</height>
+                    <width>800</width>
+                    <height>200</height>
                     <format>R8G8B8</format>
                 </image>
                 <clip>
                     <near>0.02</near>
                     <far>300</far>
                 </clip>
-                <save enabled="true">
-                    <path>/home/fanny/Log_videos</path>
-                </save>
             </camera>
             <plugin name="camera_controller" filename="libgazebo_ros_camera.so">
                 <alwaysOn>true</alwaysOn>
