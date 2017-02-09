@@ -59,7 +59,7 @@
                 <pose>0 0.0 6.0 0 1.57 1.57</pose>
                 <horizontal_fov>1.4 </horizontal_fov>
                 <image>
-                    <width>800</width>
+                    <width>400</width>
                     <height>200</height>
                     <format>R8G8B8</format>
                 </image>

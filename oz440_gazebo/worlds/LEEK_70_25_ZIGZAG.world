@@ -1,0 +1,704 @@
+<sdf version='1.6'> 
+ 	 <world name='default'> 
+ 	 	 <light name='sun' type='directional'> 
+ 	 	 	 <cast_shadows>1</cast_shadows> 
+ 	 	 	 <pose frame=''>0 0 10 0 -0 0</pose> 
+ 	 	 	 <diffuse>0.5 0.5 0.5 1</diffuse> 
+ 	 	 	 <specular>0.1 0.1 0.1 1</specular> 
+ 	 	 	 <attenuation> 
+ 	 	 	 	 <range>1000</range> 
+ 	 	 	 	 <constant>0.9</constant> 
+ 	 	 	 	 <linear>0.01</linear> 
+ 	 	 	 	 <quadratic>0.001</quadratic> 
+ 	 	 	 </attenuation> 
+ 	 	 	 <direction>0.9 0.5 -1</direction> 
+ 	 	 </light>
+ 
+ 	 	 <scene> 
+ 	 	 	 <background>130 200 255 1 </background>
+ 	 	 	 <ambient>130 140 140 1</ambient>
+ 	 	 </scene>
+ 
+ 	 	 <include> 
+ 	 	 	 <uri>model://sand_plane</uri> 
+ 	 	 </include>
+ 
+	 	 <population name="sticks"> 
+ 	 	 	 <model name="Red_stick">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>0</static>
+ 	 	 	 	 	 <uri>model://Red_stick</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	<pose>5.500000 0.3500000 0.1 0 0 0</pose>
+ 	 	 	<distribution> 
+ 	 	 	 	 <type>grid</type> 
+ 	 	 	 	 <rows>3</rows>
+ 	 	 	 	 <cols>2</cols>
+ 	 	 	 	 <step>9.000000 0.700000 0</step>
+ 	 	 	 </distribution>
+ 	 	 </population>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>1.500000 1.053455 0.15 0 0 31.093936</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>1.750000 1.07657 0.15 0 0 -21.085103</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>2.000000 1.09144 0.15 0 0 -142.701296</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>2.250000 1.116815 0.15 0 0 -28.667320</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>2.500000 1.120358 0.15 0 0 -176.776607</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>2.750000 1.114567 0.15 0 0 -48.898725</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>3.000000 1.093750 0.15 0 0 33.747201</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>3.250000 1.072446 0.15 0 0 112.016233</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>3.500000 1.062669 0.15 0 0 114.023949</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>3.750000 1.039425 0.15 0 0 -95.174597</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>4.000000 1.052611 0.15 0 0 23.498677</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>4.250000 1.071331 0.15 0 0 -78.017386</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>4.500000 1.098685 0.15 0 0 78.162470</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>4.750000 1.117130 0.15 0 0 64.171555</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>5.000000 1.121649 0.15 0 0 104.840696</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>5.250000 1.093198 0.15 0 0 -61.214973</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>5.500000 1.110600 0.15 0 0 95.404228</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>5.750000 1.122740 0.15 0 0 -65.342288</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>6.000000 1.096236 0.15 0 0 -33.873640</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>6.250000 1.078426 0.15 0 0 -104.165669</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>6.500000 1.042026 0.15 0 0 18.231172</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>6.750000 1.061856 0.15 0 0 -163.298047</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>7.000000 1.088469 0.15 0 0 76.218734</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>7.250000 1.103083 0.15 0 0 27.743371</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>7.500000 1.122475 0.15 0 0 22.277067</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>7.750000 1.149041 0.15 0 0 81.371069</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>8.000000 1.127604 0.15 0 0 158.432280</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>8.250000 1.107059 0.15 0 0 63.531456</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>8.500000 1.087978 0.15 0 0 -18.195034</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>8.750000 1.068388 0.15 0 0 165.495991</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>9.000000 1.033020 0.15 0 0 -152.819568</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+			 <uri>model://Leek</uri>
+			 <pose>9.250000 1.043898 0.15 0 0 -54.914159</pose>
+			 <static>0</static>
+		 </include>
+
+		 <include>
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>1.500000 0.353455 0.15 0 0 31.093936</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>1.750000 0.37657 0.15 0 0 -21.085103</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.000000 0.39144 0.15 0 0 -142.701296</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.250000 0.416815 0.15 0 0 -28.667320</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.500000 0.420358 0.15 0 0 -176.776607</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.750000 0.414567 0.15 0 0 -48.898725</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.000000 0.393750 0.15 0 0 33.747201</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.250000 0.372446 0.15 0 0 112.016233</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.500000 0.362669 0.15 0 0 114.023949</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.750000 0.339425 0.15 0 0 -95.174597</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.000000 0.352611 0.15 0 0 23.498677</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.250000 0.371331 0.15 0 0 -78.017386</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.500000 0.398685 0.15 0 0 78.162470</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.750000 0.417130 0.15 0 0 64.171555</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.000000 0.421649 0.15 0 0 104.840696</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.250000 0.393198 0.15 0 0 -61.214973</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.500000 0.410600 0.15 0 0 95.404228</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.750000 0.422740 0.15 0 0 -65.342288</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.000000 0.396236 0.15 0 0 -33.873640</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.250000 0.378426 0.15 0 0 -104.165669</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.500000 0.342026 0.15 0 0 18.231172</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.750000 0.361856 0.15 0 0 -163.298047</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.000000 0.388469 0.15 0 0 76.218734</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.250000 0.403083 0.15 0 0 27.743371</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.500000 0.422475 0.15 0 0 22.277067</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.750000 0.449041 0.15 0 0 81.371069</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.000000 0.427604 0.15 0 0 158.432280</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.250000 0.407059 0.15 0 0 63.531456</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.500000 0.387978 0.15 0 0 -18.195034</pose>
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.750000 0.368388 0.15 0 0 165.495991</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>9.000000 0.333020 0.15 0 0 -152.819568</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>9.250000 0.343898 0.15 0 0 -54.914159</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>1.620299 -0.355295 0.15 0 0 -47.658381</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>1.870299 -0.340901 0.15 0 0 81.891212</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.120299 -0.344815 0.15 0 0 46.669446</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.370299 -0.369074 0.15 0 0 -171.665159</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.620299 -0.360144 0.15 0 0 -91.296735</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>2.870299 -0.353715 0.15 0 0 -33.434942</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.120299 -0.363195 0.15 0 0 -118.752922</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.370299 -0.338383 0.15 0 0 104.553189</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.620299 -0.335309 0.15 0 0 132.222583</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>3.870299 -0.340454 0.15 0 0 85.909775</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.120299 -0.336590 0.15 0 0 120.687470</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.370299 -0.330500 0.15 0 0 175.498247</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.620299 -0.335135 0.15 0 0 133.788351</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>4.870299 -0.344225 0.15 0 0 51.974599</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.120299 -0.363053 0.15 0 0 -117.480808</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.370299 -0.356971 0.15 0 0 -62.741912</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.620299 -0.365452 0.15 0 0 -139.064815</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>5.870299 -0.349987 0.15 0 0 0.116144</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.120299 -0.364440 0.15 0 0 -129.964167</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.370299 -0.359921 0.15 0 0 -89.290919</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.620299 -0.350384 0.15 0 0 -3.459428</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>6.870299 -0.341373 0.15 0 0 77.643738</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.120299 -0.368853 0.15 0 0 -169.673058</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.370299 -0.355985 0.15 0 0 -53.860994</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.620299 -0.330124 0.15 0 0 178.880412</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>7.870299 -0.353624 0.15 0 0 -32.612808</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.120299 -0.352674 0.15 0 0 -24.063254</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.370299 -0.361187 0.15 0 0 -100.680087</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.620299 -0.365824 0.15 0 0 -142.412364</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>8.870299 -0.355684 0.15 0 0 -51.151729</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>9.120299 -0.345391 0.15 0 0 41.483021</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<include> 
+ 	 	 	 <uri>model://Leek</uri> 
+ 	 	 	 <pose>9.370299 -0.330516 0.15 0 0 175.360278</pose> 
+ 	 	 	 <static>0</static> 
+ 	 	 </include> 
+ 
+	 	<population name="Rocks1">
+ 	 	 	 <model name="Rock">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Rock</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>5.500000 0.000000 0.0 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>14 0.600000 0.005</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>80</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population> 
+ 
+	 	 <population name="Trees1"> 
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>17 0 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>5 20 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>5</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 	 	 
+ 	 	 <population name="Trees2">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>0 -17 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>30 6 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>5</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 
+ 	 	 <population name="Trees3">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>0 15 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>30 6 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>7</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 	 </population>
+ 
+ 	 	 <population name="Trees4">
+ 	 	 	 <model name="Tree">
+ 	 	 	 	 <include>
+ 	 	 	 	 	 <static>1</static>
+ 	 	 	 	 	 <uri>model://Tree</uri>
+ 	 	 	 	 </include>
+ 	 	 	 </model>
+ 	 	 	 <pose>-15 0 -0.6 0 0 0</pose>
+ 	 	 	 <box>
+ 	 	 	 	 <size>10 30 3</size>
+ 	 	 	 </box>
+ 	 	 	 <model_count>8</model_count>
+ 	 	 	 <distribution>
+ 	 	 	 	 <type>random</type>
+ 	 	 	 </distribution>
+ 	 	 </population>
+ 
+	 </world> 
+ </sdf>

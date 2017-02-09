@@ -533,7 +533,7 @@ file.close()
 
 # Creating the launch file
 
-launchname = "../launch/"+name+".launch"
+launchname = "../../launch/LAAS_tests/"+name+".launch"
 
 launchfile = open(launchname, "w")
 

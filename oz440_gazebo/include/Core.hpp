@@ -104,8 +104,9 @@ private:
     ros::Publisher velocity_pub_;
     ros::Publisher actuator_pub_;
 
+    // Video_recorder
     std::string video_folder_;
-
+    cv::VideoWriter output_video_;
 };
 
 #endif //CORE_HPP
