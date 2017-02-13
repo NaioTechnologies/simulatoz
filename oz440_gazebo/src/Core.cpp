@@ -310,6 +310,8 @@ void Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& 
 
 void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right)
 {
+    ROS_ERROR("Callback camera");
+
     try
     {
         if( use_camera_ and camera_ptr_->connected() )
@@ -334,6 +336,8 @@ void Core::callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const
 
 void Core::callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg)
 {
+    ROS_ERROR("Callback imu");
+
     try {
         if( use_can_ and can_ptr_->connected() ) {
 
