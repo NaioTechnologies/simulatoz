@@ -19,9 +19,9 @@ add_library(gazebo_ros_side_drive src/gazebo_ros_side_drive.cpp
 
 )
 
-add_library(gazebo_ros_my_laser src/gazebo_ros_my_laser.cpp
-
-        )
+#add_library(gazebo_ros_my_laser src/gazebo_ros_my_laser.cpp
+#
+#        )
 #add_library(gazebo_ros_imu_direct src/gazebo_ros_imu_direct.cpp
 #
 #)
@@ -36,8 +36,8 @@ target_link_libraries( gazebo_ros_actuator  ${catkin_LIBRARIES} ${GAZEBO_LIBRARI
 target_link_libraries( gazebo_ros_side_drive  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
         )
 
-target_link_libraries( gazebo_ros_my_laser  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
-        )
+#target_link_libraries( gazebo_ros_my_laser  ${catkin_LIBRARIES} ${GAZEBO_LIBRARIES}
+#        )
 
 catkin_package(
   DEPENDS 

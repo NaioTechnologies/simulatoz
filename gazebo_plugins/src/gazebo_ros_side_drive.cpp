@@ -10,8 +10,6 @@
 
 #include "gazebo/gazebo.hh"
 
-#include <sdf/sdf.hh>
-
 #include <ros/ros.h>
 #include "geometry_msgs/Vector3.h"
 

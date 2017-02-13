@@ -173,7 +173,7 @@
                     <stddev>0.01</stddev>
                 </noise>
             </ray>
-            <plugin name="gazebo_lidar_controller" filename="libgazebo_ros_my_laser.so">
+            <plugin name="gazebo_lidar_controller" filename="libgazebo_ros_gpu_laser.so">
                 <alwaysOn>true</alwaysOn>
                 <topicName>/oz440/laser/scan</topicName>
                 <frameName>lidar_link</frameName>
