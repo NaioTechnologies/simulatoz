@@ -247,6 +247,8 @@ void Core::read_thread_function( )
 
 void Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
+    ROS_ERROR("Callback lidar");
+
     try
     {
         if( use_lidar_ and lidar_ptr_->connected() )
