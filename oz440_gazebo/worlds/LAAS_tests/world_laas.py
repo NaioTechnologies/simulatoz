@@ -137,12 +137,12 @@ file.write("\t \t<population name=\"Rocks\">\n \
 \t \t \t <model name=\"Rocks\">\n \
 \t \t \t \t <include>\n \
 \t \t \t \t \t <static>1</static>\n \
-\t \t \t \t \t <uri>model://Grass</uri>\n \
+\t \t \t \t \t <uri>model://Big_rock</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>%f 0 -0.01 0 0 0</pose>\n \
+\t \t \t <pose>%f 0 0 0 0 0</pose>\n \
 \t \t \t <box>\n \
-\t \t \t \t <size>%d %f 0.05</size>\n \
+\t \t \t \t <size>%d %f 0.02</size>\n \
 \t \t \t </box>\n \
 \t \t \t <model_count>%d</model_count>\n \
 \t \t \t <distribution>\n \

@@ -21,7 +21,7 @@
       <visual name='visual'>
         <geometry>
           <sphere>
-            <radius>0.03</radius>
+            <radius>0.08</radius>
           </sphere>
         </geometry>
         <material>
@@ -43,7 +43,7 @@
         <pose frame=''>0 0 0 0 -0 0</pose>
         <geometry>
           <sphere>
-            <radius>0.03</radius>
+            <radius>0.07</radius>
           </sphere>
         </geometry>
         <surface>
