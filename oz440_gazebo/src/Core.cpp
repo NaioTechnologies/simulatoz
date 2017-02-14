@@ -43,7 +43,7 @@ int main( int argc, char **argv )
 
 Core::Core( int argc, char **argv )
         : terminate_ {false}
-        , log_folder_ { "/home/fanny/Log_videos" }
+        , log_folder_ {  }
         , use_camera_ {true}
         , camera_ptr_ {nullptr}
         , camera_port_ {5558}
@@ -69,6 +69,14 @@ Core::Core( int argc, char **argv )
     ros::NodeHandle n;
 
     listener_ptr_ = std::make_shared< tf::TransformListener>( ros::Duration(10) );
+
+    for( int i = 1; i < argc; i++ )
+    {
+        if( strncmp( argv[i], "--videoFolder", 13 ) == 0 )
+        {
+            log_folder_ = argv[i + 1];
+        }
+    }
 }
 
 // *********************************************************************************************************************

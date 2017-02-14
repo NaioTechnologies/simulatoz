@@ -11,11 +11,13 @@ import json
 arguments = sys.argv
 json_file = arguments[1]
 
-json_data=open(json_file)
+json_data = open(json_file)
 data = json.load(json_data)
 
 name =  data["Nom"]
 filename = name+".world"
+
+vid_name = data["videoFolder"]
 
 # World file creation
 file = open(filename, "w")
@@ -249,35 +251,8 @@ file.write("\t \t <population name=\"Trees1\"> \n \
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
 # Closing the file
-namelaunch = name+".launch"
-print "\nYour world is ready ! You can launch it using : \nroslaunch oz440_gazebo",namelaunch,"\n"
+print "\nYour world is ready ! You can launch it using : \nroslaunch oz440_gazebo oz.launch world:=",name," videoFolder:=",vid_name,"\n"
 
 file.write("\t </world> \n \
 </sdf>")
 file.close()
-
-#||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
-
-# Creating the launch file
-
-launchname = "../../launch/LAAS_tests/"+name+".launch"
-
-launchfile = open(launchname, "w")
-
-launchfile.write("<launch> \n \n \
-\t <param name=\"naio01_server_port\" type=\"int\" value=\"5555\" />\n \n \
-\t <node name=\"Core\" pkg=\"oz440_gazebo\" type=\"Core\"/>\n \n \
-\t <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> \n \
-\t <include file=\"$(find gazebo_ros)/launch/empty_world.launch\">\n \
-\t \t <arg name=\"world_name\" value=\"$(find oz440_gazebo)/worlds/LAAS_tests/%s\"/> \n \
-\t \t <arg name=\"gui\" value=\"false\" /> \n \
-\n </include> \n \n \
-\t <param name=\"robot_description\" command=\"$(find xacro)/xacro '$(find oz440_description)/urdf/oz440.xacro'\" />\n \n \
-\t <!-- Spawn a robot into Gazebo --> \n \
-\t <node name=\"spawn_urdf\" pkg=\"gazebo_ros\" type=\"spawn_model\" output=\"screen\" args=\"-param robot_description -b -urdf -x 0 -y 0 -z 0.4 -model oz440\" /> \n \
-\t <!-- ros_control launch file --> \n \
-\t <include file=\"$(find oz440_control)/launch/oz440_control.launch\"/>\n \
-</launch>\n " \
-%(filename))
-
-launchfile.close()
