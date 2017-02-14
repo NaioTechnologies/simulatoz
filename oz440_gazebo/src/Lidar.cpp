@@ -192,7 +192,7 @@ void Lidar::send_packet(){
         if (write_size != strlen(trame)) {
             ROS_ERROR("Error sending Lidar trame");
         } else {
-            ROS_ERROR("Lidar packet send");
+            ROS_INFO("Lidar packet send");
         }
     }
 }
