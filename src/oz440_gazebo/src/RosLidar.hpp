@@ -43,6 +43,8 @@ public:
 	void cleanup();
 
 private:
+	void reset();
+
 	void do_accept( const boost::system::error_code& ec );
 
 	void do_receive( const boost::system::error_code& ec, std::size_t bytes_transferred );
@@ -50,6 +52,11 @@ private:
 	void do_send( const boost::system::error_code& ec, std::size_t bytes_transferred );
 
 	void ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
+
+	void createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096], uint64_t nbMesures,
+					  uint64_t nbTelegrammes, struct timespec timeInit );
+
+	long elapsedMillis( struct timespec dateDepart );
 
 //-- Data members ----------------------------------------------------------------------------------
 private:
@@ -61,11 +68,7 @@ private:
 	std::unique_ptr< boost::asio::ip::tcp::socket > socket_;
 	bool connected_;
 
-	//std::mutex datagram_access_;
-	//sensor_msgs::LaserScan::ConstPtr latest_lidar_msg_;
-	//std::array< uint8_t, 1024 > receive_buffer_;
-
-	std::array< uint8_t, 1024 > write_buffer_;
+	std::array< uint8_t, 4096 > write_buffer_;
 };
 
 //==================================================================================================

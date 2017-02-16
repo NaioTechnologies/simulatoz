@@ -12,7 +12,6 @@
 //==================================================================================================
 // I N C L U D E   F I L E S
 
-#include "createLidarTrame.hpp"
 #include "RosLidar.hpp"
 
 //==================================================================================================
@@ -31,12 +30,10 @@ RosLidar::RosLidar( boost::asio::io_service& io_service, uint16_t port )
 	, laser_queue_{ 500 }
 	, ros_sub_{ }
 	, acceptor_{ io_service, boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), port ) }
-	, socket_{ /*io_service*/ }
+	, socket_{ }
 	, connected_{ }
 {
-	socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
-	acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
-												   boost::asio::placeholders::error ) );
+	reset();
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -63,54 +60,16 @@ RosLidar::cleanup()
 	acceptor_.cancel();
 }
 
-////--------------------------------------------------------------------------------------------------
-////
-//void
-//RosLidar::send_packet()
-//{
-//	char trame[10000];
+//--------------------------------------------------------------------------------------------------
 //
-//	int lidar[271];
-//	int albedo[271];
-//
-//	struct timespec timeInit;
-//	clock_gettime( CLOCK_MONOTONIC_RAW, &timeInit );
-//
-//	if( socket_connected_ )
-//	{
-//
-//		packet_access_.lock();
-//
-//		if( packet_ptr_ != nullptr )
-//		{
-//			for( int i = 0; i < 271; i++ )
-//			{
-//				lidar[i] = packet_ptr_->distance[i];
-//				albedo[i] = packet_ptr_->albedo[i];
-//			}
-//		}
-//
-//		packet_access_.unlock();
-//
-//		nbMesures_++;
-//		nbTelegrammes_++;
-//
-//		createTrame( lidar, albedo, trame, nbMesures_, nbTelegrammes_, timeInit );
-//
-//		socket_access_.lock();
-//		ssize_t write_size = write( socket_desc_, trame, strlen( trame ) );
-//		socket_access_.unlock();
-//
-//		if( write_size != strlen( trame ) )
-//		{
-//			ROS_ERROR( "Error sending Lidar trame" );
-//		}
-//		else
-//		{
-//			ROS_INFO( "Lidar packet send" );
-//		}
-//	}
-//}
+void
+RosLidar::reset()
+{
+	connected_ = false;
+	socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
+	acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
+												   boost::asio::placeholders::error ) );
+}
 
 //--------------------------------------------------------------------------------------------------
 //
@@ -119,9 +78,9 @@ RosLidar::do_accept( const boost::system::error_code& ec )
 {
 	if( !ec )
 	{
-		ROS_ERROR_STREAM( "Connection to 'RosLidar' on 2213 successfull" );
-
+		ROS_ERROR( "RosLidar connection successfull" );
 		connected_ = true;
+
 		//socket_.async_receive( boost::asio::buffer( receive_buffer_ ),
 		//					   boost::bind( &RosLidar::do_receive, this,
 		//									boost::asio::placeholders::error,
@@ -129,7 +88,7 @@ RosLidar::do_accept( const boost::system::error_code& ec )
 	}
 	else
 	{
-		ROS_ERROR_STREAM( "Connection to 'RosLidar' on 2213 failed" << ec.message() );
+		ROS_ERROR_STREAM( "RosLidar connection failed: " << ec.message() );
 	}
 }
 
@@ -141,12 +100,8 @@ RosLidar::do_receive( const boost::system::error_code& ec, std::size_t bytes_tra
 	if( ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset ||
 		ec == boost::asio::error::broken_pipe )
 	{
-		connected_ = false;
-		ROS_ERROR( "Connection to RosLidar closed" );
-
-		socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
-		acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
-													   boost::asio::placeholders::error ) );
+		ROS_ERROR( "RosLidar connection closed" );
+		reset();
 	}
 	else
 	{
@@ -165,14 +120,10 @@ RosLidar::do_send( const boost::system::error_code& ec, std::size_t bytes_transf
 	if( ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset ||
 		ec == boost::asio::error::broken_pipe )
 	{
-		connected_ = false;
-		ROS_ERROR( "Connection to RosLidar closed" );
-		socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
-		acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
-													   boost::asio::placeholders::error ) );
+		ROS_ERROR( "RosLidar connection closed" );
+		reset();
 	}
-	else
-	{ }
+
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -180,9 +131,6 @@ RosLidar::do_send( const boost::system::error_code& ec, std::size_t bytes_transf
 void
 RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
-	//std::lock_guard< std::mutex > lock{ datagram_access_ };
-	//latest_lidar_msg_ = lidar_msg;
-
 	if( connected_ )
 	{
 		uint16_t distances[271];
@@ -192,8 +140,8 @@ RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 		{
 			if( i >= 45 and i < 226 )
 			{
-				distances[i] = (uint16_t) (lidar_msg->ranges[270 - i] *
-										   1000); //Convert meters to millimeters
+				//Convert meters to millimeters
+				distances[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000);
 			}
 			else
 			{
@@ -202,14 +150,155 @@ RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 			albedos[i] = 0;
 		}
 
-		//struct timespec time;
-		//clock_gettime( CLOCK_MONOTONIC_RAW, &time );
-		//createTrame( distances, albedos, reinterpret_cast<char*>(&write_buffer_.front()), 0, 0,
-		//			 time );
-		
+		// Do this shit properly
+		struct timespec t;
+		clock_gettime( CLOCK_MONOTONIC_RAW, &t );
+		createTrame( distances, albedos, reinterpret_cast<char*>(&write_buffer_.front()), 0, 0, t );
+
 		socket_->async_send( boost::asio::buffer( write_buffer_ ),
 							 boost::bind( &RosLidar::do_send, this,
 										  boost::asio::placeholders::error,
 										  boost::asio::placeholders::bytes_transferred() ) );
 	}
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+void
+RosLidar::createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096], uint64_t nbMesures,
+			 uint64_t nbTelegrammes, struct timespec timeInit )
+{
+	char buffer[20];
+
+	memset( trame, '\0', 2000 );
+
+	strcat( trame, "sRA " );//commandType
+
+	strcat( trame, "LMDscandata " );//command
+
+	strcat( trame, "1 " );//versionNumber
+
+	strcat( trame, "1 " );//deviceNumber
+
+	strcat( trame, "000000 " );//SerialNumber
+
+	strcat( trame,
+			"0 0 " );//status 0 0->OK 0 1 -> error 0 2 -> pollutionWarning 0 4 pollutionError
+
+	sprintf( buffer, "%x ", (uint32_t) nbTelegrammes );
+	strcat( trame, buffer );//TelegramCounter
+
+	sprintf( buffer, "%x ", (uint32_t) nbMesures );
+	strcat( trame, buffer );//ScanCounter
+
+	sprintf( buffer, "%x ", (uint32_t) elapsedMillis( timeInit ) );
+	strcat( trame, buffer );//timeSinceStartInμsec
+
+	sprintf( buffer, "%x ", (uint32_t) elapsedMillis( timeInit ) );
+	strcat( trame, buffer );//timeInμsec
+
+	strcat( trame, "0 0 " );//Status of digsitalInputs ??
+
+	strcat( trame, "0 0 " );//Status of digsitalOutputs ??
+
+	strcat( trame, "0 " );//Reserved
+
+	sprintf( buffer, "%x ", 1500 );
+	strcat( trame, buffer );//Scan Frequency (15Hz)
+
+	sprintf( buffer, "%x ", 1500 );
+	strcat( trame, buffer );//Measurement Frequency ??
+
+	strcat( trame, "0 " );//No encoders
+
+	//Encoder position && speed not present because no encoders.
+
+	strcat( trame, "1 " );//Amount of 16bits channels
+
+	strcat( trame, "DIST1 " );//Type de message : distances
+
+	strcat( trame, "3F800000 " );//scaleFactor
+
+	strcat( trame, "00000000 " );//offset
+
+	sprintf( buffer, "%x ", -135 );
+	strcat( trame, buffer );//startAngle
+
+	sprintf( buffer, "%x ", 5000 );
+	strcat( trame, buffer );//steps ???
+
+	sprintf( buffer, "%x ", 271 );
+	strcat( trame, buffer );//amountofData
+
+	for( int i = 0; i < 271; i++ )
+	{
+		int locDist = 0;
+		if( dist[i] > 3999 || dist[i] < 20 )
+		{
+			locDist = 0;
+		}
+		else
+		{
+			locDist = dist[i];
+		}
+		sprintf( buffer, "%x ", locDist );
+		strcat( trame, buffer );//distances
+	}
+
+	strcat( trame, "1 " );//Amount of bits channels
+
+	strcat( trame, "RSSI1 " );//Type de message : intensités lumineuses
+
+	strcat( trame, "3F800000 " );//scaleFactor
+
+	strcat( trame, "00000000 " );//offset
+
+	sprintf( buffer, "%x ", -135 );
+	strcat( trame, buffer );//startAngle
+
+	sprintf( buffer, "%x ", 5000 );
+	strcat( trame, buffer );//steps ???
+
+	sprintf( buffer, "%x ", 271 );
+	strcat( trame, buffer );//amountofData
+
+	for( int i = 0; i < 271; i++ )
+	{
+		int locLum = 0;
+		if( dist[i] > 3999 || dist[i] < 20 )
+		{
+			locLum = 0;
+		}
+		else
+		{
+			locLum = 100;
+		}
+		sprintf( buffer, "%x ", locLum );
+		strcat( trame, buffer );//distances
+	}
+
+	strcat( trame, "0 " );//Position data : 0 -> no position data
+
+	strcat( trame, "0 " );//Device name : 0 -> no name
+
+	strcat( trame, "0 " );//Device comment : 0 -> no comment
+
+	strcat( trame, "0 " );//Device time : 0 -> no time
+
+	strcat( trame, "0 " );//Event info : 0 -> no Event
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+long
+RosLidar::elapsedMillis( struct timespec dateDepart )
+{
+	struct timespec NOW;
+	long ecart;
+
+	clock_gettime( CLOCK_MONOTONIC_RAW, &NOW );
+
+	ecart = (((long) (NOW.tv_sec) - (long) (dateDepart.tv_sec)) * 1000L) +
+			((long) (NOW.tv_nsec) - (long) (dateDepart.tv_nsec)) / 1000000L;
+	return ecart;
 }

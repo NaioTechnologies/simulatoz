@@ -16,7 +16,6 @@
 
 #include "HaLidarPacket.hpp"
 #include "ApiLidarPacket.hpp"
-#include "createLidarTrame.hpp"
 
 #ifndef SIMULATOZ_LIDAR_H
 #define SIMULATOZ_LIDAR_H
