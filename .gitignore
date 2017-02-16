@@ -86,5 +86,7 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 
+devel
+build
 cmake-build-debug/
 *.idea
