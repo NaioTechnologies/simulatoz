@@ -15,6 +15,7 @@
 //==================================================================================================
 // I N C L U D E   F I L E S
 
+#include <mutex>
 #include <boost/asio.hpp>
 
 #include "ros/ros.h"
@@ -46,12 +47,9 @@ private:
 
 	void do_receive( const boost::system::error_code& ec, std::size_t bytes_transferred );
 
+	void do_send( const boost::system::error_code& ec, std::size_t bytes_transferred );
+
 	void ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
-
-
-	//void read_thread();
-
-	//void send_packet();
 
 //-- Data members ----------------------------------------------------------------------------------
 private:
@@ -60,8 +58,14 @@ private:
 	ros::Subscriber ros_sub_;
 
 	boost::asio::ip::tcp::acceptor acceptor_;
-	boost::asio::ip::tcp::socket socket_;
+	std::unique_ptr< boost::asio::ip::tcp::socket > socket_;
 	bool connected_;
+
+	//std::mutex datagram_access_;
+	//sensor_msgs::LaserScan::ConstPtr latest_lidar_msg_;
+	//std::array< uint8_t, 1024 > receive_buffer_;
+
+	std::array< uint8_t, 1024 > write_buffer_;
 };
 
 //==================================================================================================

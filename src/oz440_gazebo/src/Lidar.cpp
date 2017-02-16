@@ -183,7 +183,7 @@ void Lidar::send_packet(){
         nbMesures_++;
         nbTelegrammes_++;
 
-        createTrame(lidar, albedo, trame, nbMesures_, nbTelegrammes_, timeInit);
+        //createTrame( lidar, albedo, trame, nbMesures_, nbTelegrammes_, timeInit );
 
         socket_access_.lock();
         ssize_t write_size = write(socket_desc_, trame, strlen(trame));

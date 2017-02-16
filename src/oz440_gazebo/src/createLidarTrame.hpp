@@ -7,7 +7,9 @@
 #include <inttypes.h>
 
 //Distance en mm
-void createTrame(int dist[271] , int albedo[271], char trame[10000],uint64_t nbMesures,uint64_t nbTelegrammes,struct timespec timeInit);
+void createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[1024], uint64_t nbMesures,
+				  uint64_t nbTelegrammes, struct timespec timeInit );
+
 long elapsedMillis(struct timespec dateDepart);
 
 

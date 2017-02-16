@@ -12,7 +12,6 @@
 //==================================================================================================
 // I N C L U D E   F I L E S
 
-#include "DriverSocket.hpp"
 #include "createLidarTrame.hpp"
 #include "RosLidar.hpp"
 
@@ -32,11 +31,12 @@ RosLidar::RosLidar( boost::asio::io_service& io_service, uint16_t port )
 	, laser_queue_{ 500 }
 	, ros_sub_{ }
 	, acceptor_{ io_service, boost::asio::ip::tcp::endpoint( boost::asio::ip::tcp::v4(), port ) }
-	, socket_{ io_service }
+	, socket_{ /*io_service*/ }
 	, connected_{ }
 {
-	acceptor_.async_accept( socket_, boost::bind( &RosLidar::do_accept, this,
-												  boost::asio::placeholders::error ) );
+	socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
+	acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
+												   boost::asio::placeholders::error ) );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -63,54 +63,6 @@ RosLidar::cleanup()
 	acceptor_.cancel();
 }
 
-////--------------------------------------------------------------------------------------------------
-////
-//void
-//RosLidar::read_thread()
-//{
-//	char received_buffer[4096];
-//
-//	read_thread_started_ = true;
-//
-//	while( !stop_asked_ )
-//	{
-//		if( socket_connected_ )
-//		{
-//			memset( received_buffer, '\0', 1000 );
-//
-//			socket_access_.lock();
-//			ssize_t size = read( socket_desc_, received_buffer, 4096 );
-//			socket_access_.unlock();
-//
-//			if( size > 0 )
-//			{
-//				received_buffer[size] = '\0';
-//
-//				if( strncmp( "\x02sRN LMDscandata 1\x03", (char*) received_buffer,
-//							 strlen( "\x02sRN LMDscandata 1\x03" ) ) == 0 )
-//				{
-//					send_packet();
-//				}
-//			}
-//			else
-//			{
-//				if( errno == 32 or errno == 104 or (size == 0 and errno == 11) )
-//				{
-//					disconnect();
-//				}
-//			}
-//
-//			std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
-//		}
-//		else
-//		{
-//			std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-//		}
-//	}
-//	read_thread_started_ = false;
-//
-//}
-//
 ////--------------------------------------------------------------------------------------------------
 ////
 //void
@@ -167,7 +119,13 @@ RosLidar::do_accept( const boost::system::error_code& ec )
 {
 	if( !ec )
 	{
+		ROS_ERROR_STREAM( "Connection to 'RosLidar' on 2213 successfull" );
+
 		connected_ = true;
+		//socket_.async_receive( boost::asio::buffer( receive_buffer_ ),
+		//					   boost::bind( &RosLidar::do_receive, this,
+		//									boost::asio::placeholders::error,
+		//									boost::asio::placeholders::bytes_transferred() ) );
 	}
 	else
 	{
@@ -180,11 +138,41 @@ RosLidar::do_accept( const boost::system::error_code& ec )
 void
 RosLidar::do_receive( const boost::system::error_code& ec, std::size_t bytes_transferred )
 {
-	if( ec == boost::asio::error::eof ||
-		ec == boost::asio::error::connection_reset )
+	if( ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset ||
+		ec == boost::asio::error::broken_pipe )
 	{
 		connected_ = false;
+		ROS_ERROR( "Connection to RosLidar closed" );
+
+		socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
+		acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
+													   boost::asio::placeholders::error ) );
 	}
+	else
+	{
+		//if( strncmp( "\x02sRN LMDscandata 1\x03", (char*) &receive_buffer_.front(),
+		//			 strlen( "\x02sRN LMDscandata 1\x03" ) ) == 0 )
+		//{
+		//}
+	}
+}
+
+//--------------------------------------------------------------------------------------------------
+//
+void
+RosLidar::do_send( const boost::system::error_code& ec, std::size_t bytes_transferred )
+{
+	if( ec == boost::asio::error::eof || ec == boost::asio::error::connection_reset ||
+		ec == boost::asio::error::broken_pipe )
+	{
+		connected_ = false;
+		ROS_ERROR( "Connection to RosLidar closed" );
+		socket_ = std::make_unique< boost::asio::ip::tcp::socket >( acceptor_.get_io_service() );
+		acceptor_.async_accept( *socket_, boost::bind( &RosLidar::do_accept, this,
+													   boost::asio::placeholders::error ) );
+	}
+	else
+	{ }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -192,35 +180,36 @@ RosLidar::do_receive( const boost::system::error_code& ec, std::size_t bytes_tra
 void
 RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
-	std::array< uint8_t, 1024 > datagram;
+	//std::lock_guard< std::mutex > lock{ datagram_access_ };
+	//latest_lidar_msg_ = lidar_msg;
+
 	if( connected_ )
 	{
-		socket_.async_send( boost::asio::buffer( datagram ),
-							boost::bind( &RosLidar::do_receive, this,
-										 boost::asio::placeholders::error ) );
+		uint16_t distances[271];
+		uint8_t albedos[271];
+
+		for( int i = 0; i < 271; ++i )
+		{
+			if( i >= 45 and i < 226 )
+			{
+				distances[i] = (uint16_t) (lidar_msg->ranges[270 - i] *
+										   1000); //Convert meters to millimeters
+			}
+			else
+			{
+				distances[i] = 0;
+			}
+			albedos[i] = 0;
+		}
+
+		//struct timespec time;
+		//clock_gettime( CLOCK_MONOTONIC_RAW, &time );
+		//createTrame( distances, albedos, reinterpret_cast<char*>(&write_buffer_.front()), 0, 0,
+		//			 time );
+		
+		socket_->async_send( boost::asio::buffer( write_buffer_ ),
+							 boost::bind( &RosLidar::do_send, this,
+										  boost::asio::placeholders::error,
+										  boost::asio::placeholders::bytes_transferred() ) );
 	}
-
-
-	//if( connected() )
-	//{
-	//	uint16_t distance[271];
-	//	uint8_t albedo[271];
-	//
-	//	for( int i = 0; i < 271; ++i )
-	//	{
-	//
-	//		if( i >= 45 and i < 226 )
-	//		{
-	//			distance[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000); //Convert meters to millimeters
-	//		}
-	//		else
-	//		{
-	//			distance[i] = 0;
-	//		}
-	//		albedo[i] = 0;
-	//	}
-	//
-	//	HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
-	//	set_packet( lidarPacketPtr );
-	//}
 }
