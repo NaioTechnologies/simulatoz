@@ -53,8 +53,8 @@ private:
 
 	void ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
 
-	void createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096], uint64_t nbMesures,
-					  uint64_t nbTelegrammes, struct timespec timeInit );
+	void createTrame( const sensor_msgs::LaserScan::ConstPtr& lidar_msg, char trame[4096],
+					  uint64_t nbMesures, uint64_t nbTelegrammes, struct timespec timeInit );
 
 	long elapsedMillis( struct timespec dateDepart );
 

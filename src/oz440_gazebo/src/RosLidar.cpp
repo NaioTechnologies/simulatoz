@@ -133,27 +133,10 @@ RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 {
 	if( connected_ )
 	{
-		uint16_t distances[271];
-		uint8_t albedos[271];
-
-		for( int i = 0; i < 271; ++i )
-		{
-			if( i >= 45 and i < 226 )
-			{
-				//Convert meters to millimeters
-				distances[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000);
-			}
-			else
-			{
-				distances[i] = 0;
-			}
-			albedos[i] = 0;
-		}
-
 		// Do this shit properly
 		struct timespec t;
 		clock_gettime( CLOCK_MONOTONIC_RAW, &t );
-		createTrame( distances, albedos, reinterpret_cast<char*>(&write_buffer_.front()), 0, 0, t );
+		createTrame( lidar_msg, reinterpret_cast<char*>(&write_buffer_.front()), 0, 0, t );
 
 		socket_->async_send( boost::asio::buffer( write_buffer_ ),
 							 boost::bind( &RosLidar::do_send, this,
@@ -165,8 +148,8 @@ RosLidar::ros_callback( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 //--------------------------------------------------------------------------------------------------
 //
 void
-RosLidar::createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096], uint64_t nbMesures,
-			 uint64_t nbTelegrammes, struct timespec timeInit )
+RosLidar::createTrame( const sensor_msgs::LaserScan::ConstPtr& lidar_msg, char trame[4096],
+					   uint64_t nbMesures, uint64_t nbTelegrammes, struct timespec timeInit )
 {
 	char buffer[20];
 
@@ -230,16 +213,34 @@ RosLidar::createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096]
 	sprintf( buffer, "%x ", 271 );
 	strcat( trame, buffer );//amountofData
 
-	for( int i = 0; i < 271; i++ )
+	uint16_t distances[271];
+	uint8_t albedos[271];
+
+	for( int i = 0; i < 271; ++i )
+	{
+		if( i >= 45 and i < 226 )
+		{
+			//Convert meters to millimeters
+			distances[i] = (uint16_t) (lidar_msg->ranges[270 - i] * 1000);
+		}
+		else
+		{
+			distances[i] = 0;
+		}
+		albedos[i] = 0;
+	}
+
+
+	for( int i = 0; i < 271; ++i )
 	{
 		int locDist = 0;
-		if( dist[i] > 3999 || dist[i] < 20 )
+		if( distances[i] > 3999 || distances[i] < 20 )
 		{
 			locDist = 0;
 		}
 		else
 		{
-			locDist = dist[i];
+			locDist = distances[i];
 		}
 		sprintf( buffer, "%x ", locDist );
 		strcat( trame, buffer );//distances
@@ -265,7 +266,7 @@ RosLidar::createTrame( uint16_t dist[271], uint8_t albedo[271], char trame[4096]
 	for( int i = 0; i < 271; i++ )
 	{
 		int locLum = 0;
-		if( dist[i] > 3999 || dist[i] < 20 )
+		if( distances[i] > 3999 || distances[i] < 20 )
 		{
 			locLum = 0;
 		}
