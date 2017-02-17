@@ -1,11 +1,12 @@
 <launch>
 
 	<arg name="world" default="world" />
-	<arg name="videoFolder" default="/home/fanny/Log_videos" />
+	<arg name="videoFolder" default="NO_VIDEO" />
+	<arg name="logFolder" default="NO_LOG" />
 
 	<param name="naio01_server_port" type="int" value="5555" />
  
- 	 <node name="Core" pkg="oz440_gazebo" type="Core" args="--videoFolder $(arg videoFolder)"/>
+ 	 <node name="Core" pkg="oz440_gazebo" type="Core" args="--videoFolder $(arg videoFolder) --logFolder $(arg logFolder)"/>
  
  	 <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> 
  	 <include file="$(find gazebo_ros)/launch/empty_world.launch">
