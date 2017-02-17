@@ -73,7 +73,7 @@ bool Log::setup_log_folder( std::string log_folder )
         std::time_t t = std::time( NULL );
         size_t bufferSize{ 256 };
         char buff[bufferSize];
-        std::string format{ "%F_%H-%M-%S" };
+        std::string format{ "%F_%H-%M" };
         size_t bytesRead = std::strftime( buff, bufferSize, format.c_str(), std::localtime( &t ) );
 
         std::string date_str = std::string( buff, bytesRead );
@@ -86,8 +86,9 @@ bool Log::setup_log_folder( std::string log_folder )
         if( !fs::exists( dated_folder_path ) )
         {
             fs::create_directory( dated_folder_path );
-            folder_ = dated_folder_path.c_str();
         }
+
+        folder_ = dated_folder_path.c_str();
         success = true;
 
         create_file();
@@ -113,7 +114,7 @@ bool Log::create_file( )
     if( fs::exists( folder_ ) )
     {
         std::string filename = folder_;
-        filename.append("Log_metrics");
+        filename.append("/Log_metrics");
 
         // We create a file called Log_metric
         file_.open ( filename.c_str(), std::ios::app  );

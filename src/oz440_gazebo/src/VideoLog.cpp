@@ -93,7 +93,7 @@ VideoLog::setup_video_folder()
         std::time_t t = std::time( NULL );
         size_t bufferSize{ 256 };
         char buff[bufferSize];
-        std::string format{ "%F_%H-%M-%S" };
+        std::string format{ "%F_%H-%M" };
         size_t bytesRead = std::strftime( buff, bufferSize, format.c_str(), std::localtime( &t ) );
 
         std::string date_str = std::string( buff, bytesRead );
@@ -106,8 +106,9 @@ VideoLog::setup_video_folder()
         if( !fs::exists( dated_folder_path ) )
         {
             fs::create_directory( dated_folder_path );
-            dated_folder_ = dated_folder_path.c_str();
         }
+
+        dated_folder_ = dated_folder_path.c_str();
         success = true;
 
         ROS_INFO( "video_folder_ %s", dated_folder_.c_str() );

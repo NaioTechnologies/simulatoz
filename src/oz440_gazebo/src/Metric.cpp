@@ -305,7 +305,5 @@ void Metric::make_trajectory(){
         center_turns_.push_back(length_rows + 2.0);
         center_turns_.push_back(- i * width );
         center_turns_.push_back(0);
-
     }
-
 }

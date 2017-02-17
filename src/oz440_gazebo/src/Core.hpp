@@ -31,6 +31,7 @@
 #include <camera_calibration_parsers/parse.h>
 #include "VideoLog.h"
 #include "Log.h"
+#include "Metric.hpp"
 
 class RosLidar;
 
