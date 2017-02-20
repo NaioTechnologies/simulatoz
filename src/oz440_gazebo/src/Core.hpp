@@ -25,6 +25,7 @@
 #include "Camera.h"
 #include "Can.h"
 #include "Serial.h"
+#include "Lidar.h"
 
 #include <sensor_msgs/image_encodings.h>
 #include <image_transport/image_transport.h>
@@ -32,8 +33,6 @@
 #include "VideoLog.h"
 #include "Log.h"
 #include "Metric.hpp"
-
-class RosLidar;
 
 class Core
 {
@@ -53,7 +52,7 @@ private:
 	std::shared_ptr< Camera > camera_ptr_;
 	int camera_port_;
 
-	std::unique_ptr< RosLidar > lidar_;
+	std::unique_ptr< Lidar > lidar_;
 
 	bool use_can_;
 	std::shared_ptr< Can > can_ptr_;

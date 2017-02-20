@@ -46,10 +46,6 @@ Core::Core( int argc, char** argv )
 {
     ros::init( argc, argv, "Core" );
 
-    ros::NodeHandle n;
-
-    listener_ptr_ = std::make_shared< tf::TransformListener >( ros::Duration( 10 ) );
-
     for( int i = 1; i < argc; i++ )
     {
         if( strncmp( argv[i], "--videoFolder", 13 ) == 0 )
@@ -75,6 +71,8 @@ Core::~Core()
 void
 Core::run()
 {
+    ROS_ERROR(" RUN");
+
     using namespace std::chrono_literals;
     std::this_thread::sleep_for( 1500ms );
     ros::NodeHandle node;
@@ -89,7 +87,7 @@ Core::run()
         worker_threads.create_thread( boost::bind( &boost::asio::io_service::run, &io_service ) );
     }
 
-    lidar_ = std::make_unique< RosLidar >( io_service, 2213 );
+    lidar_ = std::make_unique< Lidar >( 2213 );
     lidar_->subscribe( node );
 
 	if( use_camera_ )
@@ -107,9 +105,6 @@ Core::run()
 
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
 	serial_ptr_->advertise( node );
-
-	// subscribe to top_camera topic
-	image_transport::Subscriber top_camera_sub = it.subscribe( "/oz440/top_camera/image_raw", 5, &Core::callback_top_camera, this );
 
     while( ros::master::check() )
     {
