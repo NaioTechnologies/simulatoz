@@ -73,7 +73,7 @@ include_directories( include
 add_executable( Core src/Core.cpp
 				src/GeoAngle.cpp
 				src/DriverSocket.cpp
-				src/createLidarTrame.cpp
+				src/RosLidar.cpp
 				src/Camera.cpp
 				src/Lidar.cpp
 				src/Can.cpp

@@ -1,10 +1,13 @@
 
-#include "Core.hpp"
 
 #include <chrono>
-#include <pthread.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/asio.hpp>
+#include <boost/utility.hpp>
+#include <boost/none.hpp>
+
+#include <opencv2/highgui/highgui.hpp>
 
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
@@ -12,15 +15,14 @@
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
 
-using namespace std::chrono;
+#include "Core.hpp"
+#include "RosLidar.hpp"
 
 int
 main( int argc, char** argv )
 {
 	Core core( argc, argv );
-
 	core.run();
-
 	return 0;
 }
 
@@ -32,9 +34,7 @@ Core::Core( int argc, char** argv )
 	, use_camera_{ true }
 	, camera_ptr_{ nullptr }
 	, camera_port_{ 5558 }
-	, use_lidar_{ true }
-	, lidar_ptr_{ nullptr }
-	, lidar_port_{ 2213 }
+	, lidar_{ }
 	, use_can_{ true }
 	, can_ptr_{ nullptr }
 	, can_port_{ 5559 }
@@ -76,17 +76,22 @@ void
 Core::run()
 {
 	using namespace std::chrono_literals;
-
 	std::this_thread::sleep_for( 1500ms );
+	ros::NodeHandle node;
+	image_transport::ImageTransport it( node );
 
-	ros::NodeHandle n;
+	boost::asio::io_service io_service;
+	boost::optional< boost::asio::io_service::work > work(
+		boost::in_place( boost::ref( io_service ) ) ) ;
 
-	image_transport::ImageTransport it( n );
-
-	if( use_lidar_ )
+	boost::thread_group worker_threads;
+	for( uint32_t x = 0; x < 2; ++x )
 	{
-		lidar_ptr_ = std::make_shared< Lidar >( lidar_port_ );
+		worker_threads.create_thread( boost::bind( &boost::asio::io_service::run, &io_service ) );
 	}
+
+	lidar_ = std::make_unique< RosLidar >( io_service, 2213 );
+	lidar_->subscribe( node );
 
 	if( use_camera_ )
 	{
@@ -101,23 +106,21 @@ Core::run()
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
 
 	// Create motors and actuator commands publishers
-	velocity_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_vel", 10 );
-	actuator_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
-
-	// subscribe to lidar topic
-	ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::callback_lidar,
-											 this );
+	velocity_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_vel", 10 );
+	actuator_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
 
 	// subscribe to actuator position
-	ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500,
-														 &Core::callback_actuator_position, this );
+	ros::Subscriber actuator_position_sub = node.subscribe( "/oz440/joint_states", 500,
+															&Core::callback_actuator_position,
+															this );
 
 	// subscribe to imu topic
-	ros::Subscriber imu_sub = n.subscribe( "/oz440/imu/data", 50, &Core::callback_imu, this );
+	ros::Subscriber imu_sub = node.subscribe( "/oz440/imu/data", 50, &Core::callback_imu, this );
 
 	// subscribe to gps topic
-	message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub( n, "/oz440/navsat/fix", 5 );
-	message_filters::Subscriber< geometry_msgs::Vector3Stamped > gps_vel_sub( n,
+	message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub( node, "/oz440/navsat/fix",
+																	   5 );
+	message_filters::Subscriber< geometry_msgs::Vector3Stamped > gps_vel_sub( node,
 																			  "/oz440/navsat/vel",
 																			  5 );
 	message_filters::TimeSynchronizer< sensor_msgs::NavSatFix,
@@ -126,10 +129,10 @@ Core::run()
 	sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
 
 	// subscribe to camera topic
-	message_filters::Subscriber< sensor_msgs::Image > image_left_sub( n,
+	message_filters::Subscriber< sensor_msgs::Image > image_left_sub( node,
 																	  "/oz440/camera/left/image_raw",
 																	  1 );
-	message_filters::Subscriber< sensor_msgs::Image > image_right_sub( n,
+	message_filters::Subscriber< sensor_msgs::Image > image_right_sub( node,
 																	   "/oz440/camera/right/image_raw",
 																	   1 );
 	message_filters::TimeSynchronizer< sensor_msgs::Image, sensor_msgs::Image > sync(
@@ -148,22 +151,19 @@ Core::run()
 	// create_read_thread
 	read_thread_ = std::thread( &Core::read_thread_function, this );
 
-	while( ros::master::check() and !terminate_ )
+	while( ros::master::check() )
 	{
-		std::this_thread::sleep_for( 3ms );
 		ros::spinOnce();
+		std::this_thread::sleep_for( 3ms );
 	}
 
 	camera_ptr_->ask_stop();
-	lidar_ptr_->ask_stop();
 	can_ptr_->ask_stop();
+	lidar_->cleanup();
 
-	terminate_ = true;
-
-	std::this_thread::sleep_for( 500ms );
-
+	work = boost::none;
+	worker_threads.join_all();
 	ROS_ERROR( "Core run thread stopped" );
-
 }
 
 // *********************************************************************************************************************
@@ -248,40 +248,6 @@ Core::read_thread_function()
 
 	read_thread_started_ = false;
 }
-
-// *********************************************************************************************************************
-
-void
-Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
-{
-	if( use_lidar_ and lidar_ptr_->connected() )
-	{
-		uint16_t distance[271];
-		uint8_t albedo[271];
-
-		for( int i = 0; i < 271; ++i )
-		{
-
-			if( i >= 45 and i < 226 )
-			{
-				distance[i] = (uint16_t) (lidar_msg->ranges[270 - i] *
-										  1000); //Convert meters to millimeters
-			}
-			else
-			{
-				distance[i] = 0;
-			}
-			albedo[i] = 0;
-		}
-
-		HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
-
-		lidar_ptr_->set_packet( lidarPacketPtr );
-
-		ROS_INFO( "Lidar packet enqueued" );
-	}
-}
-
 
 // *********************************************************************************************************************
 
@@ -404,7 +370,7 @@ Core::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
 
 			if( !success )
 			{
-				ROS_ERROR( "Error creating the video folder" );
+				//ROS_ERROR( "Error creating the video folder" );
 			}
 		}
 
@@ -602,7 +568,7 @@ Core::setup_video_folder()
 		std::replace( date_str.begin(), date_str.end(), ':', '_' );
 
 		fs::path dated_folder_path{ log_folder_ };
-		dated_folder_path /= ( date_str );
+		dated_folder_path /= (date_str);
 
 		// Creating the folders.
 		if( !fs::exists( dated_folder_path ) )
@@ -615,7 +581,7 @@ Core::setup_video_folder()
 	}
 	else
 	{
-		ROS_ERROR( "Log_video folder does not exist" );
+		//ROS_ERROR( "Log_video folder does not exist" );
 	}
 
 	return success;
