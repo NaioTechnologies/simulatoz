@@ -30,6 +30,8 @@ private:
     void init();
 
     void connect();
+    void read_thread();
+
     void callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
     void disconnect();
 
@@ -42,8 +44,8 @@ private:
     bool connect_thread_started_;
     std::thread connect_thread_;
 
-//    bool read_thread_started_;
-//    std::thread read_thread_;
+    bool read_thread_started_;
+    std::thread read_thread_;
 
     int server_port_;
     bool socket_connected_;

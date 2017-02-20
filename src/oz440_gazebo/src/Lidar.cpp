@@ -36,8 +36,8 @@ void Lidar::init()
     connect_thread_ = std::thread( &Lidar::connect, this );
     connect_thread_.detach();
 
-//    read_thread_ = std::thread( &Lidar::read_thread, this );
-//    read_thread_.detach();
+    read_thread_ = std::thread( &Lidar::read_thread, this );
+    read_thread_.detach();
 }
 
 //*****************************************  --  SET PACKET  --  *******************************************************
@@ -87,48 +87,46 @@ void Lidar::connect(){
 
 //*****************************************  --  READ THREAD  --  ******************************************************
 
-//void Lidar::read_thread(){
-//
-//    char received_buffer[4096];
-//
-//    read_thread_started_ = true;
-//
-//    while ( !stop_asked_ )
-//    {
-//        if (socket_connected_)
-//        {
-//            memset( received_buffer, '\0', 1000 );
-//
-//            socket_access_.lock();
-//            ssize_t size = read( socket_desc_, received_buffer, 4096 );
-//            socket_access_.unlock();
-//
-//            if (size > 0)
-//            {
-//                received_buffer[ size ] = '\0';
-//
-//                if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
-//                {
-////                    send_packet();
-//                }
-//            }
-//            else
-//            {
-//                if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
-//                    disconnect();
-//                }
-//            }
-//
-//            std::this_thread::sleep_for(1ms);
-//        }
-//        else
-//        {
-//            std::this_thread::sleep_for(100ms);
-//        }
-//    }
-//    read_thread_started_ = false;
-//
-//}
+void Lidar::read_thread(){
+
+    char received_buffer[4096];
+
+
+    while ( !stop_asked_ )
+    {
+        if (socket_connected_)
+        {
+            memset( received_buffer, '\0', 1000 );
+
+            socket_access_.lock();
+            ssize_t size = read( socket_desc_, received_buffer, 4096 );
+            socket_access_.unlock();
+
+            if (size > 0)
+            {
+                received_buffer[ size ] = '\0';
+
+                if (strncmp("\x02sRN LMDscandata 1\x03", (char *) received_buffer, strlen("\x02sRN LMDscandata 1\x03")) == 0)
+                {
+//                    send_packet();
+                }
+            }
+            else
+            {
+                if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
+                    disconnect();
+                }
+            }
+
+            std::this_thread::sleep_for(1ms);
+        }
+        else
+        {
+            std::this_thread::sleep_for(100ms);
+        }
+    }
+
+}
 
 //*****************************************  --  DISCONNECT  --  *******************************************************
 
