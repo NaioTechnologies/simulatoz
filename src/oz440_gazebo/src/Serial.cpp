@@ -10,19 +10,14 @@ using namespace std::chrono_literals;
 
 //*****************************************  --  CONSTRUCTOR / DESTRUCTOR  --  *****************************************
 
-Serial::Serial(int server_port)
-        : stop_asked_{ false }
-        , connect_thread_started_ { false }
+Serial::Serial(uint16_t server_port)
+        : stop_{ false }
         , connect_thread_ { }
-        , read_thread_started_ { false }
-        , read_thread_ { }
         , socket_connected_ { false }
         , server_port_ {server_port}
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
         , socket_access_ { }
-        , packet_ptr_ { nullptr }
-        , packet_access_ { }
 {
     init();
 }
@@ -44,46 +39,33 @@ void Serial::init()
     read_thread_.detach();
 }
 
-//*****************************************  --  SET PACKET  --  *******************************************************
+//*****************************************  --  ADVERTISE  --  *************************************************************
 
-HaMotorsPacketPtr Serial::get_packet()
+void Serial::advertise(ros::NodeHandle& node)
 {
-    packet_access_.lock();
-    HaMotorsPacketPtr packet_ptr = packet_ptr_;
-    packet_ptr_ = nullptr;
-    packet_access_.unlock();
-
-    return packet_ptr;
+    velocity_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_vel", 10 );
 }
 
 //*****************************************  --  ASK STOP  --  *********************************************************
 
-void Serial::ask_stop()
+void Serial::cleanup()
 {
-    stop_asked_ = true;
+    stop_ = true;
     disconnect();
     close(server_socket_desc_);
-}
-
-//*****************************************  --  CONNECTED?  --  *******************************************************
-
-bool Serial::connected(){
-    return socket_connected_;
 }
 
 //*****************************************  --  CONNECT  --  **********************************************************
 
 void Serial::connect(){
 
-    connect_thread_started_ = true;
+    server_socket_desc_ = DriverSocket::openSocketServer( server_port_ );
 
-    server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t) server_port_ );
-
-    while( !stop_asked_ )
+    while( !stop_ )
     {
         if( !socket_connected_ and server_socket_desc_ > 0 )
         {
-            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_asked_ );
+            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_ );
 
             if ( socket_desc_ > 0 )
             {
@@ -96,8 +78,6 @@ void Serial::connect(){
             std::this_thread::sleep_for(500ms);
         }
     }
-
-    connect_thread_started_ = false;
 }
 
 //*****************************************  --  READ THREAD  --  ******************************************************
@@ -110,9 +90,7 @@ void Serial::read_thread(){
     int posInEntete = 0;
     char motors[ 3 ] = { 0 };
 
-    read_thread_started_ = true;
-
-    while ( !stop_asked_ )
+    while ( !stop_ )
     {
         if (socket_connected_)
         {
@@ -122,31 +100,30 @@ void Serial::read_thread(){
 
             if (size > 0)
             {
-
-                if ( posInEntete == 2 )
+                if (posInEntete == 2)
                 {
-                    motors[ motorNumber ] = ( ( ( char ) b[ 0 ] ) * 2 ) - 128;
+                    motors[motorNumber] = (((char) b[0]) * 2) - 128;
 
-                    if ( motorNumber == 2 )
-                    {
-                        HaMotorsPacketPtr packet_ptr = std::make_shared<HaMotorsPacket>( motors[ 2 ], motors[ 1 ] );
+                    if (motorNumber == 2) {
+                        geometry_msgs::Vector3 command;
 
-                        packet_access_.lock();
-                        packet_ptr_ = packet_ptr ;
-                        packet_access_.unlock();
+                        command.x = ((motors[2] / 127.0) * 3.4);
+                        command.y = ((motors[1] / 127.0) * 3.4);
+
+                        velocity_pub_.publish(command);
                     }
 
                     posInEntete = 0;
                 }
 
-                if ( posInEntete == 1 )
+                if (posInEntete == 1)
                 {
-                    if ( b[0] == 6 )
+                    if (b[0] == 6)
                     {
                         motorNumber = 1;
                         posInEntete = 2;
                     }
-                    else if ( b[0] == 7 )
+                    else if (b[0] == 7)
                     {
                         motorNumber = 2;
                         posInEntete = 2;
@@ -157,8 +134,7 @@ void Serial::read_thread(){
                     }
                 }
 
-                if ( ( posInEntete == 0 ) && ( b[ 0 ] == 128 ) )
-                {
+                if ( (posInEntete == 0) && (b[0] == 128) ) {
                     posInEntete = 1;
                 }
             }
@@ -172,8 +148,6 @@ void Serial::read_thread(){
 
         std::this_thread::sleep_for(5ms);
     }
-
-    read_thread_started_ = false;
 }
 
 //*****************************************  --  DISCONNECT  --  *******************************************************

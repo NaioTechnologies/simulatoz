@@ -43,27 +43,7 @@ public:
 
 private:
 
-	// thread function
-	void read_thread_function();
-
-	void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
-
-	void callback_camera( const sensor_msgs::Image::ConstPtr& image_left,
-						  const sensor_msgs::Image::ConstPtr& image_right );
-
-	void callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg );
-
-	void callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
-					   const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
-
 	void callback_top_camera( const sensor_msgs::Image::ConstPtr& image );
-
-	// Odometry part
-	void odometry_thread();
-
-	double getPitch( std::string wheel );
-
-	bool odo_wheel( uint8_t& wheel, double& pitch, double& pitch_last_tic, int& forward_backward );
 
 	bool setup_video_folder();
 
@@ -71,8 +51,6 @@ private:
 	bool terminate_;
 
 	std::string log_folder_;
-
-	std::shared_ptr< tf::TransformListener > listener_ptr_;
 
 	bool use_camera_;
 	std::shared_ptr< Camera > camera_ptr_;
@@ -86,20 +64,6 @@ private:
 
 	std::shared_ptr< Serial > serial_ptr_;
 	int serial_port_;
-
-	std::vector< BaseNaio01PacketPtr > received_packet_list_;
-
-	bool read_thread_started_;
-	std::thread read_thread_;
-
-	bool odometry_thread_started_;
-	std::thread odometry_thread_;;
-
-	float actuator_position_;
-
-	// ROS PART
-	ros::Publisher velocity_pub_;
-	ros::Publisher actuator_pub_;
 
 	// Video_recorder
 	std::string video_folder_;
