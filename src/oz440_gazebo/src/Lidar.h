@@ -3,7 +3,7 @@
 //
 
 #include "ros/ros.h"
-
+#include "sensor_msgs/LaserScan.h"
 #include <iostream>
 #include <chrono>
 #include <unistd.h>
@@ -14,10 +14,6 @@
 #include <atomic>
 #include <thread>
 
-#include "HaLidarPacket.hpp"
-#include "ApiLidarPacket.hpp"
-#include "createLidarTrame.hpp"
-
 #ifndef SIMULATOZ_LIDAR_H
 #define SIMULATOZ_LIDAR_H
 
@@ -27,19 +23,22 @@ public:
     Lidar(int server_port);
     ~Lidar();
 
-    void set_packet(HaLidarPacketPtr packet_ptr);
-    void ask_stop();
-    bool connected();
+    void subscribe( ros::NodeHandle& node);
+    void cleanup();
 
 private:
     void init();
 
     void connect();
     void read_thread();
-    void disconnect();
-    void send_packet();
 
-    //  -- ATTRIBUTS --
+    void callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
+    void disconnect();
+
+    void createTrame(int dist[271] , int albedo[271], char trame[10000],uint64_t nbMesures,uint64_t nbTelegrammes,struct timespec timeInit);
+    long elapsedMillis(struct timespec dateDepart);
+
+        //  -- ATTRIBUTS --
     std::atomic<bool> stop_asked_;
 
     bool connect_thread_started_;
@@ -54,12 +53,10 @@ private:
     int socket_desc_;
     std::mutex socket_access_;
 
-    HaLidarPacketPtr packet_ptr_;
-    std::mutex packet_access_;
-
     uint16_t nbMesures_;
     uint16_t nbTelegrammes_;
 
+    ros::Subscriber lidar_sub_;
 };
 
 #endif //SIMULATOZ_LIDAR_H

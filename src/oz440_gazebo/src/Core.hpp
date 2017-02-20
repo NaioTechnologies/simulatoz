@@ -23,10 +23,10 @@
 
 #include "ApiStereoCameraPacket.hpp"
 
+#include "Serial.h"
 #include "Camera.h"
 #include "Lidar.h"
 #include "Can.h"
-#include "Serial.h"
 
 #include <opencv2/core/core.hpp>
 #include "opencv2/opencv.hpp"
@@ -44,14 +44,8 @@ public:
     void run();
 
 private:
-
-    // thread function
-    void read_thread_function( );
-
     // callback functions
-    void callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg );
     void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
-    void callback_camera(const sensor_msgs::Image::ConstPtr& image_left, const sensor_msgs::Image::ConstPtr& image_right);
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
     void callback_top_camera(const sensor_msgs::Image::ConstPtr& image );
@@ -83,7 +77,7 @@ private:
     int can_port_;
 
     std::shared_ptr<Serial> serial_ptr_;
-    int serial_port_;
+    uint serial_port_;
 
     std::vector< BaseNaio01PacketPtr > received_packet_list_;
 
@@ -96,7 +90,6 @@ private:
     float actuator_position_;
 
     // ROS PART
-    ros::Publisher velocity_pub_;
     ros::Publisher actuator_pub_;
 
     // Video_recorder

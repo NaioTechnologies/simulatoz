@@ -14,7 +14,7 @@
 #include <atomic>
 #include <thread>
 
-#include "HaMotorsPacket.hpp"
+#include "geometry_msgs/Vector3Stamped.h"
 
 #ifndef SIMULATOZ_SERIAL_H
 #define SIMULATOZ_SERIAL_H
@@ -22,12 +22,12 @@
 class Serial
 {
 public:
-    Serial(int server_port);
+    Serial(uint16_t server_port);
     ~Serial();
 
-    HaMotorsPacketPtr get_packet();
-    void ask_stop();
-    bool connected();
+    void advertise( ros::NodeHandle& node );
+
+    void cleanup();
 
 private:
     void init();
@@ -37,23 +37,18 @@ private:
     void disconnect();
 
     //  -- ATTRIBUTS --
-    std::atomic<bool> stop_asked_;
+    std::atomic<bool> stop_;
 
-    bool connect_thread_started_;
     std::thread connect_thread_;
-
-    bool read_thread_started_;
     std::thread read_thread_;
 
-    int server_port_;
+    uint16_t server_port_;
     bool socket_connected_;
     int server_socket_desc_;
     int socket_desc_;
     std::mutex socket_access_;
 
-    HaMotorsPacketPtr packet_ptr_;
-    std::mutex packet_access_;
-
+    ros::Publisher velocity_pub_;
 };
 
 #endif //SIMULATOZ_SERIAL_H

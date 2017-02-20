@@ -51,8 +51,6 @@ Core::Core( int argc, char** argv )
 {
 	ros::init( argc, argv, "Core" );
 
-	ros::NodeHandle n;
-
 	listener_ptr_ = std::make_shared< tf::TransformListener >( ros::Duration( 10 ) );
 
 	for( int i = 1; i < argc; i++ )
@@ -86,27 +84,28 @@ Core::run()
 	if( use_lidar_ )
 	{
 		lidar_ptr_ = std::make_shared< Lidar >( lidar_port_ );
+		lidar_ptr_->subscribe( n );
 	}
 
 	if( use_camera_ )
 	{
 		camera_ptr_ = std::make_shared< Camera >( camera_port_ );
+		camera_ptr_->subscribe( n );
+
 	}
 
 	if( use_can_ )
 	{
+
 		can_ptr_ = std::make_shared< Can >( can_port_ );
 	}
 
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
+	serial_ptr_->advertise( n );
+
 
 	// Create motors and actuator commands publishers
-	velocity_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_vel", 10 );
 	actuator_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
-
-	// subscribe to lidar topic
-	ros::Subscriber lidar_sub = n.subscribe( "/oz440/laser/scan", 500, &Core::callback_lidar,
-											 this );
 
 	// subscribe to actuator position
 	ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500,
@@ -125,17 +124,6 @@ Core::run()
 																				 gps_vel_sub, 10 );
 	sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
 
-	// subscribe to camera topic
-	message_filters::Subscriber< sensor_msgs::Image > image_left_sub( n,
-																	  "/oz440/camera/left/image_raw",
-																	  1 );
-	message_filters::Subscriber< sensor_msgs::Image > image_right_sub( n,
-																	   "/oz440/camera/right/image_raw",
-																	   1 );
-	message_filters::TimeSynchronizer< sensor_msgs::Image, sensor_msgs::Image > sync(
-		image_left_sub, image_right_sub, 10 );
-	sync.registerCallback( boost::bind( &Core::callback_camera, this, _1, _2 ) );
-
 	// subscribe to top_camera topic
 	image_transport::Subscriber top_camera_sub = it.subscribe( "/oz440/top_camera/image_raw", 5,
 															   &Core::callback_top_camera, this );
@@ -145,18 +133,16 @@ Core::run()
 		odometry_thread_ = std::thread( &Core::odometry_thread, this );
 	}
 
-	// create_read_thread
-	read_thread_ = std::thread( &Core::read_thread_function, this );
-
 	while( ros::master::check() and !terminate_ )
 	{
 		std::this_thread::sleep_for( 3ms );
 		ros::spinOnce();
 	}
 
-	camera_ptr_->ask_stop();
-	lidar_ptr_->ask_stop();
+	camera_ptr_->cleanup();
+	lidar_ptr_->cleanup();
 	can_ptr_->ask_stop();
+	serial_ptr_->cleanup();
 
 	terminate_ = true;
 
@@ -164,122 +150,6 @@ Core::run()
 
 	ROS_ERROR( "Core run thread stopped" );
 
-}
-
-// *********************************************************************************************************************
-
-void
-Core::read_thread_function()
-{
-	using namespace std::chrono_literals;
-
-//    bool last_order_down = 0;
-
-	read_thread_started_ = true;
-
-	while( !terminate_ )
-	{
-		if( serial_ptr_->connected() )
-		{
-
-			HaMotorsPacketPtr motor_packet_ptr = serial_ptr_->get_packet();
-
-			if( motor_packet_ptr != nullptr )
-			{
-
-				double rightspeed = static_cast<double>(motor_packet_ptr->right);
-				double leftspeed = static_cast<double>(motor_packet_ptr->left);
-
-				ROS_INFO( "HaMotorsPacket received, right: %f left : %f", rightspeed, leftspeed );
-
-				geometry_msgs::Vector3 command;
-
-				command.x = ((leftspeed / 127.0) * 3.4);
-				command.y = ((rightspeed / 127.0) * 3.4);
-
-				velocity_pub_.publish( command );
-			}
-		}
-
-		if( can_ptr_->connected() )
-		{
-
-			ApiMoveActuatorPacketPtr actuator_packet_ptr = can_ptr_->get_actuator_packet_ptr();
-
-			if( actuator_packet_ptr != nullptr )
-			{
-
-//                    geometry_msgs::Vector3 command;
-//
-//                    if ( ActuatorPacketPtr->position == 1 )
-//                    {
-//                        command.x = actuator_position_ +0.005;
-//                        ROS_INFO("MONTE : %f", actuator_position_ +0.005);
-//                        last_order_down = 0;
-//
-//                    }
-//                    else if ( ActuatorPacketPtr->position == 2 )
-//                    {
-//                        command.x = actuator_position_ -0.005;
-//                        ROS_INFO("DESCEND : %f", actuator_position_ -0.005);
-//                        last_order_down = 1;
-//                    }
-//                    else
-//                    {
-//                        if (last_order_down == 1) {
-//                            command.x = actuator_position_ - 0.0001;
-//                            std::this_thread::sleep_for(10ms);
-//                        }
-//                        else
-//                        {
-//                            command.x = actuator_position_ + 0.0001;
-//                            std::this_thread::sleep_for(10ms);
-//                        }
-//                    }
-//
-//                    ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
-//
-//                    actuator_pub_.publish(command);
-			}
-		}
-
-		std::this_thread::sleep_for( 5ms );
-	}
-
-	read_thread_started_ = false;
-}
-
-// *********************************************************************************************************************
-
-void
-Core::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
-{
-	if( use_lidar_ and lidar_ptr_->connected() )
-	{
-		uint16_t distance[271];
-		uint8_t albedo[271];
-
-		for( int i = 0; i < 271; ++i )
-		{
-
-			if( i >= 45 and i < 226 )
-			{
-				distance[i] = (uint16_t) (lidar_msg->ranges[270 - i] *
-										  1000); //Convert meters to millimeters
-			}
-			else
-			{
-				distance[i] = 0;
-			}
-			albedo[i] = 0;
-		}
-
-		HaLidarPacketPtr lidarPacketPtr = std::make_shared< HaLidarPacket >( distance, albedo );
-
-		lidar_ptr_->set_packet( lidarPacketPtr );
-
-		ROS_INFO( "Lidar packet enqueued" );
-	}
 }
 
 
@@ -302,25 +172,6 @@ Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint
 		can_ptr_->add_packet( ActuatorPositionPacketPtr );
 
 		ROS_INFO( "Actuator position packet enqueued" );
-	}
-}
-
-// *********************************************************************************************************************
-
-void
-Core::callback_camera( const sensor_msgs::Image::ConstPtr& image_left,
-					   const sensor_msgs::Image::ConstPtr& image_right )
-{
-	if( use_camera_ and camera_ptr_->connected() )
-	{
-		std::array< uint8_t, 721920 > image_buffer_to_send;
-
-		std::memcpy( image_buffer_to_send.data(), &image_left->data[0], 360960 );
-		std::memcpy( image_buffer_to_send.data() + 360960, &image_right->data[0], 360960 );
-
-		camera_ptr_->set_image( image_buffer_to_send );
-
-		ROS_INFO( "Stereo camera packet managed" );
 	}
 }
 
@@ -396,7 +247,7 @@ Core::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
 void
 Core::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
 {
-	if( serial_ptr_->connected() )
+	if( can_ptr_->connected() )
 	{
 		if( video_folder_.empty() )
 		{
