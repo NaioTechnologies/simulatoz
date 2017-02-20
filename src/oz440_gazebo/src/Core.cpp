@@ -119,7 +119,8 @@ Core::run()
     if( log_folder_ != "NO_LOG" )
     {
         log_ptr_ = std::make_shared< Log >( log_folder_ );
-        log_ptr_->write("Hello !");
+        metric_ptr_ = std::make_shared< Metric >( log_ptr_ );
+        metric_ptr_->subscribe( n );
     }
 
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
@@ -171,11 +172,11 @@ Core::run()
 		ros::spinOnce();
 		std::this_thread::sleep_for( 3ms );
 	}
+    metric_ptr_->cleanup();
 
 	camera_ptr_->ask_stop();
 	can_ptr_->ask_stop();
 	lidar_->cleanup();
-    log_ptr_->cleanup();
 
 	work = boost::none;
 	worker_threads.join_all();

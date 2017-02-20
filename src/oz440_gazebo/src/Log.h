@@ -48,7 +48,7 @@ private:
 //-- Data members ----------------------------------------------------------------------------------
 private:
     std::string folder_;
-    std::ofstream file_;
+    std::string filename_;
 };
 
 #endif //PROJECT_LOG_H

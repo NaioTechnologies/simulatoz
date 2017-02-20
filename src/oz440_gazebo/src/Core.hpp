@@ -87,6 +87,8 @@ private:
 
     std::shared_ptr<Log> log_ptr_;
     std::string log_folder_;
+    std::shared_ptr<Metric> metric_ptr_;
+
 
     bool read_thread_started_;
     std::thread read_thread_;

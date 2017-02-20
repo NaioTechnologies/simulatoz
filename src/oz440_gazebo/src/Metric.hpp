@@ -1,13 +1,23 @@
+//==================================================================================================
 //
-// Created by fanny on 25/11/16.
+//  Copyright(c)  2016  Naïo Technologies
 //
+//  These coded instructions, statements, and computer programs contain unpublished proprietary
+//  information written by Naio Technologies and are protected by copyright law. They may not be
+//  disclosed to third parties or copied or duplicated in any form, in whole or in part, without
+//  the prior written consent of Naio Technologies.
+//
+//==================================================================================================
 
 #ifndef PROJECT_METRIC_H
 #define PROJECT_METRIC_H
 
+//==================================================================================================
+// I N C L U D E   F I L E S
+
 #include "ros/ros.h"
 
-#include <iostream>
+#include <atomic>
 #include <mutex>
 #include <thread>
 
@@ -18,64 +28,57 @@
 #include <geometry_msgs/Pose.h>
 #include "sensor_msgs/LaserScan.h"
 
-#include "Test.hpp"
+#include "Log.h"
+
+//==================================================================================================
+// F O R W A R D   D E C L A R A T I O N S
+
+//==================================================================================================
+// C O N S T A N T S
+
+//==================================================================================================
+// C L A S S E S
 
 class Metric
 {
+//-- Methods ---------------------------------------------------------------------------------------
 
 public:
     // Constructeur/destructeur
-    Metric( int argc, char **argv, Test test );
+    Metric( std::shared_ptr<Log> log_ptr );
     ~Metric();
 
-    // Getters
-    bool followed_trajectory( );
-    bool pushed_object();
-    bool is_arrived();
+    //suscribe
+    void subscribe (ros::NodeHandle& node);
 
-    //Setter
-    void initialize(Test test);
+    void cleanup();
+
+private:
+    // functions
+    void init();
+
+    void timer_thread();
+
+    void log( std::string link_name);
+    void log_fallen( std::string link_name);
 
     // callback functions
     void link_states_callback( const gazebo_msgs::LinkStates::ConstPtr& link_states_msg );
 
-private:
-    // functions
-    void run(int argc, char **argv);
-    void belong_to_trajectory( float pose_x, float pose_y, float pose_z );
-    void make_trajectory();
+//-- Data members ----------------------------------------------------------------------------------
 
-    //threads
-    void trajectory_thread_function();
-    void collision_thread_function();
-    void main_thread_function();
-
-
-private:
-
-    bool collision_thread_started_;
-    std::thread collision_thread_;
-
-    bool main_thread_started_;
-    std::thread main_thread_;
-
-    bool trajectory_thread_started_;
-    std::thread trajectory_thread_;
-
-//    std::vector<std::string> link_states_names_;
-    std::vector<float> vegetable_orientation_;
-    float position_x_;
-    float position_y_;
-    float position_z_;
+    std::vector< std::string > link_names_;
+    std::vector< float > link_orientation_;
+    std::vector< float > link_pose_;
     std::mutex link_states_access_;
 
-    bool object_down_;
-    bool followed_trajectory_;
+    std::shared_ptr<Log> log_ptr_;
+    ros::Subscriber link_states_sub_;
 
-    std::vector<float> trajectory_;
-    std::vector<float> center_turns_;
+    std::thread timer_thread_;
 
-    Test test_;
+    std::atomic< bool > do_log_;
+    std::atomic< bool > stop_;
 
 };
 

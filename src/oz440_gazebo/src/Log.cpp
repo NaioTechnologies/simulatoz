@@ -27,7 +27,7 @@
 
 Log::Log( std::string log_folder )
         : folder_ { }
-        , file_ { "" }
+        , filename_ { "" }
 {
     setup_log_folder( log_folder );
 }
@@ -41,22 +41,21 @@ void Log::write( std::string text )
 {
     namespace fs = boost::filesystem;
 
-    if (file_.is_open())
+    std::ofstream file;
+
+    file.open( filename_.c_str(), std::ios::app  );
+
+    if (file.is_open())
     {
-        file_ << text ;
-        file_ << "\n";
+        file << text ;
+        file << "\n";
     }
     else
     {
         ROS_ERROR( "Unable to open file");
     }
-}
 
-// *********************************************************************************************************************
-
-void Log::cleanup()
-{
-    file_.close();
+    file.close();
 }
 
 // *********************************************************************************************************************
@@ -113,15 +112,20 @@ bool Log::create_file( )
     // Check if folder exists.
     if( fs::exists( folder_ ) )
     {
-        std::string filename = folder_;
-        filename.append("/Log_metrics");
+        filename_ = folder_;
+        filename_.append("/Log_metrics");
 
         // We create a file called Log_metric
-        file_.open ( filename.c_str(), std::ios::app  );
+
+        std::ofstream file;
+
+        file.open ( filename_.c_str(), std::ios::app  );
 
         success = true;
 
-        ROS_INFO( "File is %s", filename.c_str() );
+        write( filename_ );
+
+        ROS_INFO( "File is %s", filename_.c_str() );
     }
     else
     {
