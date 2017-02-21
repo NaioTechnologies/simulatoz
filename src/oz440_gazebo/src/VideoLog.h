@@ -61,6 +61,5 @@ private:
 
     cv::VideoWriter output_video_;
 };
-
-
 #endif //PROJECT_VIDEOLOG_H
+

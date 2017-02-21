@@ -52,3 +52,4 @@ private:
 };
 
 #endif //PROJECT_LOG_H
+

@@ -73,14 +73,13 @@ include_directories( include
 add_executable( Core src/Core.cpp
 				src/GeoAngle.cpp
 				src/DriverSocket.cpp
-				src/RosLidar.cpp
 				src/Camera.cpp
 				src/Lidar.cpp
 				src/Can.cpp
 				src/Serial.cpp
-				src/VideoLog.cpp
+				src/Metric.cpp
 				src/Log.cpp
-				src/Metric.cpp)
+				src/VideoLog.cpp)
 
 target_link_libraries( Core ${catkin_LIBRARIES}
 					   oz440_api

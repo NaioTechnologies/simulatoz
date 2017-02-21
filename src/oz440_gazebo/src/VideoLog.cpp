@@ -66,7 +66,7 @@ VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
         std::string filename = dated_folder_ + "/output.avi";
 
         output_video_.open( filename, CV_FOURCC( codec.c_str()[0], codec.c_str()[1], codec.c_str()[2],
-                                       codec.c_str()[3] ), 5, size, true );
+                                                 codec.c_str()[3] ), 5, size, true );
 
         if( !output_video_.isOpened() )
         {
@@ -120,3 +120,4 @@ VideoLog::setup_video_folder()
 
     return success;
 }
+
