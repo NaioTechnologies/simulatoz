@@ -15,7 +15,6 @@
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/Image.h"
 #include "sensor_msgs/JointState.h"
-#include "sensor_msgs/LaserScan.h"
 #include "gazebo_msgs/LinkStates.h"
 #include "sensor_msgs/NavSatFix.h"
 
@@ -25,8 +24,8 @@
 
 #include "Serial.h"
 #include "Camera.h"
-#include "Lidar.h"
 #include "Can.h"
+#include "Lidar.h"
 
 #include "VideoLog.h"
 #include "Log.h"
@@ -35,9 +34,7 @@
 class Core
 {
 public:
-    Core( int argc, char **argv );
-    ~Core();
-
+	Core( int argc, char** argv );
     void run();
 
 private:
@@ -70,17 +67,7 @@ private:
     int can_port_;
 
     std::shared_ptr<Serial> serial_ptr_;
-    uint serial_port_;
-
-    std::vector< BaseNaio01PacketPtr > received_packet_list_;
-
-    bool read_thread_started_;
-    std::thread read_thread_;
-
-    bool odometry_thread_started_;
-    std::thread odometry_thread_;;
-
-    float actuator_position_;
+    uint serial_port_
 
     // ROS PART
     ros::Publisher actuator_pub_;
@@ -91,10 +78,6 @@ private:
     std::shared_ptr<Log> log_ptr_;
     std::string log_folder_;
     std::shared_ptr<Metric> metric_ptr_;
-
-
-
-
 };
 
 #endif //CORE_HPP

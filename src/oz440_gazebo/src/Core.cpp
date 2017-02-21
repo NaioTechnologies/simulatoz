@@ -1,10 +1,13 @@
 
-#include "Core.hpp"
 
 #include <chrono>
-#include <pthread.h>
 
 #include <boost/filesystem.hpp>
+#include <boost/asio.hpp>
+#include <boost/utility.hpp>
+#include <boost/none.hpp>
+
+#include <opencv2/highgui/highgui.hpp>
 
 #include "std_msgs/String.h"
 #include "std_msgs/Float64.h"
@@ -12,21 +15,21 @@
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
 
-using namespace std::chrono;
+#include "Core.hpp"
+#include "RosLidar.hpp"
 
 int
 main( int argc, char** argv )
 {
 	Core core( argc, argv );
-
 	core.run();
-
 	return 0;
 }
 
 // *********************************************************************************************************************
 
 Core::Core( int argc, char** argv )
+
 	: terminate_{ false }
 	, use_camera_{ true }
 	, camera_ptr_{ nullptr }
@@ -65,7 +68,6 @@ Core::Core( int argc, char** argv )
 		{
 			log_folder_ = argv[i + 1];
 		}
-	}
 }
 
 // *********************************************************************************************************************
@@ -79,24 +81,33 @@ Core::~Core()
 void
 Core::run()
 {
-	using namespace std::chrono_literals;
+    ROS_ERROR(" RUN");
 
-	std::this_thread::sleep_for( 1500ms );
+    using namespace std::chrono_literals;
+    std::this_thread::sleep_for( 1500ms );
+    ros::NodeHandle node;
+    image_transport::ImageTransport it( node );
 
-	ros::NodeHandle n;
+	boost::asio::io_service io_service;
+	boost::optional< boost::asio::io_service::work > work( boost::in_place( boost::ref( io_service ) ) ) ;
 
-	image_transport::ImageTransport it( n );
+    boost::thread_group worker_threads;
+    for( uint32_t x = 0; x < 2; ++x )
+    {
+        worker_threads.create_thread( boost::bind( &boost::asio::io_service::run, &io_service ) );
+    }
 
 	if( use_lidar_ )
 	{
 		lidar_ptr_ = std::make_shared< Lidar >( lidar_port_ );
-		lidar_ptr_->subscribe( n );
+		lidar_ptr_->subscribe( node );
 	}
+
 
 	if( use_camera_ )
 	{
 		camera_ptr_ = std::make_shared< Camera >( camera_port_ );
-		camera_ptr_->subscribe( n );
+		camera_ptr_->subscribe( node );
 
 	}
 
@@ -104,10 +115,10 @@ Core::run()
 	{
 
 		can_ptr_ = std::make_shared< Can >( can_port_ );
-	}
+		can_ptr_->subscribe( node );
 
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
-	serial_ptr_->advertise( n );
+	serial_ptr_->advertise( node );
 
 	if( video_log_folder_ != "NO_VIDEO" )
 	{
@@ -119,21 +130,21 @@ Core::run()
     {
         log_ptr_ = std::make_shared< Log >( log_folder_ );
         metric_ptr_ = std::make_shared< Metric >( log_ptr_ );
-        metric_ptr_->subscribe( n );
+        metric_ptr_->subscribe( node );
     }
 
 	// Create motors and actuator commands publishers
-	actuator_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
+	actuator_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
 
 	// subscribe to actuator position
-	ros::Subscriber actuator_position_sub = n.subscribe( "/oz440/joint_states", 500,
+	ros::Subscriber actuator_position_sub = node.subscribe( "/oz440/joint_states", 500,
 														 &Core::callback_actuator_position, this );
 
 	// subscribe to imu topic
-	ros::Subscriber imu_sub = n.subscribe( "/oz440/imu/data", 50, &Core::callback_imu, this );
+	ros::Subscriber imu_sub = node.subscribe( "/oz440/imu/data", 50, &Core::callback_imu, this );
 
 	// subscribe to gps topic
-	message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub( n, "/oz440/navsat/fix", 5 );
+	message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub( node, "/oz440/navsat/fix", 5 );
 	message_filters::Subscriber< geometry_msgs::Vector3Stamped > gps_vel_sub( n,
 																			  "/oz440/navsat/vel",
 																			  5 );
@@ -405,3 +416,4 @@ Core::odo_wheel( uint8_t& odo_wheel, double& pitch, double& pitch_last_tic, int&
 
 	return tic;
 }
+

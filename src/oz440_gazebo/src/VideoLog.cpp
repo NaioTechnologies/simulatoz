@@ -120,3 +120,4 @@ VideoLog::setup_video_folder()
 
     return success;
 }
+

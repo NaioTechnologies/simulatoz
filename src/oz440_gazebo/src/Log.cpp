@@ -134,3 +134,4 @@ bool Log::create_file( )
 
     return success;
 }
+
