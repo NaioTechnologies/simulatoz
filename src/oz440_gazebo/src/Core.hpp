@@ -28,12 +28,9 @@
 #include "Lidar.h"
 #include "Can.h"
 
-#include <opencv2/core/core.hpp>
-#include "opencv2/opencv.hpp"
-#include <opencv2/highgui/highgui.hpp>
-#include <sensor_msgs/image_encodings.h>
-#include <image_transport/image_transport.h>
-#include <camera_calibration_parsers/parse.h>
+#include "VideoLog.h"
+#include "Log.h"
+#include "Metric.hpp"
 
 class Core
 {
@@ -48,19 +45,15 @@ private:
     void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
-    void callback_top_camera(const sensor_msgs::Image::ConstPtr& image );
 
     // Odometry part
     void odometry_thread();
     double getPitch( std::string wheel);
     bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
-    bool setup_video_folder();
 
 private:
 
     bool terminate_ ;
-
-    std::string log_folder_;
 
     std::shared_ptr<tf::TransformListener> listener_ptr_;
 
@@ -92,9 +85,16 @@ private:
     // ROS PART
     ros::Publisher actuator_pub_;
 
-    // Video_recorder
-    std::string video_folder_;
-    cv::VideoWriter output_video_;
+    std::shared_ptr<VideoLog> video_log_ptr_;
+    std::string video_log_folder_;
+
+    std::shared_ptr<Log> log_ptr_;
+    std::string log_folder_;
+    std::shared_ptr<Metric> metric_ptr_;
+
+
+
+
 };
 
 #endif //CORE_HPP

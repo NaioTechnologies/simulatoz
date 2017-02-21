@@ -77,7 +77,10 @@ add_executable( Core src/Core.cpp
 				src/Camera.cpp
 				src/Lidar.cpp
 				src/Can.cpp
-				src/Serial.cpp )
+				src/Serial.cpp
+				src/Metric.cpp
+				src/Log.cpp
+				src/VideoLog.cpp)
 
 target_link_libraries( Core ${catkin_LIBRARIES}
 					   oz440_api

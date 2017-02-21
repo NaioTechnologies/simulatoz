@@ -9,26 +9,17 @@
 //
 //==================================================================================================
 
-#ifndef PROJECT_METRIC_H
-#define PROJECT_METRIC_H
+#ifndef PROJECT_LOG_H
+#define PROJECT_LOG_H
 
 //==================================================================================================
 // I N C L U D E   F I L E S
 
+#include <boost/filesystem.hpp>
+#include <iostream>
+#include <fstream>
+
 #include "ros/ros.h"
-
-#include <atomic>
-#include <mutex>
-#include <thread>
-
-#include <vector>
-
-#include "std_msgs/String.h"
-#include "gazebo_msgs/LinkStates.h"
-#include <geometry_msgs/Pose.h>
-#include "sensor_msgs/LaserScan.h"
-
-#include "Log.h"
 
 //==================================================================================================
 // F O R W A R D   D E C L A R A T I O N S
@@ -39,47 +30,25 @@
 //==================================================================================================
 // C L A S S E S
 
-class Metric
-{
+class Log {
 //-- Methods ---------------------------------------------------------------------------------------
-
 public:
-    // Constructeur/destructeur
-    Metric( std::shared_ptr<Log> log_ptr );
-    ~Metric();
+    Log( std::string log_folder );
+    ~Log();
 
-    //suscribe
-    void subscribe (ros::NodeHandle& node);
+    void write( std::string text );
 
     void cleanup();
 
 private:
-    // functions
-    void init();
+    bool setup_log_folder( std::string log_folder_);
+    bool create_file ();
 
-    void timer_thread();
-
-    void log( std::string link_name);
-    void log_fallen( std::string link_name);
-
-    // callback functions
-    void link_states_callback( const gazebo_msgs::LinkStates::ConstPtr& link_states_msg );
 
 //-- Data members ----------------------------------------------------------------------------------
-
-    std::vector< std::string > link_names_;
-    std::vector< float > link_orientation_;
-    std::vector< float > link_pose_;
-    std::mutex link_states_access_;
-
-    std::shared_ptr<Log> log_ptr_;
-    ros::Subscriber link_states_sub_;
-
-    std::thread timer_thread_;
-
-    std::atomic< bool > do_log_;
-    std::atomic< bool > stop_;
-
+private:
+    std::string folder_;
+    std::string filename_;
 };
 
-#endif //PROJECT_METRIC_H
+#endif //PROJECT_LOG_H

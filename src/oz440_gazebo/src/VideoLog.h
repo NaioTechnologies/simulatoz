@@ -9,26 +9,24 @@
 //
 //==================================================================================================
 
-#ifndef PROJECT_METRIC_H
-#define PROJECT_METRIC_H
+#ifndef PROJECT_VIDEOLOG_H
+#define PROJECT_VIDEOLOG_H
 
 //==================================================================================================
 // I N C L U D E   F I L E S
 
-#include "ros/ros.h"
-
 #include <atomic>
-#include <mutex>
-#include <thread>
 
-#include <vector>
+#include <opencv2/core/core.hpp>
+#include "opencv2/opencv.hpp"
+#include <opencv2/highgui/highgui.hpp>
 
-#include "std_msgs/String.h"
-#include "gazebo_msgs/LinkStates.h"
-#include <geometry_msgs/Pose.h>
-#include "sensor_msgs/LaserScan.h"
+#include <boost/filesystem.hpp>
 
-#include "Log.h"
+#include <sensor_msgs/image_encodings.h>
+#include <image_transport/image_transport.h>
+#include <camera_calibration_parsers/parse.h>
+#include "sensor_msgs/Image.h"
 
 //==================================================================================================
 // F O R W A R D   D E C L A R A T I O N S
@@ -39,47 +37,30 @@
 //==================================================================================================
 // C L A S S E S
 
-class Metric
-{
+class VideoLog {
+
 //-- Methods ---------------------------------------------------------------------------------------
-
 public:
-    // Constructeur/destructeur
-    Metric( std::shared_ptr<Log> log_ptr );
-    ~Metric();
+    VideoLog( std::string video_log_folder );
+    ~VideoLog();
 
-    //suscribe
-    void subscribe (ros::NodeHandle& node);
-
-    void cleanup();
+    void subscribe( image_transport::ImageTransport& it );
 
 private:
-    // functions
-    void init();
+    void callback_top_camera(const sensor_msgs::Image::ConstPtr& image );
 
-    void timer_thread();
+    bool setup_video_folder();
 
-    void log( std::string link_name);
-    void log_fallen( std::string link_name);
-
-    // callback functions
-    void link_states_callback( const gazebo_msgs::LinkStates::ConstPtr& link_states_msg );
 
 //-- Data members ----------------------------------------------------------------------------------
+private:
+    image_transport::Subscriber top_camera_sub_;
 
-    std::vector< std::string > link_names_;
-    std::vector< float > link_orientation_;
-    std::vector< float > link_pose_;
-    std::mutex link_states_access_;
+    std::string video_log_folder_;
+    std::string dated_folder_;
 
-    std::shared_ptr<Log> log_ptr_;
-    ros::Subscriber link_states_sub_;
-
-    std::thread timer_thread_;
-
-    std::atomic< bool > do_log_;
-    std::atomic< bool > stop_;
-
+    cv::VideoWriter output_video_;
 };
 
-#endif //PROJECT_METRIC_H
+
+#endif //PROJECT_VIDEOLOG_H

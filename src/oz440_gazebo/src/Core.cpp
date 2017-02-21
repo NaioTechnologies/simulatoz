@@ -28,7 +28,6 @@ main( int argc, char** argv )
 
 Core::Core( int argc, char** argv )
 	: terminate_{ false }
-	, log_folder_{ }
 	, use_camera_{ true }
 	, camera_ptr_{ nullptr }
 	, camera_port_{ 5558 }
@@ -46,8 +45,10 @@ Core::Core( int argc, char** argv )
 	, odometry_thread_{ }
 	, odometry_thread_started_{ false }
 	, actuator_position_{ 0.0 }
-	, video_folder_{ }
-	, output_video_{ }
+	, video_log_ptr_ { nullptr }
+	, video_log_folder_ { }
+    , log_ptr_ { nullptr }
+    , log_folder_ { }
 {
 	ros::init( argc, argv, "Core" );
 
@@ -56,6 +57,11 @@ Core::Core( int argc, char** argv )
 	for( int i = 1; i < argc; i++ )
 	{
 		if( strncmp( argv[i], "--videoFolder", 13 ) == 0 )
+		{
+			video_log_folder_ = argv[i + 1];
+		}
+
+		if( strncmp( argv[i], "--logFolder", 11 ) == 0 )
 		{
 			log_folder_ = argv[i + 1];
 		}
@@ -103,6 +109,18 @@ Core::run()
 	serial_ptr_ = std::make_shared< Serial >( serial_port_ );
 	serial_ptr_->advertise( n );
 
+	if( video_log_folder_ != "NO_VIDEO" )
+	{
+		video_log_ptr_ = std::make_shared< VideoLog >( video_log_folder_ );
+		video_log_ptr_->subscribe( it );
+	}
+
+    if( log_folder_ != "NO_LOG" )
+    {
+        log_ptr_ = std::make_shared< Log >( log_folder_ );
+        metric_ptr_ = std::make_shared< Metric >( log_ptr_ );
+        metric_ptr_->subscribe( n );
+    }
 
 	// Create motors and actuator commands publishers
 	actuator_pub_ = n.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
@@ -123,10 +141,6 @@ Core::run()
 									   geometry_msgs::Vector3Stamped > sync_gps( gps_fix_sub,
 																				 gps_vel_sub, 10 );
 	sync_gps.registerCallback( boost::bind( &Core::callback_gps, this, _1, _2 ) );
-
-	// subscribe to top_camera topic
-	image_transport::Subscriber top_camera_sub = it.subscribe( "/oz440/top_camera/image_raw", 5,
-															   &Core::callback_top_camera, this );
 
 	if( use_can_ )
 	{
@@ -241,45 +255,6 @@ Core::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
 		ROS_INFO( "Gps packet enqueued" );
 	}
 }
-
-// *********************************************************************************************************************
-
-void
-Core::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
-{
-	if( can_ptr_->connected() )
-	{
-		if( video_folder_.empty() )
-		{
-			bool success = setup_video_folder();
-
-			if( !success )
-			{
-				ROS_ERROR( "Error creating the video folder" );
-			}
-		}
-
-		if( !output_video_.isOpened() )
-		{
-			std::string codec = "MJPG";
-			cv::Size size( image->width, image->height );
-			std::string filename = video_folder_ + "/output.avi";
-
-			output_video_.open( filename,
-								CV_FOURCC( codec.c_str()[0], codec.c_str()[1], codec.c_str()[2],
-										   codec.c_str()[3] ), 5, size, true );
-
-			if( !output_video_.isOpened() )
-			{
-				ROS_ERROR(
-					"Could not create the output video! Check filename and/or support for codec." );
-				exit( -1 );
-			}
-		}
-	}
-}
-
-
 // *********************************************************************************************************************
 
 void
@@ -429,45 +404,4 @@ Core::odo_wheel( uint8_t& odo_wheel, double& pitch, double& pitch_last_tic, int&
 	}
 
 	return tic;
-}
-
-// *********************************************************************************************************************
-
-bool
-Core::setup_video_folder()
-{
-	namespace fs = boost::filesystem;
-	bool success{ };
-
-	// Check if folder exists.
-	if( fs::exists( log_folder_ ) )
-	{
-		// We create a dated folder and two subfolders to write our images.
-		std::time_t t = std::time( NULL );
-		size_t bufferSize{ 256 };
-		char buff[bufferSize];
-		std::string format{ "%F_%H:%M:%S" };
-		size_t bytesRead = std::strftime( buff, bufferSize, format.c_str(), std::localtime( &t ) );
-
-		std::string date_str = std::string( buff, bytesRead );
-		std::replace( date_str.begin(), date_str.end(), ':', '_' );
-
-		fs::path dated_folder_path{ log_folder_ };
-		dated_folder_path /= ( date_str );
-
-		// Creating the folders.
-		if( !fs::exists( dated_folder_path ) )
-		{
-			fs::create_directory( dated_folder_path );
-			video_folder_ = dated_folder_path.c_str();
-		}
-
-		success = true;
-	}
-	else
-	{
-		ROS_ERROR( "Log_video folder does not exist" );
-	}
-
-	return success;
 }
