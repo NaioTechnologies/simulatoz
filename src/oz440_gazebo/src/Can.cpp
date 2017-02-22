@@ -1,3 +1,16 @@
+//==================================================================================================
+//
+//  Copyright(c)  2016  Naio Technologies. All rights reserved.
+//
+//  These coded instructions, statements, and computer programs contain unpublished proprietary
+//  information written by Naio Technologies and are protected by copyright law. They may not be
+//  disclosed to third parties or copied or duplicated in any form, in whole or in part, without
+//  the prior written consent of Naio Technologies.
+//
+//==================================================================================================
+
+//==================================================================================================
+// I N C L U D E   F I L E S
 
 #include "DriverSocket.hpp"
 #include "Can.h"
@@ -7,41 +20,28 @@
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
-//*****************************************  --  CONSTRUCTOR / DESTRUCTOR  --  *****************************************
+//==================================================================================================
+// C O N S T R U C T O R (S) / D E S T R U C T O R   C O D E   S E C T I O N
+
+//--------------------------------------------------------------------------------------------------
 
 Can::Can(int server_port)
-        : stop_asked_{ false }
-        , connect_thread_started_ { false }
+        : stop_{ false }
         , connect_thread_ { }
-        , read_thread_started_ { false }
         , read_thread_ { }
-        , manage_thread_started_ { false }
-        , manage_thread_ { }
         , server_port_ {server_port}
-        , socket_connected_ { false }
+        , connected_ { false }
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
         , socket_access_ { }
-        , packets_ptr_ { nullptr }
-        , packets_access_ { }
-        , last_odo_packet_ptr_ { nullptr }
         , tool_position_access_ { }
         , tool_position_ { 0 }
-        , actuator_packet_access_ { }
-        , actuator_packet_ptr_ { nullptr }
         , gps_packet_access_ { }
-        , gps_packet_ptr_ { nullptr }
+        , gps_packet_ { }
         , gps_manager_thread_ { }
-        , last_gps_packet_ptr_ { nullptr }
-
-{
-    last_odo_ticks_[0] = false;
-    last_odo_ticks_[1] = false;
-    last_odo_ticks_[2] = false;
-    last_odo_ticks_[3] = false;
-
-    init();
-}
+        , last_gps_packet_ { }
+        , sync_gps_ { gps_fix_sub_, gps_vel_sub_, 10 }
+{ }
 
 Can::~Can()
 {
@@ -49,7 +49,10 @@ Can::~Can()
     close(server_socket_desc_);
 }
 
-//*****************************************  --  INIT  --  *************************************************************
+//==================================================================================================
+// M E T H O D S   C O D E   S E C T I O N
+
+//--------------------------------------------------------------------------------------------------
 
 void Can::init()
 {
@@ -58,62 +61,95 @@ void Can::init()
 
     read_thread_ = std::thread( &Can::read_thread, this );
     read_thread_.detach();
+}
 
-    manage_thread_ = std::thread( &Can::manage_thread, this );
-    manage_thread_.detach();
+
+//*****************************************  --  SUBSCRIBE  --  *******************************************************
+
+void Can::subscribe( ros::NodeHandle &node ) {
+
+    // subscribe to gps topic
+    gps_fix_sub_.subscribe( node, "/oz440/navsat/fix", 5 );
+    gps_vel_sub_.subscribe( node, "/oz440/navsat/vel", 5 );
+    sync_gps_.registerCallback( boost::bind( &Can::callback_gps, this, _1, _2 ) );
+
+    // subscribe to imu topic
+    imu_sub_ = node.subscribe( "/oz440/imu/data", 50, &Can::callback_imu, this );
+
+    // Create motors and actuator commands publishers
+    actuator_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
+
+    // subscribe to actuator position
+    actuator_position_sub_ = node.subscribe( "/oz440/joint_states", 500, &Can::callback_actuator_position, this );
+
+
 }
 
 //*****************************************  --  ADD PACKET  --  *******************************************************
 
-void Can::add_packet( BaseNaio01PacketPtr packet_ptr )
+void Can::add_odo_packet( const std::array<bool, 4>& ticks )
 {
-    packets_access_.lock();
-    packets_ptr_.emplace( packets_ptr_.begin(), packet_ptr );
-    packets_access_.unlock();
+
+    uint8_t data[ 1 ];
+
+    data[ 0 ] = 0x00;
+
+    if( ticks[ 0 ] )
+    {
+        data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 0 ) ) ) ;
+    }
+
+    if( ticks[ 1 ] )
+    {
+        data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 1 ) ) ) ;
+    }
+
+    if( ticks[ 2 ] )
+    {
+        data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 2 ) ) ) ;
+    }
+
+    if( ticks[ 3 ] )
+    {
+        data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 3 ) ) ) ;
+    }
+
+    send_packet( CanMessageId::CAN_ID_GEN, CanMessageType::CAN_MOT_CONS, data, 1 );
+
 }
 
-//*****************************************  --  GET ACTUATOR PACKET  --  *******************************************************
+//*****************************************  --  CLEANUP  --  *********************************************************
 
-ApiMoveActuatorPacketPtr Can::get_actuator_packet_ptr()
+void Can::cleanup()
 {
-    actuator_packet_access_.lock();
-    ApiMoveActuatorPacketPtr actuator_packet_ptr = actuator_packet_ptr_;
-    actuator_packet_access_.unlock();
-
-    return actuator_packet_ptr;
-}
-//*****************************************  --  ASK STOP  --  *********************************************************
-
-void Can::ask_stop()
-{
-    stop_asked_ = true;
+    stop_ = true;
     disconnect();
     close(server_socket_desc_);
 }
 
+
+
 //*****************************************  --  CONNECTED?  --  *******************************************************
 
 bool Can::connected(){
-    return socket_connected_;
+    return connected_;
 }
 
 //*****************************************  --  CONNECT  --  **********************************************************
 
 void Can::connect(){
 
-    connect_thread_started_ = true;
-
     server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t)server_port_ );
 
-    while( !stop_asked_ )
+    while( !stop_ )
     {
-        if( !socket_connected_ and server_socket_desc_ > 0 )
+        if( !connected_ and server_socket_desc_ > 0 )
         {
-            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_asked_ );
+            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_ );
 
             if ( socket_desc_ > 0 )
             {
-                socket_connected_ = true;
+                connected_ = true;
 
                 ROS_ERROR( "OzCore Can Socket Connected" );
             }
@@ -122,23 +158,19 @@ void Can::connect(){
             std::this_thread::sleep_for(500ms);
         }
     }
-
-    connect_thread_started_ = false;
 }
 
 //*****************************************  --  READ THREAD  --  ******************************************************
 
 void Can::read_thread(){
 
-    read_thread_started_ = true;
-
     struct can_frame frame;
 
-    memset( &frame, 0, sizeof( frame ) );while ( !stop_asked_ )
+    memset( &frame, 0, sizeof( frame ) );while ( !stop_ )
 
-        while ( !stop_asked_ )
+        while ( !stop_ )
         {
-            if (socket_connected_)
+            if (connected_)
             {
                 socket_access_.lock();
                 ssize_t size = read( socket_desc_, &frame, sizeof( frame ));;
@@ -150,9 +182,7 @@ void Can::read_thread(){
                     {
                         if( ( ( frame.can_id ) % 16 ) == CAN_VER_CONS )
                         {
-                            actuator_packet_access_.lock();
-                            actuator_packet_ptr_ = std::make_shared<ApiMoveActuatorPacket>( frame.data[ 0 ] );
-                            actuator_packet_access_.unlock();
+//                            actuator_order_ = frame_.data[ 0 ] ;
                         }
                         else if( ( ( frame.can_id ) % 16 ) == CAN_VER_POS )
                         {
@@ -212,183 +242,6 @@ void Can::read_thread(){
             }
         }
 
-    read_thread_started_ = false;
-
-}
-
-//*****************************************  --  MANAGE THREAD  --  ****************************************************
-
-void Can::manage_thread(){
-
-    manage_thread_started_ = true;
-
-    try{
-
-        BaseNaio01PacketPtr packet_ptr;
-
-        while( !stop_asked_ )
-        {
-            if(socket_connected_) {
-
-                if ( !packets_ptr_.empty()) {
-
-                    packets_access_.lock();
-
-                    packet_ptr = packets_ptr_.back();
-                    manage_packet(packet_ptr);
-                    packets_ptr_.pop_back();
-
-                    packets_access_.unlock();
-                }
-                else{
-                    std::this_thread::sleep_for(1ms);
-                }
-            }
-            else{
-
-                packets_ptr_.clear();
-                std::this_thread::sleep_for(50ms);
-            }
-        }
-    }
-    catch ( std::exception e )
-    {
-        std::cout<<"Exception server_read_thread catch : "<< e.what() << std::endl;
-    }
-
-    manage_thread_started_ = false;
-
-}
-
-//*****************************************  --  MANAGE PACKET  --  ****************************************************
-
-void Can::manage_packet( BaseNaio01PacketPtr packet_ptr ) {
-
-    try {
-
-        if (std::dynamic_pointer_cast<HaGyroPacket>( packet_ptr ))
-        {
-            HaGyroPacketPtr gyro_packet_ptr = std::dynamic_pointer_cast<HaGyroPacket>( packet_ptr );
-
-            uint8_t data[ 6 ];
-
-            data[ 0 ] = (uint8_t) (( gyro_packet_ptr->x >> 8 ) & 0xFF ) ;
-            data[ 1 ] = (uint8_t) (( gyro_packet_ptr->x >> 0 ) & 0xFF ) ;
-
-            data[ 2 ] = (uint8_t) (( gyro_packet_ptr->y >> 8 ) & 0xFF ) ;
-            data[ 3 ] = (uint8_t) (( gyro_packet_ptr->y >> 0 ) & 0xFF ) ;
-
-            data[ 4 ] = (uint8_t) (( gyro_packet_ptr->z >> 8 ) & 0xFF ) ;
-            data[ 5 ] = (uint8_t) (( gyro_packet_ptr->z >> 0 ) & 0xFF ) ;
-
-            send_packet( CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_GYRO, data, 6 );
-        }
-        else if (std::dynamic_pointer_cast<HaAcceleroPacket>( packet_ptr ))
-        {
-            HaAcceleroPacketPtr accel_packet_ptr = std::dynamic_pointer_cast<HaAcceleroPacket>( packet_ptr );
-
-            uint8_t data[ 6 ];
-
-            data[ 0 ] = (uint8_t) (( accel_packet_ptr->x >> 8 ) & 0xFF ) ;
-            data[ 1 ] = (uint8_t) (( accel_packet_ptr->x >> 0 ) & 0xFF ) ;
-
-            data[ 2 ] = (uint8_t) (( accel_packet_ptr->y >> 8 ) & 0xFF ) ;
-            data[ 3 ] = (uint8_t) (( accel_packet_ptr->y >> 0 ) & 0xFF ) ;
-
-            data[ 4 ] = (uint8_t) (( accel_packet_ptr->z >> 8 ) & 0xFF ) ;
-            data[ 5 ] = (uint8_t) (( accel_packet_ptr->z >> 0 ) & 0xFF ) ;
-
-            send_packet( CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6 );
-        }
-        else if (std::dynamic_pointer_cast<HaOdoPacket>( packet_ptr ))
-        {
-            HaOdoPacketPtr odo_packet_ptr = std::dynamic_pointer_cast<HaOdoPacket>( packet_ptr );
-
-            if( last_odo_packet_ptr_ != nullptr )
-            {
-                if( last_odo_packet_ptr_->fr != odo_packet_ptr->fr )
-                {
-                    last_odo_ticks_[ 0 ] = not last_odo_ticks_[ 0 ];
-                }
-
-                if( last_odo_packet_ptr_->fl != odo_packet_ptr->fl )
-                {
-                    last_odo_ticks_[ 1 ] = not last_odo_ticks_[ 1 ];
-                }
-
-                if( last_odo_packet_ptr_->rr != odo_packet_ptr->rr )
-                {
-                    last_odo_ticks_[ 2 ] = not last_odo_ticks_[ 2 ];
-                }
-
-                if( last_odo_packet_ptr_->rl != odo_packet_ptr->rl )
-                {
-                    last_odo_ticks_[ 3 ] = not last_odo_ticks_[ 3 ];
-                }
-            }
-
-            uint8_t data[ 1 ];
-
-            data[ 0 ] = 0x00;
-
-            if( last_odo_ticks_[ 0 ] )
-            {
-                data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 0 ) ) ) ;
-            }
-
-            if( last_odo_ticks_[ 1 ] )
-            {
-                data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 1 ) ) ) ;
-            }
-
-            if( last_odo_ticks_[ 2 ] )
-            {
-                data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 2 ) ) ) ;
-            }
-
-            if( last_odo_ticks_[ 3 ] )
-            {
-                data[ 0 ] = (uint8_t) (( data[ 0 ] | ( 0x01 << 3 ) ) ) ;
-            }
-
-            send_packet( CanMessageId::CAN_ID_GEN, CanMessageType::CAN_MOT_CONS, data, 1 );
-
-            last_odo_packet_ptr_ = odo_packet_ptr;
-        }
-        else if (std::dynamic_pointer_cast<HaGpsPacket>( packet_ptr ))
-        {
-            HaGpsPacketPtr gps_packet_ptr = std::dynamic_pointer_cast<HaGpsPacket>(packet_ptr);
-
-            gps_packet_access_.lock();
-            last_gps_packet_ptr_ = gps_packet_ptr_;
-            gps_packet_ptr_ = gps_packet_ptr;
-            gps_packet_access_.unlock();
-
-            gps_manager();
-        }
-        else if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packet_ptr))
-        {
-            ApiMoveActuatorPacketPtr api_move_actuator_packet_ptr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(
-                    packet_ptr);
-
-            tool_position_access_.lock();
-            tool_position_ = api_move_actuator_packet_ptr->position;
-            tool_position_access_.unlock();
-
-            uint8_t data[1];
-
-            tool_position_access_.lock();
-            data[0] = tool_position_;
-            tool_position_access_.unlock();
-
-            send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1);
-        }
-
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception main_thread catch : "<< e.what() << std::endl;
-    }
-
 }
 
 //*****************************************  --  SEND PACKET  --  ******************************************************
@@ -397,27 +250,18 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
 
     try {
 
-        if (socket_connected_) {
+        if (connected_) {
 
             struct can_frame frame;
-            ssize_t nbytes = -1;
-            int nbTests = 0;
 
             frame.can_id = (unsigned int) (id * 128 + id_msg);
             frame.can_dlc = len;
 
-            for (uint8_t i = 0; i < len; i++) {
-                frame.data[i] = data[i];
-            }
+            std::memcpy( frame.data, data, len );
 
-            while (nbytes <= 0 && nbTests < 10) {
-
-                socket_access_.lock();
-                nbytes = write( socket_desc_, &frame, sizeof(struct can_frame) );
-                socket_access_.unlock();
-
-                nbTests++;
-            }
+            socket_access_.lock();
+            ssize_t nbytes = write( socket_desc_, &frame, sizeof(struct can_frame) );
+            socket_access_.unlock();
 
             if (nbytes <= 0) {
                 std::cout << "Can write error." << std::endl;
@@ -434,10 +278,38 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
 void Can::disconnect(){
 
     close( socket_desc_ );
-
-    socket_connected_ = false;
+    connected_ = false;
 
     ROS_ERROR("OzCore Can Socket Disconnected");
+}
+
+// *********************************************************************************************************************
+
+void Can::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
+                    const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
+{
+    if( connected_ )
+    {
+        struct Can::Gps_packet gps_packet;
+
+        gps_packet.lat = gps_fix_msg->latitude;
+        gps_packet.lon = gps_fix_msg->longitude;
+        gps_packet.alt = gps_fix_msg->altitude;
+        gps_packet.satUsed = 3;
+        gps_packet.quality = 3;
+        gps_packet.groundSpeed = sqrt(gps_vel_msg->vector.x * gps_vel_msg->vector.x +
+                                      gps_vel_msg->vector.y * gps_vel_msg->vector.y);
+        gps_packet.updated = true;
+
+        gps_packet_access_.lock();
+        last_gps_packet_ = gps_packet_;
+        gps_packet_ = gps_packet;
+        gps_packet_access_.unlock();
+
+        gps_manager();
+
+        ROS_INFO( "Gps packet sent" );
+    }
 }
 
 //*****************************************  --  GPS THREAD  --  *******************************************************
@@ -449,14 +321,14 @@ void Can::gps_manager()
     try{
 
         gps_packet_access_.lock();
-        HaGpsPacketPtr gps_packet_ptr = gps_packet_ptr_;
-        HaGpsPacketPtr last_gps_packet_ptr = last_gps_packet_ptr_;
+        Gps_packet gps_packet = gps_packet_;
+        Gps_packet last_gps_packet = last_gps_packet_;
         gps_packet_access_.unlock();
 
-        if( ( gps_packet_ptr != nullptr ) and ( last_gps_packet_ptr != nullptr ))
+        if( ( gps_packet.updated ) and ( last_gps_packet.updated ))
         {
             // compute speed and track orientation
-            double track_orientation = north_bearing( last_gps_packet_ptr->lat, last_gps_packet_ptr->lon, gps_packet_ptr->lat, gps_packet_ptr->lon );
+            double track_orientation = north_bearing( last_gps_packet.lat, last_gps_packet.lon, gps_packet.lat, gps_packet.lon );
 
 //          ********************************  RMC ********************************
 
@@ -472,13 +344,13 @@ void Can::gps_manager()
             timeinfo = std::localtime( &rawtime );
 
             sprintf( to, "%03.1f", track_orientation );
-            sprintf( gs, "%03.1f", gps_packet_ptr_->groundSpeed );
+            sprintf( gs, "%03.1f", gps_packet.groundSpeed );
 
             std::strftime( hhmmss, 80, "%H%M%S", timeinfo );
             std::strftime( ddmmyy, 80, "%d%m%y", timeinfo );
 
-            GeoAngle ns = GeoAngle::from_double( gps_packet_ptr->lat );
-            GeoAngle we = GeoAngle::from_double( gps_packet_ptr->lon );
+            GeoAngle ns = GeoAngle::from_double( gps_packet.lat );
+            GeoAngle we = GeoAngle::from_double( gps_packet.lon );
 
             std::string gprmc =   std::string( "$GPRMC" ) + std::string( "," )
                                   + std::string( hhmmss ) + std::string( "," )
@@ -507,9 +379,9 @@ void Can::gps_manager()
             char nos[ 80 ];
             char alt[ 80 ];
 
-            sprintf( quality, "%d", static_cast<int>( gps_packet_ptr_->quality ) );
-            sprintf( nos, "%02d", static_cast<int>( gps_packet_ptr_->satUsed ) );
-            sprintf( alt, "%03.1f", gps_packet_ptr_->alt );
+            sprintf( quality, "%d", static_cast<int>( gps_packet.quality ) );
+            sprintf( nos, "%02d", static_cast<int>( gps_packet.satUsed ) );
+            sprintf( alt, "%03.1f", gps_packet.alt );
 
             std::string gpgga =   std::string( "$GPGGA" ) + std::string( "," )
                                   + std::string( "#" ) + std::string( "," )
@@ -610,4 +482,75 @@ double Can::north_bearing( double lat1, double lon1, double lat2, double lon2 )
     double brng = fmod((std::atan2(dLong, dPhi) / M_PI * 180.0) + 360.0, 360.0);
 
     return brng;
+}
+
+// *********************************************************************************************************************
+
+void
+Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
+{
+    if( connected_ )
+    {
+        uint8_t data[6];
+
+        std::array<int16_t, 3> gyro_packet;
+
+        gyro_packet.at(0) = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+        gyro_packet.at(1) = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+        gyro_packet.at(2) = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+
+        data[0] = (uint8_t) ((gyro_packet.at(0) >> 8) & 0xFF);
+        data[1] = (uint8_t) ((gyro_packet.at(0) >> 0) & 0xFF);
+
+        data[2] = (uint8_t) ((gyro_packet.at(1) >> 8) & 0xFF);
+        data[3] = (uint8_t) ((gyro_packet.at(1) >> 0) & 0xFF);
+
+        data[4] = (uint8_t) ((gyro_packet.at(2) >> 8) & 0xFF);
+        data[5] = (uint8_t) ((gyro_packet.at(2) >> 0) & 0xFF);
+
+        send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_GYRO, data, 6);
+
+        ROS_INFO( "Gyro packet enqueued" );
+
+        std::array<int16_t, 3> accelero_packet;
+
+        accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
+                                                     9.8);
+        accelero_packet.at(1) = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 /
+                                                     9.8);
+        accelero_packet.at(2) = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 /
+                                                     9.8);
+
+        data[0] = (uint8_t) ((accelero_packet.at(0) >> 8) & 0xFF);
+        data[1] = (uint8_t) ((accelero_packet.at(0) >> 0) & 0xFF);
+
+        data[2] = (uint8_t) ((accelero_packet.at(1) >> 8) & 0xFF);
+        data[3] = (uint8_t) ((accelero_packet.at(1) >> 0) & 0xFF);
+
+        data[4] = (uint8_t) ((accelero_packet.at(2) >> 8) & 0xFF);
+        data[5] = (uint8_t) ((accelero_packet.at(2) >> 0) & 0xFF);
+
+        send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
+
+        ROS_INFO( "Accelero packet enqueued" );
+    }
+}
+
+// *********************************************************************************************************************
+
+void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
+{
+    if( connected_ )
+    {
+        uint8_t position_percent = (uint8_t) (std::round(joint_states_msg->position[0] * (-100.0 / 0.15)));
+
+        tool_position_access_.lock();
+        tool_position_ = position_percent;
+        tool_position_access_.unlock();
+
+        ROS_INFO( "Actuator position packet enqueued" );
+    }
 }
