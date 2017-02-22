@@ -64,7 +64,8 @@ find_package( catkin REQUIRED COMPONENTS
 			  oz440_msgs
 			  oz440_api
 			  gazebo_msgs
-			  image_transport )
+			  image_transport
+              cv_bridge  )
 
 include_directories( include
 					 ${catkin_INCLUDE_DIRS}

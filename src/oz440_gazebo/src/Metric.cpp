@@ -142,7 +142,7 @@ void Metric::log( std::string link_name){
             to_log.append( std::to_string( link_pose_[ i*3 + 1 ]) );
             to_log.append( ", "  );
             to_log.append( std::to_string( link_pose_[ i*3 + 2 ] ) );
-            to_log.append( "] , orientation : [ "  );
+            to_log.append( "] , orientation = [ "  );
             to_log.append( std::to_string( link_orientation_[ i*3 ] ) );
             to_log.append( ", " );
             to_log.append( std::to_string( link_orientation_[ i*3 + 1 ] ) );
@@ -184,7 +184,7 @@ void Metric::log_fallen( std::string link_name){
                 to_log.append( std::to_string( link_pose_[ i*3 + 1 ]) );
                 to_log.append( ", "  );
                 to_log.append( std::to_string( link_pose_[ i*3 + 2 ] ) );
-                to_log.append( "] , orientation : [ "  );
+                to_log.append( "] , orientation = [ "  );
                 to_log.append( std::to_string( link_orientation_[ i*3 ] ) );
                 to_log.append( ", " );
                 to_log.append( std::to_string( link_orientation_[ i*3 + 1 ] ) );

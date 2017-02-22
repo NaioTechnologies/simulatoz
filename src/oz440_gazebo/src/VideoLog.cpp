@@ -42,7 +42,7 @@ VideoLog::~VideoLog()
 
 void VideoLog::subscribe( image_transport::ImageTransport& it )
 {
-    top_camera_sub_ = it.subscribe( "/oz440/top_camera/image_raw", 5, &VideoLog::callback_top_camera, this );
+    top_camera_sub_ = it.subscribe( "/oz440/top_camera/image_raw", 1, &VideoLog::callback_top_camera, this );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -74,6 +74,27 @@ void VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
                     "Could not create the output video! Check filename and/or support for codec." );
             exit( -1 );
         }
+    }
+
+    try
+    {
+        cv_bridge::CvtColorForDisplayOptions options;
+        options.do_dynamic_scaling = false;
+        options.min_image_value = 0.0;
+        options.max_image_value = 0.0;
+        options.colormap = -1;
+
+        const cv::Mat cv_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image ), std::string("bgr8"), options)->image;
+
+        if (!cv_image.empty()) {
+            output_video_ << cv_image;
+        } else {
+            ROS_WARN("Frame skipped, no data!");
+        }
+    } catch(cv_bridge::Exception)
+    {
+        ROS_ERROR("Unable to convert %s image to -bgr8-", image->encoding.c_str());
+        return;
     }
 
 }

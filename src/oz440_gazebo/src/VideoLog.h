@@ -15,18 +15,20 @@
 //==================================================================================================
 // I N C L U D E   F I L E S
 
-#include <atomic>
-
-#include <opencv2/core/core.hpp>
-#include "opencv2/opencv.hpp"
 #include <opencv2/highgui/highgui.hpp>
-
-#include <boost/filesystem.hpp>
-
 #include <sensor_msgs/image_encodings.h>
+#include <cv_bridge/cv_bridge.h>
 #include <image_transport/image_transport.h>
 #include <camera_calibration_parsers/parse.h>
-#include "sensor_msgs/Image.h"
+#if CV_MAJOR_VERSION == 3
+#include <opencv2/videoio.hpp>
+#endif
+
+#include "ros/ros.h"
+
+#include <atomic>
+
+#include <boost/filesystem.hpp>
 
 //==================================================================================================
 // F O R W A R D   D E C L A R A T I O N S
