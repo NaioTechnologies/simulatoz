@@ -135,14 +135,28 @@ void Metric::log( std::string link_name){
 
         if (found != std::string::npos) {
 
-            std::string to_log = link_name;
-            to_log.append( " : pose = [ " );
+            std::string to_log;
+
+            std::time_t t = std::time( NULL );
+            char buff[256];
+            std::string format{ "%H:%M:%S" };
+
+            size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+            std::string date_str = std::string( buff, bytesRead );
+
+            ROS_INFO( "%s has fallen. ", link_name.c_str() );
+
+            to_log.append( "[ " );
+            to_log.append( date_str );
+            to_log.append( " ]   " );
+            to_log.append( "Oz :   pose = [ " );
             to_log.append( std::to_string( link_pose_[ i*3 ] ) );
             to_log.append( ", " );
             to_log.append( std::to_string( link_pose_[ i*3 + 1 ]) );
             to_log.append( ", "  );
             to_log.append( std::to_string( link_pose_[ i*3 + 2 ] ) );
-            to_log.append( "] , orientation = [ "  );
+            to_log.append( "] ,   orientation = [ "  );
             to_log.append( std::to_string( link_orientation_[ i*3 ] ) );
             to_log.append( ", " );
             to_log.append( std::to_string( link_orientation_[ i*3 + 1 ] ) );
@@ -175,16 +189,29 @@ void Metric::log_fallen( std::string link_name){
 
             if ( fabs( link_orientation_[ i*3 ] ) > 0.01 )
             {
+                std::string to_log;
+
+                std::time_t t = std::time( NULL );
+                char buff[256];
+                std::string format{ "%H:%M:%S" };
+
+                size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+                std::string date_str = std::string( buff, bytesRead );
+
                 ROS_INFO( "%s has fallen. ", link_name.c_str() );
 
-                std::string to_log = link_name;
-                to_log.append( " fallen : pose = [ " );
+                to_log.append( "[ " );
+                to_log.append( date_str );
+                to_log.append( " ]   " );
+                to_log.append( link_name );
+                to_log.append( " fallen :   pose = [ " );
                 to_log.append( std::to_string( link_pose_[ i*3 ] ) );
                 to_log.append( ", " );
                 to_log.append( std::to_string( link_pose_[ i*3 + 1 ]) );
                 to_log.append( ", "  );
                 to_log.append( std::to_string( link_pose_[ i*3 + 2 ] ) );
-                to_log.append( "] , orientation = [ "  );
+                to_log.append( "] ,   orientation = [ "  );
                 to_log.append( std::to_string( link_orientation_[ i*3 ] ) );
                 to_log.append( ", " );
                 to_log.append( std::to_string( link_orientation_[ i*3 + 1 ] ) );
