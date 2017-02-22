@@ -36,10 +36,6 @@ Can::Can(int server_port)
         , socket_access_ { }
         , tool_position_access_ { }
         , tool_position_ { 0 }
-        , gps_packet_access_ { }
-        , gps_packet_ { }
-        , gps_manager_thread_ { }
-        , last_gps_packet_ { }
         , sync_gps_ { gps_fix_sub_, gps_vel_sub_, 10 }
 { }
 
@@ -63,8 +59,7 @@ void Can::init()
     read_thread_.detach();
 }
 
-
-//*****************************************  --  SUBSCRIBE  --  *******************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::subscribe( ros::NodeHandle &node ) {
 
@@ -85,11 +80,10 @@ void Can::subscribe( ros::NodeHandle &node ) {
 
 }
 
-//*****************************************  --  ADD PACKET  --  *******************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::add_odo_packet( const std::array<bool, 4>& ticks )
 {
-
     uint8_t data[ 1 ];
 
     data[ 0 ] = 0x00;
@@ -115,10 +109,9 @@ void Can::add_odo_packet( const std::array<bool, 4>& ticks )
     }
 
     send_packet( CanMessageId::CAN_ID_GEN, CanMessageType::CAN_MOT_CONS, data, 1 );
-
 }
 
-//*****************************************  --  CLEANUP  --  *********************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::cleanup()
 {
@@ -127,15 +120,13 @@ void Can::cleanup()
     close(server_socket_desc_);
 }
 
-
-
-//*****************************************  --  CONNECTED?  --  *******************************************************
+//--------------------------------------------------------------------------------------------------
 
 bool Can::connected(){
     return connected_;
 }
 
-//*****************************************  --  CONNECT  --  **********************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::connect(){
 
@@ -160,7 +151,7 @@ void Can::connect(){
     }
 }
 
-//*****************************************  --  READ THREAD  --  ******************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::read_thread(){
 
@@ -244,7 +235,7 @@ void Can::read_thread(){
 
 }
 
-//*****************************************  --  SEND PACKET  --  ******************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], uint8_t len ){
 
@@ -273,7 +264,7 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
     }
 }
 
-//*****************************************  --  DISCONNECT  --  *******************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::disconnect(){
 
@@ -283,208 +274,7 @@ void Can::disconnect(){
     ROS_ERROR("OzCore Can Socket Disconnected");
 }
 
-// *********************************************************************************************************************
-
-void Can::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
-                    const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
-{
-    if( connected_ )
-    {
-        struct Can::Gps_packet gps_packet;
-
-        gps_packet.lat = gps_fix_msg->latitude;
-        gps_packet.lon = gps_fix_msg->longitude;
-        gps_packet.alt = gps_fix_msg->altitude;
-        gps_packet.satUsed = 3;
-        gps_packet.quality = 3;
-        gps_packet.groundSpeed = sqrt(gps_vel_msg->vector.x * gps_vel_msg->vector.x +
-                                      gps_vel_msg->vector.y * gps_vel_msg->vector.y);
-        gps_packet.updated = true;
-
-        gps_packet_access_.lock();
-        last_gps_packet_ = gps_packet_;
-        gps_packet_ = gps_packet;
-        gps_packet_access_.unlock();
-
-        gps_manager();
-
-        ROS_INFO( "Gps packet sent" );
-    }
-}
-
-//*****************************************  --  GPS THREAD  --  *******************************************************
-
-// Sends GPS packets to OzCore
-
-void Can::gps_manager()
-{
-    try{
-
-        gps_packet_access_.lock();
-        Gps_packet gps_packet = gps_packet_;
-        Gps_packet last_gps_packet = last_gps_packet_;
-        gps_packet_access_.unlock();
-
-        if( ( gps_packet.updated ) and ( last_gps_packet.updated ))
-        {
-            // compute speed and track orientation
-            double track_orientation = north_bearing( last_gps_packet.lat, last_gps_packet.lon, gps_packet.lat, gps_packet.lon );
-
-//          ********************************  RMC ********************************
-
-            std::time_t rawtime;
-            std::tm* timeinfo;
-
-            char hhmmss[ 80 ];
-            char ddmmyy[ 80 ];
-            char to[ 80 ];
-            char gs[ 80 ];
-
-            std::time( &rawtime );
-            timeinfo = std::localtime( &rawtime );
-
-            sprintf( to, "%03.1f", track_orientation );
-            sprintf( gs, "%03.1f", gps_packet.groundSpeed );
-
-            std::strftime( hhmmss, 80, "%H%M%S", timeinfo );
-            std::strftime( ddmmyy, 80, "%d%m%y", timeinfo );
-
-            GeoAngle ns = GeoAngle::from_double( gps_packet.lat );
-            GeoAngle we = GeoAngle::from_double( gps_packet.lon );
-
-            std::string gprmc =   std::string( "$GPRMC" ) + std::string( "," )
-                                  + std::string( hhmmss ) + std::string( "," )
-                                  + std::string( "A" ) + std::string( "," )
-                                  + ns.to_string( true ) + std::string( "," )
-                                  + we.to_string( false ) + std::string( "," )
-                                  + std::string( gs ) + std::string( "," )
-                                  + std::string( to ) + std::string( "," )
-                                  + std::string( ddmmyy ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( "*" );
-
-//          ********************************  VTG  ********************************
-
-            std::string gpvtg =   std::string( "$GPVTG" ) + std::string( "," )
-                                  + std::string( to ) + std::string( ",T," )
-                                  + std::string( to ) + std::string( ",M," )
-                                  + std::string( gs ) + std::string( ",N," )
-                                  + std::string( gs ) + std::string( ",K," )
-                                  + std::string( "*" );
-
-
-//          ********************************  GGA  ********************************
-
-            char quality[ 80 ];
-            char nos[ 80 ];
-            char alt[ 80 ];
-
-            sprintf( quality, "%d", static_cast<int>( gps_packet.quality ) );
-            sprintf( nos, "%02d", static_cast<int>( gps_packet.satUsed ) );
-            sprintf( alt, "%03.1f", gps_packet.alt );
-
-            std::string gpgga =   std::string( "$GPGGA" ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( "#" ) + std::string( "," )
-                                  + std::string( quality ) + std::string( "," )
-                                  + std::string( nos ) + std::string( "," )
-                                  + std::string( "0.9" ) + std::string( "," )
-                                  + std::string( alt ) + std::string( ",M," )
-                                  + std::string( "*" );
-
-//          ********************************  SEND GPRMC  ********************************
-
-            for( int i = 0 ; i < gprmc.size() ; i++ )
-            {
-                uint8_t data[ 1 ];
-
-                data[ 0 ] = static_cast<uint8_t>( gprmc.at( (uint8_t) i ) );
-
-                send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
-
-                usleep( 200 );
-            }
-
-            uint8_t end_data[ 1 ];
-            end_data[ 0 ] = 10;
-
-            send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, end_data, 1 );
-
-            usleep( 200 );
-
-//          ********************************  SEND GPVTG  ********************************
-
-            for( int i = 0 ; i < gpvtg.size() ; i++ )
-            {
-                uint8_t data[ 1 ];
-
-                data[ 0 ] = static_cast<uint8_t>( gpvtg.at( (uint8_t) i ) );
-
-                send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
-
-                usleep( 200 );
-            }
-
-            send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, end_data, 1 );
-
-            usleep( 200 );
-
-
-//            ********************************  SEND GPGGA  ********************************
-
-            for( int i = 0 ; i < gpgga.size() ; i++ )
-            {
-                uint8_t data[ 1 ];
-
-                data[ 0 ] = static_cast<uint8_t>( gpgga.at( (uint8_t) i ) );
-
-                send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
-
-                usleep( 200 );
-            }
-
-            send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, end_data, 1 );
-
-            usleep( 20 );
-        }
-
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception gps_manager catch : "<< e.what() << std::endl;
-    }
-}
-
-//*****************************************  --  GET NORTH BEARING  --  ************************************************
-
-double Can::north_bearing( double lat1, double lon1, double lat2, double lon2 )
-{
-    double startLat = lat1 * M_PI / 180.0;
-    double startLon = lon1 * M_PI / 180.0;
-
-    double endLat = lat2 * M_PI / 180.0;
-    double endLon = lon2 * M_PI / 180.0;
-
-    double dLong = endLon - startLon;
-
-    double dPhi = std::log(std::tan(endLat / 2.0 + M_PI / 4.0) / std::tan(startLat / 2.0 + M_PI / 4.0));
-
-    if (std::abs(dLong) > M_PI) {
-        if (dLong > 0.0) {
-            dLong = -(2.0 * M_PI - dLong);
-        } else {
-            dLong = (2.0 * M_PI - dLong);
-        }
-    }
-
-    double brng = fmod((std::atan2(dLong, dPhi) / M_PI * 180.0) + 360.0, 360.0);
-
-    return brng;
-}
-
-// *********************************************************************************************************************
+//--------------------------------------------------------------------------------------------------
 
 void
 Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
@@ -539,7 +329,7 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
     }
 }
 
-// *********************************************************************************************************************
+//--------------------------------------------------------------------------------------------------
 
 void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
 {
@@ -554,3 +344,49 @@ void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& j
         ROS_INFO( "Actuator position packet enqueued" );
     }
 }
+
+//--------------------------------------------------------------------------------------------------
+
+void Can::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
+                        const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg ) {
+    if (connected_)
+    {
+        std::array<std::string, 3> frames = gps_.make_frame(gps_fix_msg->latitude,
+                                                            gps_fix_msg->longitude,
+                                                            gps_fix_msg->altitude,
+                                                            3,
+                                                            3,
+                                                            sqrt(gps_vel_msg->vector.x * gps_vel_msg->vector.x +
+                                                                 gps_vel_msg->vector.y * gps_vel_msg->vector.y));
+        for (const auto &frame : frames) {
+            if (!frame.empty()) {
+                send_gps_frame(frame);
+            }
+
+            ROS_INFO("Gps packets sent");
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------------------
+
+void Can::send_gps_frame( std::string frame )
+{
+    uint8_t data[ 1 ];
+    uint8_t end_data[ 1 ];
+    end_data[ 0 ] = 10;
+
+    for( int i = 0 ; i < frame.size() ; i++ )
+    {
+        data[ 0 ] = static_cast<uint8_t>( frame.at( (uint8_t) i ) );
+        send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, data, 1 );
+
+        usleep( 200 );
+    }
+
+    send_packet( CanMessageId::CAN_ID_GPS, CanMessageType::CAN_GPS_DATA, end_data, 1 );
+
+    usleep( 200 );
+}
+
+//--------------------------------------------------------------------------------------------------

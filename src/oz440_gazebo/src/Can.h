@@ -1,6 +1,19 @@
+//==================================================================================================
 //
-// Created by fanny on 31/01/17.
+//  Copyright(c)  2016  Naïo Technologies
 //
+//  These coded instructions, statements, and computer programs contain unpublished proprietary
+//  information written by Naio Technologies and are protected by copyright law. They may not be
+//  disclosed to third parties or copied or duplicated in any form, in whole or in part, without
+//  the prior written consent of Naio Technologies.
+//
+//==================================================================================================
+
+#ifndef SIMULATOZ_CAN_H
+#define SIMULATOZ_CAN_H
+
+//==================================================================================================
+// I N C L U D E   F I L E S
 
 #include "ros/ros.h"
 
@@ -14,7 +27,7 @@
 #include <atomic>
 #include <thread>
 
-#include "GeoAngle.hpp"
+#include "Gps.h"
 
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
@@ -23,8 +36,14 @@
 #include "sensor_msgs/Imu.h"
 #include "sensor_msgs/JointState.h"
 
-#ifndef SIMULATOZ_CAN_H
-#define SIMULATOZ_CAN_H
+//==================================================================================================
+// F O R W A R D   D E C L A R A T I O N S
+
+//==================================================================================================
+// C O N S T A N T S
+
+//==================================================================================================
+// C L A S S E S
 
 class Can
 {
@@ -59,24 +78,13 @@ public:
         CAN_VER_POS = 0x01,
     };
 
-    struct Gps_packet {
-        double lat;
-        double lon;
-        double alt;
-        uint8_t satUsed;
-        uint8_t quality;
-        double groundSpeed;
-        bool updated;
-    };
-
-//  *********************************************  -- METHODES --  ****************************************************
+//-- Methods ---------------------------------------------------------------------------------------
 
     Can(int server_port);
     ~Can();
 
     void init();
 
-    void add_actuator_position( uint8_t actuator_position);
     void add_odo_packet( const std::array<bool, 4>& ticks );
 
     void cleanup();
@@ -93,39 +101,34 @@ private:
 
     // callback functions
     void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
-    void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
+    void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
 
-    void gps_manager();
-    double north_bearing( double lat1, double lon1, double lat2, double lon2 );
+    void send_gps_frame( std::string trame );
 
-//  *********************************************  -- ATTRIBUTS --  ****************************************************
+//-- Data members ----------------------------------------------------------------------------------
 
     std::atomic<bool> stop_;
 
-    //  -- THREADS  --
+//  -- T H R E A D S  --
     std::thread connect_thread_;
     std::thread read_thread_;
 
-    //  --  SOCKET  --
+//  --  S O C K E T  --
     int server_port_;
     bool connected_;
     int server_socket_desc_;
     int socket_desc_;
     std::mutex socket_access_;
 
-    //  --  ODOMETRY  --
-
-    //  --  TOOL POSITION  --
+//  --  T O O L   P O S I T I O N  --
     uint8_t tool_position_;
     std::mutex tool_position_access_;
 
-    //  --  GPS  --
-    std::mutex gps_packet_access_;
-    Gps_packet gps_packet_;
-    Gps_packet last_gps_packet_;
-    std::thread gps_manager_thread_;
+//  --  G P S  --
+    Gps gps_;
 
+//  --  R O S   P A R T  --
     message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub_;
     message_filters::Subscriber< geometry_msgs::Vector3Stamped > gps_vel_sub_;
     message_filters::TimeSynchronizer< sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped > sync_gps_;
@@ -134,7 +137,6 @@ private:
     ros::Subscriber actuator_position_sub_;
 
     ros::Publisher actuator_pub_;
-
 };
 
 #endif //SIMULATOZ_CAN_H

@@ -91,7 +91,6 @@ void Lidar::read_thread(){
 
     char received_buffer[4096];
 
-
     while ( !stop_asked_ )
     {
         if (socket_connected_)

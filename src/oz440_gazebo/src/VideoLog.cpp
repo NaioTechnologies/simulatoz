@@ -35,19 +35,19 @@ VideoLog::VideoLog( std::string video_log_folder )
 VideoLog::~VideoLog()
 { }
 
-//*****************************************  --  SUBSCRIBE  --  ********************************************************
+//==================================================================================================
+// M E T H O D S   C O D E   S E C T I O N
 
-void
-VideoLog::subscribe( image_transport::ImageTransport& it )
+//--------------------------------------------------------------------------------------------------
+
+void VideoLog::subscribe( image_transport::ImageTransport& it )
 {
-    // subscribe to top_camera topic
     top_camera_sub_ = it.subscribe( "/oz440/top_camera/image_raw", 5, &VideoLog::callback_top_camera, this );
 }
 
-// ***************************************** --  CAMERA CALLBACK  --***************************************************
+//--------------------------------------------------------------------------------------------------
 
-void
-VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
+void VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
 {
     if( dated_folder_.empty() )
     {
@@ -78,10 +78,9 @@ VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
 
 }
 
-// *********************************************************************************************************************
+//--------------------------------------------------------------------------------------------------
 
-bool
-VideoLog::setup_video_folder()
+bool VideoLog::setup_video_folder()
 {
     namespace fs = boost::filesystem;
     bool success{ };

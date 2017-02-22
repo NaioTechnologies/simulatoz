@@ -1,5 +1,19 @@
+//==================================================================================================
+//
+//  Copyright(c)  2016  Naïo Technologies
+//
+//  These coded instructions, statements, and computer programs contain unpublished proprietary
+//  information written by Naio Technologies and are protected by copyright law. They may not be
+//  disclosed to third parties or copied or duplicated in any form, in whole or in part, without
+//  the prior written consent of Naio Technologies.
+//
+//==================================================================================================
+
 #ifndef CORE_HPP
 #define CORE_HPP
+
+//==================================================================================================
+// I N C L U D E   F I L E S
 
 #include <iostream>
 #include <thread>
@@ -26,9 +40,19 @@
 #include "Metric.hpp"
 #include "Odometry.h"
 
+//==================================================================================================
+// F O R W A R D   D E C L A R A T I O N S
+
+//==================================================================================================
+// C O N S T A N T S
+
+//==================================================================================================
+// C L A S S E S
+
 class Core
 {
 public:
+//-- Methods ---------------------------------------------------------------------------------------
 
     Core( int argc, char **argv );
     ~Core();
@@ -36,6 +60,8 @@ public:
     void run();
 
 private:
+
+//-- Data members ----------------------------------------------------------------------------------
 
     bool use_camera_;
     std::shared_ptr<Camera> camera_ptr_;
@@ -47,13 +73,12 @@ private:
 
     bool use_can_;
     std::shared_ptr<Can> can_ptr_;
-    std::shared_ptr<Odometry> odometry_ptr_;
     int can_port_;
+
+    std::shared_ptr<Odometry> odometry_ptr_;
 
     std::shared_ptr<Serial> serial_ptr_;
     uint serial_port_;
-
-    float actuator_position_;
 
     std::shared_ptr<VideoLog> video_log_ptr_;
     std::string video_log_folder_;
@@ -61,9 +86,6 @@ private:
     std::shared_ptr<Log> log_ptr_;
     std::string log_folder_;
     std::shared_ptr<Metric> metric_ptr_;
-
-
-
 
 };
 

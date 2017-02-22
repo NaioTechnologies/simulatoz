@@ -80,7 +80,8 @@ add_executable( Core src/Core.cpp
 				src/Metric.cpp
 				src/Log.cpp
 				src/VideoLog.cpp
-				src/Odometry.cpp)
+				src/Odometry.cpp
+				src/Gps.cpp)
 
 target_link_libraries( Core ${catkin_LIBRARIES}
 					   oz440_api
