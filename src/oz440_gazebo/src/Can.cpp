@@ -11,23 +11,15 @@ using namespace std::chrono_literals;
 
 Can::Can(int server_port)
         : stop_asked_{ false }
-        , connect_thread_started_ { false }
         , connect_thread_ { }
-        , read_thread_started_ { false }
         , read_thread_ { }
-        , manage_thread_started_ { false }
-        , manage_thread_ { }
         , server_port_ {server_port}
         , socket_connected_ { false }
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
         , socket_access_ { }
-        , packets_ptr_ { nullptr }
-        , packets_access_ { }
         , tool_position_access_ { }
         , tool_position_ { 0 }
-        , actuator_packet_access_ { }
-        , actuator_packet_ptr_ { nullptr }
         , gps_packet_access_ { }
         , gps_packet_ { }
         , gps_manager_thread_ { }
@@ -52,18 +44,17 @@ void Can::init()
 
     read_thread_ = std::thread( &Can::read_thread, this );
     read_thread_.detach();
-
-    manage_thread_ = std::thread( &Can::manage_thread, this );
-    manage_thread_.detach();
 }
 
 //*****************************************  --  ADD PACKET  --  *******************************************************
 
-void Can::add_packet( BaseNaio01PacketPtr packet_ptr )
+void Can::add_actuator_position( uint8_t actuator_position )
 {
-    packets_access_.lock();
-    packets_ptr_.emplace( packets_ptr_.begin(), packet_ptr );
-    packets_access_.unlock();
+
+    tool_position_access_.lock();
+    tool_position_ = actuator_position;
+    tool_position_access_.unlock();
+
 }
 
 //*****************************************  --  ADD PACKET  --  *******************************************************
@@ -148,16 +139,6 @@ void Can::add_accelero_packet( std::array<int16_t, 3> accelero_packet )
     send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
 }
 
-//*****************************************  --  GET ACTUATOR PACKET  --  *******************************************************
-
-ApiMoveActuatorPacketPtr Can::get_actuator_packet_ptr()
-{
-    actuator_packet_access_.lock();
-    ApiMoveActuatorPacketPtr actuator_packet_ptr = actuator_packet_ptr_;
-    actuator_packet_access_.unlock();
-
-    return actuator_packet_ptr;
-}
 //*****************************************  --  ASK STOP  --  *********************************************************
 
 void Can::ask_stop()
@@ -176,8 +157,6 @@ bool Can::connected(){
 //*****************************************  --  CONNECT  --  **********************************************************
 
 void Can::connect(){
-
-    connect_thread_started_ = true;
 
     server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t)server_port_ );
 
@@ -198,15 +177,11 @@ void Can::connect(){
             std::this_thread::sleep_for(500ms);
         }
     }
-
-    connect_thread_started_ = false;
 }
 
 //*****************************************  --  READ THREAD  --  ******************************************************
 
 void Can::read_thread(){
-
-    read_thread_started_ = true;
 
     struct can_frame frame;
 
@@ -285,82 +260,6 @@ void Can::read_thread(){
                 std::this_thread::sleep_for(100ms);
             }
         }
-
-    read_thread_started_ = false;
-
-}
-
-//*****************************************  --  MANAGE THREAD  --  ****************************************************
-
-void Can::manage_thread(){
-
-    manage_thread_started_ = true;
-
-    try{
-
-        BaseNaio01PacketPtr packet_ptr;
-
-        while( !stop_asked_ )
-        {
-            if(socket_connected_) {
-
-                if ( !packets_ptr_.empty()) {
-
-                    packets_access_.lock();
-
-                    packet_ptr = packets_ptr_.back();
-                    manage_packet(packet_ptr);
-                    packets_ptr_.pop_back();
-
-                    packets_access_.unlock();
-                }
-                else{
-                    std::this_thread::sleep_for(1ms);
-                }
-            }
-            else{
-
-                packets_ptr_.clear();
-                std::this_thread::sleep_for(50ms);
-            }
-        }
-    }
-    catch ( std::exception e )
-    {
-        std::cout<<"Exception server_read_thread catch : "<< e.what() << std::endl;
-    }
-
-    manage_thread_started_ = false;
-
-}
-
-//*****************************************  --  MANAGE PACKET  --  ****************************************************
-
-void Can::manage_packet( BaseNaio01PacketPtr packet_ptr ) {
-
-    try {
-        if (std::dynamic_pointer_cast<ApiMoveActuatorPacket>(packet_ptr))
-        {
-            ApiMoveActuatorPacketPtr api_move_actuator_packet_ptr = std::dynamic_pointer_cast<ApiMoveActuatorPacket>(
-                    packet_ptr);
-
-            tool_position_access_.lock();
-            tool_position_ = api_move_actuator_packet_ptr->position;
-            tool_position_access_.unlock();
-
-            uint8_t data[1];
-
-            tool_position_access_.lock();
-            data[0] = tool_position_;
-            tool_position_access_.unlock();
-
-            send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1);
-        }
-
-    }
-    catch ( std::exception e ) {
-        std::cout<<"Exception main_thread catch : "<< e.what() << std::endl;
-    }
 
 }
 

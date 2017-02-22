@@ -71,8 +71,6 @@ private:
     std::shared_ptr<Serial> serial_ptr_;
     uint serial_port_;
 
-    std::vector< BaseNaio01PacketPtr > received_packet_list_;
-
     bool read_thread_started_;
     std::thread read_thread_;
 

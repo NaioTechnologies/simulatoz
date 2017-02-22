@@ -36,7 +36,6 @@ Core::Core( int argc, char** argv )
         , can_port_{ 5559 }
         , serial_ptr_{ nullptr }
         , serial_port_{ 5554 }
-        , received_packet_list_{ }
         , read_thread_started_{ false }
         , read_thread_{ }
         , odometry_thread_{ }
@@ -166,14 +165,9 @@ Core::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint
 {
     if( use_can_ and can_ptr_->connected() )
     {
-        actuator_position_ = (float) (joint_states_msg->position[0]);
+        uint8_t position_percent = (uint8_t) (std::round(joint_states_msg->position[0] * (-100.0 / 0.15)));
 
-        uint8_t position_percent = (uint8_t) (std::round(
-                actuator_position_ * (-100.0 / 0.15) ));
-
-        ApiMoveActuatorPacketPtr ActuatorPositionPacketPtr = std::make_shared<ApiMoveActuatorPacket >(position_percent );
-
-        can_ptr_->add_packet( ActuatorPositionPacketPtr );
+        can_ptr_->add_actuator_position( position_percent );
 
         ROS_INFO( "Actuator position packet enqueued" );
     }
@@ -247,15 +241,9 @@ Core::odometry_thread()
 
     odometry_thread_started_ = true;
 
-    bool first_loop = true;
-    std::array<bool, 4> last_ticks{ { false, false, false, false} };
     std::array<bool, 4> ticks{ { false, false, false, false} };
 
     using namespace std::chrono_literals;
-    bool fr = 0;
-    uint8_t br = 0;
-    uint8_t bl = 0;
-    uint8_t fl = 0;
 
     std::this_thread::sleep_for( 3000ms );
 
@@ -301,10 +289,6 @@ Core::odometry_thread()
 
                 can_ptr_->add_odo_packet( ticks );
 
-                last_ticks = ticks;
-
-                ROS_ERROR_STREAM( "ticks" << ticks[3] << ticks[1] << ticks[2] << ticks[0] );
-
             }
         }
         else
@@ -313,7 +297,6 @@ Core::odometry_thread()
 
             std::this_thread::sleep_for( 100ms );
         }
-        first_loop = false;
     }
     odometry_thread_started_ = false;
 }

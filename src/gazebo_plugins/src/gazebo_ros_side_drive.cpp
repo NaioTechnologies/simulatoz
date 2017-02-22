@@ -178,10 +178,10 @@ namespace gazebo {
 
     void GazeboRosSideDrive::OnUpdate()
     {
-        joints[LEFT_FRONT]->SetParam("vel", 0, wheel_speed_[LEFT_FRONT] /9/ (wheel_diameter_ / 2.0));
-        joints[RIGHT_FRONT]->SetParam("vel", 0, wheel_speed_[RIGHT_FRONT] / 9 / (wheel_diameter_ / 2.0));
-        joints[LEFT_REAR]->SetParam("vel", 0, wheel_speed_[LEFT_REAR] / 9 / (wheel_diameter_ / 2.0));
-        joints[RIGHT_REAR]->SetParam("vel", 0, wheel_speed_[RIGHT_REAR] / 9 / (wheel_diameter_ / 2.0));
+        joints[LEFT_FRONT]->SetParam("vel", 0, wheel_speed_[LEFT_FRONT] /7/ (wheel_diameter_ / 2.0));
+        joints[RIGHT_FRONT]->SetParam("vel", 0, wheel_speed_[RIGHT_FRONT] / 7 / (wheel_diameter_ / 2.0));
+        joints[LEFT_REAR]->SetParam("vel", 0, wheel_speed_[LEFT_REAR] / 7 / (wheel_diameter_ / 2.0));
+        joints[RIGHT_REAR]->SetParam("vel", 0, wheel_speed_[RIGHT_REAR] / 7 / (wheel_diameter_ / 2.0));
 
     }
 
