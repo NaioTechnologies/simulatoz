@@ -61,8 +61,6 @@ find_package( catkin REQUIRED COMPONENTS
 			  gazebo_ros
 			  std_msgs
 			  sensor_msgs
-			  oz440_msgs
-			  oz440_api
 			  gazebo_msgs
 			  image_transport
               cv_bridge  )
@@ -85,9 +83,8 @@ add_executable( Core src/Core.cpp
 				src/Gps.cpp)
 
 target_link_libraries( Core ${catkin_LIBRARIES}
-					   oz440_api
 					   -lpthread
 					   -lz
 					   ${OpenCV_LIBRARIES} )
 
-add_dependencies( Core oz440_api ${catkin_EXPORTED_TARGETS} )
+add_dependencies( Core ${catkin_EXPORTED_TARGETS} )

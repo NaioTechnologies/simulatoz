@@ -13,14 +13,10 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>gazebo_ros</build_depend>
-  <build_depend>oz440_msgs</build_depend>
   <build_depend>sensor_msgs</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>tf</build_depend>
   <build_depend>gazebo_ros</build_depend>
   <build_depend>std_msgs</build_depend>
-  <build_depend>oz440_api</build_depend>
-  
-  <run_depend>liboz440_api</run_depend>
- 
+
 </package>
