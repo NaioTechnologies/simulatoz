@@ -33,6 +33,7 @@
 class Core
 {
 public:
+
     Core( int argc, char **argv );
     ~Core();
 
@@ -47,7 +48,7 @@ private:
     // Odometry part
     void odometry_thread();
     double getPitch( std::string wheel);
-    bool odo_wheel( uint8_t & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
+    bool odo_wheel( bool & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
 
 private:
 

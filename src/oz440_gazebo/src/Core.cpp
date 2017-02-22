@@ -187,29 +187,29 @@ Core::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
     if( use_can_ and can_ptr_->connected() )
     {
 
-        int16_t x_gyro = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 /
+        std::array<int16_t, 3> gyro_packet;
+
+        gyro_packet.at(0) = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 /
                                               (2.0 * M_PI * -30.5));
-        int16_t y_gyro = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 /
+        gyro_packet.at(1) = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 /
                                               (2.0 * M_PI * -30.5));
-        int16_t z_gyro = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 /
+        gyro_packet.at(2) = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 /
                                               (2.0 * M_PI * -30.5));
 
-        HaGyroPacketPtr gyroPacketPtr = std::make_shared< HaGyroPacket >( x_gyro, y_gyro, z_gyro );
-
-        can_ptr_->add_packet( gyroPacketPtr );
+        can_ptr_->add_gyro_packet( gyro_packet );
 
         ROS_INFO( "Gyro packet enqueued" );
 
-        int16_t x_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
+        std::array<int16_t, 3> accelero_packet;
+
+        accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
                                                   9.8);
-        int16_t y_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 /
+        accelero_packet.at(1) = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 /
                                                   9.8);
-        int16_t z_accelero = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 /
+        accelero_packet.at(2) = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 /
                                                   9.8);
 
-        HaAcceleroPacketPtr acceleroPacketPtr = std::make_shared< HaAcceleroPacket >(x_accelero, y_accelero, z_accelero );
-
-        can_ptr_->add_packet( acceleroPacketPtr );
+        can_ptr_->add_accelero_packet( accelero_packet );
 
         ROS_INFO( "Accelero packet enqueued" );
     }
@@ -223,20 +223,18 @@ Core::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
 {
     if( use_can_ and can_ptr_->connected() )
     {
+        struct Can::Gps_packet gps_packet;
 
-        ulong time = (ulong) (gps_fix_msg->header.stamp.toSec() * 1000);
-        double lat = gps_fix_msg->latitude;
-        double lon = gps_fix_msg->longitude;
-        double alt = gps_fix_msg->altitude;
-        uint8_t unit = 1;
-        uint8_t satUsed = 3;
-        uint8_t quality = 3;
-        double groundSpeed = sqrt( gps_vel_msg->vector.x * gps_vel_msg->vector.x +
-                                   gps_vel_msg->vector.y * gps_vel_msg->vector.y );
+        gps_packet.lat = gps_fix_msg->latitude;
+        gps_packet.lon = gps_fix_msg->longitude;
+        gps_packet.alt = gps_fix_msg->altitude;
+        gps_packet.satUsed = 3;
+        gps_packet.quality = 3;
+        gps_packet.groundSpeed = sqrt(gps_vel_msg->vector.x * gps_vel_msg->vector.x +
+                                      gps_vel_msg->vector.y * gps_vel_msg->vector.y);
+        gps_packet.updated = true;
 
-        HaGpsPacketPtr gpsPacketPtr = std::make_shared< HaGpsPacket >( time, lat, lon, alt, unit, satUsed, quality, groundSpeed );
-
-        can_ptr_->add_packet( gpsPacketPtr );
+        can_ptr_->add_gps_packet( gps_packet );
 
         ROS_INFO( "Gps packet enqueued" );
     }
@@ -249,8 +247,12 @@ Core::odometry_thread()
 
     odometry_thread_started_ = true;
 
+    bool first_loop = true;
+    std::array<bool, 4> last_ticks{ { false, false, false, false} };
+    std::array<bool, 4> ticks{ { false, false, false, false} };
+
     using namespace std::chrono_literals;
-    uint8_t fr = 0;
+    bool fr = 0;
     uint8_t br = 0;
     uint8_t bl = 0;
     uint8_t fl = 0;
@@ -291,26 +293,27 @@ Core::odometry_thread()
                     pitch_br = getPitch( "/back_right_wheel" );
                     pitch_fr = getPitch( "/front_right_wheel" );
 
-                    tic = odo_wheel( bl, pitch_bl, pitch_last_tic_bl, forward_backward_bl );
-                    tic = odo_wheel( fl, pitch_fl, pitch_last_tic_fl, forward_backward_fl ) or tic;
-                    tic = odo_wheel( br, pitch_br, pitch_last_tic_br, forward_backward_br ) or tic;
-                    tic = odo_wheel( fr, pitch_fr, pitch_last_tic_fr, forward_backward_fr ) or tic;
+                    tic = odo_wheel( ticks[3], pitch_bl, pitch_last_tic_bl, forward_backward_bl );
+                    tic = odo_wheel( ticks[1], pitch_fl, pitch_last_tic_fl, forward_backward_fl ) or tic;
+                    tic = odo_wheel( ticks[2], pitch_br, pitch_last_tic_br, forward_backward_br ) or tic;
+                    tic = odo_wheel( ticks[0], pitch_fr, pitch_last_tic_fr, forward_backward_fr ) or tic;
                 }
 
-                HaOdoPacketPtr odoPacketPtr = std::make_shared< HaOdoPacket >( fr, br, bl, fl );
+                can_ptr_->add_odo_packet( ticks );
 
-                can_ptr_->add_packet( odoPacketPtr );
+                last_ticks = ticks;
+
+                ROS_ERROR_STREAM( "ticks" << ticks[3] << ticks[1] << ticks[2] << ticks[0] );
+
             }
         }
         else
         {
-            fr = 0;
-            br = 0;
-            bl = 0;
-            fl = 0;
+            ticks = { { false, false, false, false} };
 
             std::this_thread::sleep_for( 100ms );
         }
+        first_loop = false;
     }
     odometry_thread_started_ = false;
 }
@@ -355,7 +358,7 @@ Core::getPitch( std::string wheel )
 // *********************************************************************************************************************
 
 bool
-Core::odo_wheel( uint8_t& odo_wheel, double& pitch, double& pitch_last_tic, int& forward_backward )
+Core::odo_wheel( bool& odo_wheel, double& pitch, double& pitch_last_tic, int& forward_backward )
 {
     double angle_tic = 6.465 / 14.6;
     bool tic = false;
@@ -375,7 +378,7 @@ Core::odo_wheel( uint8_t& odo_wheel, double& pitch, double& pitch_last_tic, int&
     {
         pitch_last_tic = pitch;
         tic = true;
-        odo_wheel = (uint8_t) (odo_wheel + 1 % 2);
+        odo_wheel = !odo_wheel;
         forward_backward = 0;
     }
 
@@ -385,7 +388,7 @@ Core::odo_wheel( uint8_t& odo_wheel, double& pitch, double& pitch_last_tic, int&
     {
         pitch_last_tic = pitch;
         tic = true;
-        odo_wheel = (uint8_t) (odo_wheel + 1 % 2);
+        odo_wheel = !odo_wheel;
         forward_backward = 0;
     }
 

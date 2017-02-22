@@ -18,11 +18,7 @@
 
 #include "ApiMoveActuatorPacket.hpp"
 #include "HaOdoPacket.hpp"
-#include "ApiGpsPacket.hpp"
-#include "HaGpsPacket.hpp"
 #include "ApiStatusPacket.hpp"
-#include "HaGyroPacket.hpp"
-#include "HaAcceleroPacket.hpp"
 
 #ifndef SIMULATOZ_CAN_H
 #define SIMULATOZ_CAN_H
@@ -60,12 +56,27 @@ public:
         CAN_VER_POS = 0x01,
     };
 
+    struct Gps_packet {
+        double lat;
+        double lon;
+        double alt;
+        uint8_t satUsed;
+        uint8_t quality;
+        double groundSpeed;
+        bool updated;
+    };
+
 //  *********************************************  -- METHODES --  ****************************************************
 
     Can(int server_port);
     ~Can();
 
     void add_packet(BaseNaio01PacketPtr packet_ptr);
+    void add_gps_packet( Gps_packet gps_packet );
+    void add_gyro_packet( std::array<int16_t, 3> gyro_packet );
+    void add_accelero_packet( std::array<int16_t, 3> accelero_packet );
+    void add_odo_packet( const std::array<bool, 4>& ticks );
+
     void ask_stop();
     bool connected();
     ApiMoveActuatorPacketPtr get_actuator_packet_ptr();
@@ -110,8 +121,6 @@ private:
     std::mutex packets_access_;
 
     //  --  ODOMETRY  --
-    bool last_odo_ticks_[4];
-    HaOdoPacketPtr last_odo_packet_ptr_;
 
     //  --  TOOL POSITION  --
     std::mutex tool_position_access_;
@@ -121,9 +130,9 @@ private:
 
     //  --  GPS  --
     std::mutex gps_packet_access_;
-    HaGpsPacketPtr gps_packet_ptr_;
-    std::thread	gps_manager_thread_;
-    HaGpsPacketPtr last_gps_packet_ptr_;
+    Gps_packet gps_packet_;
+    Gps_packet last_gps_packet_;
+    std::thread gps_manager_thread_;
 };
 
 #endif //SIMULATOZ_CAN_H
