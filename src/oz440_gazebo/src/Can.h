@@ -16,7 +16,12 @@
 
 #include "GeoAngle.hpp"
 
-//#include "ApiStatusPacket.hpp"
+#include "message_filters/subscriber.h"
+#include "message_filters/time_synchronizer.h"
+#include "sensor_msgs/NavSatFix.h"
+#include "geometry_msgs/Vector3Stamped.h"
+#include "sensor_msgs/Imu.h"
+#include "sensor_msgs/JointState.h"
 
 #ifndef SIMULATOZ_CAN_H
 #define SIMULATOZ_CAN_H
@@ -69,17 +74,16 @@ public:
     Can(int server_port);
     ~Can();
 
+    void init();
+
     void add_actuator_position( uint8_t actuator_position);
-    void add_gps_packet( Gps_packet gps_packet );
-    void add_gyro_packet( std::array<int16_t, 3> gyro_packet );
-    void add_accelero_packet( std::array<int16_t, 3> accelero_packet );
     void add_odo_packet( const std::array<bool, 4>& ticks );
 
-    void ask_stop();
+    void cleanup();
     bool connected();
+    void subscribe( ros::NodeHandle& node );
 
 private:
-    void init();
 
     void connect();
     void read_thread();
@@ -87,12 +91,17 @@ private:
     void send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], uint8_t len );
     void disconnect();
 
+    // callback functions
+    void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
+    void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
+    void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
+
     void gps_manager();
     double north_bearing( double lat1, double lon1, double lat2, double lon2 );
 
 //  *********************************************  -- ATTRIBUTS --  ****************************************************
 
-    std::atomic<bool> stop_asked_;
+    std::atomic<bool> stop_;
 
     //  -- THREADS  --
     std::thread connect_thread_;
@@ -100,7 +109,7 @@ private:
 
     //  --  SOCKET  --
     int server_port_;
-    bool socket_connected_;
+    bool connected_;
     int server_socket_desc_;
     int socket_desc_;
     std::mutex socket_access_;
@@ -116,6 +125,16 @@ private:
     Gps_packet gps_packet_;
     Gps_packet last_gps_packet_;
     std::thread gps_manager_thread_;
+
+    message_filters::Subscriber< sensor_msgs::NavSatFix > gps_fix_sub_;
+    message_filters::Subscriber< geometry_msgs::Vector3Stamped > gps_vel_sub_;
+    message_filters::TimeSynchronizer< sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped > sync_gps_;
+
+    ros::Subscriber imu_sub_;
+    ros::Subscriber actuator_position_sub_;
+
+    ros::Publisher actuator_pub_;
+
 };
 
 #endif //SIMULATOZ_CAN_H

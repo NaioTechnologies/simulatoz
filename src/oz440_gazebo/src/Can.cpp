@@ -1,3 +1,16 @@
+//==================================================================================================
+//
+//  Copyright(c)  2016  Naio Technologies. All rights reserved.
+//
+//  These coded instructions, statements, and computer programs contain unpublished proprietary
+//  information written by Naio Technologies and are protected by copyright law. They may not be
+//  disclosed to third parties or copied or duplicated in any form, in whole or in part, without
+//  the prior written consent of Naio Technologies.
+//
+//==================================================================================================
+
+//==================================================================================================
+// I N C L U D E   F I L E S
 
 #include "DriverSocket.hpp"
 #include "Can.h"
@@ -7,14 +20,17 @@
 using namespace std::chrono;
 using namespace std::chrono_literals;
 
-//*****************************************  --  CONSTRUCTOR / DESTRUCTOR  --  *****************************************
+//==================================================================================================
+// C O N S T R U C T O R (S) / D E S T R U C T O R   C O D E   S E C T I O N
+
+//--------------------------------------------------------------------------------------------------
 
 Can::Can(int server_port)
-        : stop_asked_{ false }
+        : stop_{ false }
         , connect_thread_ { }
         , read_thread_ { }
         , server_port_ {server_port}
-        , socket_connected_ { false }
+        , connected_ { false }
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
         , socket_access_ { }
@@ -24,10 +40,8 @@ Can::Can(int server_port)
         , gps_packet_ { }
         , gps_manager_thread_ { }
         , last_gps_packet_ { }
-
-{
-    init();
-}
+        , sync_gps_ { gps_fix_sub_, gps_vel_sub_, 10 }
+{ }
 
 Can::~Can()
 {
@@ -35,7 +49,10 @@ Can::~Can()
     close(server_socket_desc_);
 }
 
-//*****************************************  --  INIT  --  *************************************************************
+//==================================================================================================
+// M E T H O D S   C O D E   S E C T I O N
+
+//--------------------------------------------------------------------------------------------------
 
 void Can::init()
 {
@@ -46,46 +63,26 @@ void Can::init()
     read_thread_.detach();
 }
 
-//*****************************************  --  ADD PACKET  --  *******************************************************
 
-void Can::add_actuator_position( uint8_t actuator_position )
-{
+//*****************************************  --  SUBSCRIBE  --  *******************************************************
 
-    tool_position_access_.lock();
-    tool_position_ = actuator_position;
-    tool_position_access_.unlock();
+void Can::subscribe( ros::NodeHandle &node ) {
 
-}
+    // subscribe to gps topic
+    gps_fix_sub_.subscribe( node, "/oz440/navsat/fix", 5 );
+    gps_vel_sub_.subscribe( node, "/oz440/navsat/vel", 5 );
+    sync_gps_.registerCallback( boost::bind( &Can::callback_gps, this, _1, _2 ) );
 
-//*****************************************  --  ADD PACKET  --  *******************************************************
+    // subscribe to imu topic
+    imu_sub_ = node.subscribe( "/oz440/imu/data", 50, &Can::callback_imu, this );
 
-void Can::add_gps_packet( Gps_packet gps_packet )
-{
-    gps_packet_access_.lock();
-    last_gps_packet_ = gps_packet_;
-    gps_packet_ = gps_packet;
-    gps_packet_access_.unlock();
+    // Create motors and actuator commands publishers
+    actuator_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
 
-    gps_manager();
-}
+    // subscribe to actuator position
+    actuator_position_sub_ = node.subscribe( "/oz440/joint_states", 500, &Can::callback_actuator_position, this );
 
 
-//*****************************************  --  ADD PACKET  --  *******************************************************
-
-void Can::add_gyro_packet( std::array<int16_t, 3> gyro_packet )
-{
-    uint8_t data[6];
-
-    data[0] = (uint8_t) ((gyro_packet.at(0) >> 8) & 0xFF);
-    data[1] = (uint8_t) ((gyro_packet.at(0) >> 0) & 0xFF);
-
-    data[2] = (uint8_t) ((gyro_packet.at(1) >> 8) & 0xFF);
-    data[3] = (uint8_t) ((gyro_packet.at(1) >> 0) & 0xFF);
-
-    data[4] = (uint8_t) ((gyro_packet.at(2) >> 8) & 0xFF);
-    data[5] = (uint8_t) ((gyro_packet.at(2) >> 0) & 0xFF);
-
-    send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_GYRO, data, 6);
 }
 
 //*****************************************  --  ADD PACKET  --  *******************************************************
@@ -121,37 +118,21 @@ void Can::add_odo_packet( const std::array<bool, 4>& ticks )
 
 }
 
-//*****************************************  --  ADD PACKET  --  *******************************************************
+//*****************************************  --  CLEANUP  --  *********************************************************
 
-void Can::add_accelero_packet( std::array<int16_t, 3> accelero_packet )
+void Can::cleanup()
 {
-    uint8_t data[6];
-
-    data[0] = (uint8_t) ((accelero_packet.at(0) >> 8) & 0xFF);
-    data[1] = (uint8_t) ((accelero_packet.at(0) >> 0) & 0xFF);
-
-    data[2] = (uint8_t) ((accelero_packet.at(1) >> 8) & 0xFF);
-    data[3] = (uint8_t) ((accelero_packet.at(1) >> 0) & 0xFF);
-
-    data[4] = (uint8_t) ((accelero_packet.at(2) >> 8) & 0xFF);
-    data[5] = (uint8_t) ((accelero_packet.at(2) >> 0) & 0xFF);
-
-    send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
-}
-
-//*****************************************  --  ASK STOP  --  *********************************************************
-
-void Can::ask_stop()
-{
-    stop_asked_ = true;
+    stop_ = true;
     disconnect();
     close(server_socket_desc_);
 }
 
+
+
 //*****************************************  --  CONNECTED?  --  *******************************************************
 
 bool Can::connected(){
-    return socket_connected_;
+    return connected_;
 }
 
 //*****************************************  --  CONNECT  --  **********************************************************
@@ -160,15 +141,15 @@ void Can::connect(){
 
     server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t)server_port_ );
 
-    while( !stop_asked_ )
+    while( !stop_ )
     {
-        if( !socket_connected_ and server_socket_desc_ > 0 )
+        if( !connected_ and server_socket_desc_ > 0 )
         {
-            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_asked_ );
+            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_ );
 
             if ( socket_desc_ > 0 )
             {
-                socket_connected_ = true;
+                connected_ = true;
 
                 ROS_ERROR( "OzCore Can Socket Connected" );
             }
@@ -185,11 +166,11 @@ void Can::read_thread(){
 
     struct can_frame frame;
 
-    memset( &frame, 0, sizeof( frame ) );while ( !stop_asked_ )
+    memset( &frame, 0, sizeof( frame ) );while ( !stop_ )
 
-        while ( !stop_asked_ )
+        while ( !stop_ )
         {
-            if (socket_connected_)
+            if (connected_)
             {
                 socket_access_.lock();
                 ssize_t size = read( socket_desc_, &frame, sizeof( frame ));;
@@ -269,7 +250,7 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
 
     try {
 
-        if (socket_connected_) {
+        if (connected_) {
 
             struct can_frame frame;
 
@@ -297,10 +278,38 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
 void Can::disconnect(){
 
     close( socket_desc_ );
-
-    socket_connected_ = false;
+    connected_ = false;
 
     ROS_ERROR("OzCore Can Socket Disconnected");
+}
+
+// *********************************************************************************************************************
+
+void Can::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
+                    const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg )
+{
+    if( connected_ )
+    {
+        struct Can::Gps_packet gps_packet;
+
+        gps_packet.lat = gps_fix_msg->latitude;
+        gps_packet.lon = gps_fix_msg->longitude;
+        gps_packet.alt = gps_fix_msg->altitude;
+        gps_packet.satUsed = 3;
+        gps_packet.quality = 3;
+        gps_packet.groundSpeed = sqrt(gps_vel_msg->vector.x * gps_vel_msg->vector.x +
+                                      gps_vel_msg->vector.y * gps_vel_msg->vector.y);
+        gps_packet.updated = true;
+
+        gps_packet_access_.lock();
+        last_gps_packet_ = gps_packet_;
+        gps_packet_ = gps_packet;
+        gps_packet_access_.unlock();
+
+        gps_manager();
+
+        ROS_INFO( "Gps packet sent" );
+    }
 }
 
 //*****************************************  --  GPS THREAD  --  *******************************************************
@@ -473,4 +482,75 @@ double Can::north_bearing( double lat1, double lon1, double lat2, double lon2 )
     double brng = fmod((std::atan2(dLong, dPhi) / M_PI * 180.0) + 360.0, 360.0);
 
     return brng;
+}
+
+// *********************************************************************************************************************
+
+void
+Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
+{
+    if( connected_ )
+    {
+        uint8_t data[6];
+
+        std::array<int16_t, 3> gyro_packet;
+
+        gyro_packet.at(0) = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+        gyro_packet.at(1) = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+        gyro_packet.at(2) = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 /
+                                                 (2.0 * M_PI * -30.5));
+
+        data[0] = (uint8_t) ((gyro_packet.at(0) >> 8) & 0xFF);
+        data[1] = (uint8_t) ((gyro_packet.at(0) >> 0) & 0xFF);
+
+        data[2] = (uint8_t) ((gyro_packet.at(1) >> 8) & 0xFF);
+        data[3] = (uint8_t) ((gyro_packet.at(1) >> 0) & 0xFF);
+
+        data[4] = (uint8_t) ((gyro_packet.at(2) >> 8) & 0xFF);
+        data[5] = (uint8_t) ((gyro_packet.at(2) >> 0) & 0xFF);
+
+        send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_GYRO, data, 6);
+
+        ROS_INFO( "Gyro packet enqueued" );
+
+        std::array<int16_t, 3> accelero_packet;
+
+        accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
+                                                     9.8);
+        accelero_packet.at(1) = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 /
+                                                     9.8);
+        accelero_packet.at(2) = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 /
+                                                     9.8);
+
+        data[0] = (uint8_t) ((accelero_packet.at(0) >> 8) & 0xFF);
+        data[1] = (uint8_t) ((accelero_packet.at(0) >> 0) & 0xFF);
+
+        data[2] = (uint8_t) ((accelero_packet.at(1) >> 8) & 0xFF);
+        data[3] = (uint8_t) ((accelero_packet.at(1) >> 0) & 0xFF);
+
+        data[4] = (uint8_t) ((accelero_packet.at(2) >> 8) & 0xFF);
+        data[5] = (uint8_t) ((accelero_packet.at(2) >> 0) & 0xFF);
+
+        send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
+
+        ROS_INFO( "Accelero packet enqueued" );
+    }
+}
+
+// *********************************************************************************************************************
+
+void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
+{
+    if( connected_ )
+    {
+        uint8_t position_percent = (uint8_t) (std::round(joint_states_msg->position[0] * (-100.0 / 0.15)));
+
+        tool_position_access_.lock();
+        tool_position_ = position_percent;
+        tool_position_access_.unlock();
+
+        ROS_INFO( "Actuator position packet enqueued" );
+    }
 }

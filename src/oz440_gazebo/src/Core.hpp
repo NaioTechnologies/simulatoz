@@ -9,17 +9,12 @@
 
 #include "ros/ros.h"
 
-#include "geometry_msgs/Vector3Stamped.h"
 #include "geometry_msgs/QuaternionStamped.h"
 #include "geometry_msgs/Twist.h"
-#include "sensor_msgs/Imu.h"
 #include "sensor_msgs/Image.h"
-#include "sensor_msgs/JointState.h"
 #include "sensor_msgs/LaserScan.h"
 #include "gazebo_msgs/LinkStates.h"
 #include "sensor_msgs/NavSatFix.h"
-
-#include <tf/transform_listener.h>
 
 #include "Serial.h"
 #include "Camera.h"
@@ -29,6 +24,7 @@
 #include "VideoLog.h"
 #include "Log.h"
 #include "Metric.hpp"
+#include "Odometry.h"
 
 class Core
 {
@@ -40,21 +36,6 @@ public:
     void run();
 
 private:
-    // callback functions
-    void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
-    void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
-    void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
-
-    // Odometry part
-    void odometry_thread();
-    double getPitch( std::string wheel);
-    bool odo_wheel( bool & wheel, double& pitch, double& pitch_last_tic, int& forward_backward);
-
-private:
-
-    bool terminate_ ;
-
-    std::shared_ptr<tf::TransformListener> listener_ptr_;
 
     bool use_camera_;
     std::shared_ptr<Camera> camera_ptr_;
@@ -66,21 +47,13 @@ private:
 
     bool use_can_;
     std::shared_ptr<Can> can_ptr_;
+    std::shared_ptr<Odometry> odometry_ptr_;
     int can_port_;
 
     std::shared_ptr<Serial> serial_ptr_;
     uint serial_port_;
 
-    bool read_thread_started_;
-    std::thread read_thread_;
-
-    bool odometry_thread_started_;
-    std::thread odometry_thread_;;
-
     float actuator_position_;
-
-    // ROS PART
-    ros::Publisher actuator_pub_;
 
     std::shared_ptr<VideoLog> video_log_ptr_;
     std::string video_log_folder_;
