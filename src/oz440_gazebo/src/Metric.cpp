@@ -173,7 +173,7 @@ void Metric::log_fallen( std::string link_name){
 
         if (found != std::string::npos) {
 
-            if ( link_orientation_[ i*3 ] > 0.0001)
+            if ( fabs( link_orientation_[ i*3 ] ) > 0.01 )
             {
                 ROS_INFO( "%s has fallen. ", link_name.c_str() );
 
