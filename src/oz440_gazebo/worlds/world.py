@@ -5,6 +5,20 @@ import random
 import sys
 import json
 
+# {
+#     "Nom": "LEEK_70_25",
+#     "Sol" : "sand",
+#     "Butte": false,
+#     "Type culture" : "Leek",
+#     "Interplant" : 0.25,
+#     "Nombre de rangees" : 2,
+#     "Longueur rangee" : 8,
+#     "Largeur rangee" : 0.7,
+#     "Quinconce" : true,
+#     "Herbe": 0,
+#     "Cailloux" : 1
+# }
+
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
 # World configuration
@@ -40,17 +54,6 @@ file.write("<sdf version='1.6'> \n \
 \t \t \t <ambient>130 140 140 1</ambient>\n \
 \t \t </scene>\n \n ")
 
-# \t \t \t <uri>model://Sign</uri>\n \
-# \t \t \t <pose>12 1 0 0 0 0</pose>\n \
-# \t \t \t <static>1</static>\n \
-# \t \t </include>\n \n \
-# \t \t <include>\n \
-# \t \t \t <uri>model://Sign</uri>\n \
-# \t \t \t <pose>-4 1 0 0 0 0</pose>\n \
-# \t \t \t <static>1</static>\n \
-# \t \t </include>\n \n")
-
-
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
 # Ground texture
@@ -64,9 +67,6 @@ elif texture == "dirt" :
 
 elif texture == "grass" :
     file.write("\t \t <include> \n \t \t \t <uri>model://grass_plane</uri> \n \t \t </include>\n \n")
-
-elif texture == "heightmap" :
-    file.write("\t \t <include> \n \t \t \t <uri>model://heightmap</uri> \n \t \t </include>\n \n")
 
 else :
     print("The texture input is no correct \n")
@@ -173,7 +173,6 @@ if M :
 
 
 # Rows of vegetable
-
 if M:
 
     file.write("\t \t<population name=\"Vegetable\">\n \
@@ -322,7 +321,7 @@ if G == 10 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*15))
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*12))
 
 if G == 2 :
     i = 1
@@ -365,7 +364,7 @@ if G == 20 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*15))
+%(i, 1.5 + L/2.0, W/2 - (float(i)-1.0) * W, L+2, 0.3, L*12))
         i += 1
 
 if G == 3 :
@@ -385,7 +384,7 @@ if G == 3 :
 \t \t \t \t <type>random</type>\n \
 \t \t \t </distribution>\n \
 \t \t </population> \n \n"\
-%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*3))
+%(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*5))
 
     i = 1
     while i < N+1:
@@ -446,7 +445,7 @@ if G == 30 :
     \t \t \t \t <type>random</type>\n \
     \t \t \t </distribution>\n \
     \t \t </population> \n \n"\
-    %(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*6))
+    %(1.5 + L/2.0, -W*(N-1)/2 + W/2, L+2, W*(N-1), L*N*10))
 
 
 #Trees
@@ -457,9 +456,9 @@ file.write("\t \t <population name=\"Trees1\"> \n \
 \t \t \t \t \t <uri>model://Tree</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>17 0 -0.6 0 0 0</pose>\n \
+\t \t \t <pose>18 0 -0.6 0 0 0</pose>\n \
 \t \t \t <box>\n \
-\t \t \t \t <size>5 20 3</size>\n \
+\t \t \t \t <size>4 20 3</size>\n \
 \t \t \t </box>\n \
 \t \t \t <model_count>5</model_count>\n \
 \t \t \t <distribution>\n \
@@ -474,9 +473,9 @@ file.write("\t \t <population name=\"Trees1\"> \n \
 \t \t \t \t \t <uri>model://Tree</uri>\n \
 \t \t \t \t </include>\n \
 \t \t \t </model>\n \
-\t \t \t <pose>0 -17 -0.6 0 0 0</pose>\n \
+\t \t \t <pose>0 -18 -0.6 0 0 0</pose>\n \
 \t \t \t <box>\n \
-\t \t \t \t <size>30 6 3</size>\n \
+\t \t \t \t <size>30 4 3</size>\n \
 \t \t \t </box>\n \
 \t \t \t <model_count>5</model_count>\n \
 \t \t \t <distribution>\n \
@@ -493,7 +492,7 @@ file.write("\t \t <population name=\"Trees1\"> \n \
 \t \t \t </model>\n \
 \t \t \t <pose>0 15 -0.6 0 0 0</pose>\n \
 \t \t \t <box>\n \
-\t \t \t \t <size>30 6 3</size>\n \
+\t \t \t \t <size>30 10 3</size>\n \
 \t \t \t </box>\n \
 \t \t \t <model_count>7</model_count>\n \
 \t \t \t <distribution>\n \
@@ -522,35 +521,10 @@ file.write("\t \t <population name=\"Trees1\"> \n \
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 
 # Closing the file
-namelaunch = name+".launch"
-print "\nYour world is ready ! You can launch it using : \nroslaunch oz440_gazebo",namelaunch,"\n"
 
 file.write("\t </world> \n \
 </sdf>")
 file.close()
 
-#||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
+print "\nYour world is ready ! You can launch it using : \nroslaunch oz440_gazebo oz.launch world:=",name,"\n"
 
-# Creating the launch file
-
-launchname = "../launch/"+name+".launch"
-
-launchfile = open(launchname, "w")
-
-launchfile.write("<launch> \n \n \
-\t <param name=\"naio01_server_port\" type=\"int\" value=\"5555\" />\n \n \
-\t <node name=\"Core\" pkg=\"oz440_gazebo\" type=\"Core\"/>\n \n \
-\t <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched --> \n \
-\t <include file=\"$(find gazebo_ros)/launch/empty_world.launch\">\n \
-\t \t <arg name=\"world_name\" value=\"$(find oz440_gazebo)/worlds/%s\"/> \n \
-\t \t <arg name=\"gui\" value=\"false\" /> \n \
-\n </include> \n \n \
-\t <param name=\"robot_description\" command=\"$(find xacro)/xacro '$(find oz440_description)/urdf/oz440.xacro'\" />\n \n \
-\t <!-- Spawn a robot into Gazebo --> \n \
-\t <node name=\"spawn_urdf\" pkg=\"gazebo_ros\" type=\"spawn_model\" output=\"screen\" args=\"-param robot_description -b -urdf -x 0 -y 0 -z 0.4 -model oz440\" /> \n \
-\t <!-- ros_control launch file --> \n \
-\t <include file=\"$(find oz440_control)/launch/oz440_control.launch\"/>\n \
-</launch>\n " \
-%(filename))
-
-launchfile.close()
