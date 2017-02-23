@@ -181,8 +181,6 @@ void Can::read_thread()
 
             if ( size > 0 )
             {
-                ROS_ERROR( "Can packet received" );
-
                 if( ( ( frame.can_id ) >> 7 ) == CAN_ID_VER )
                 {
                     if (((frame.can_id) % 16) == CAN_VER_CONS)
@@ -272,10 +270,7 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
             if (nbytes <= 0) {
                 ROS_ERROR( "Can write error.");
             }
-            else {
-                ROS_ERROR( "Can packet sent ");
-
-            }
+            else {}
         }
     }
     catch ( std::exception e ) {
