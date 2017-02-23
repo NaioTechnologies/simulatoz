@@ -122,8 +122,10 @@ private:
     std::mutex socket_access_;
 
 //  --  T O O L   P O S I T I O N  --
-    uint8_t tool_position_;
+    double tool_position_;
     std::mutex tool_position_access_;
+    uint8_t tool_position_oz_;
+    std::mutex tool_position_oz_access_;
 
 //  --  G P S  --
     Gps gps_;

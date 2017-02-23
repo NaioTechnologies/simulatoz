@@ -36,6 +36,8 @@ Can::Can(int server_port)
         , socket_access_ { }
         , tool_position_access_ { }
         , tool_position_ { 0 }
+        , tool_position_oz_access_ { }
+        , tool_position_oz_ { 0 }
         , sync_gps_ { gps_fix_sub_, gps_vel_sub_, 10 }
 { }
 
@@ -76,8 +78,6 @@ void Can::subscribe( ros::NodeHandle &node ) {
 
     // subscribe to actuator position
     actuator_position_sub_ = node.subscribe( "/oz440/joint_states", 500, &Can::callback_actuator_position, this );
-
-
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -153,39 +153,73 @@ void Can::connect(){
 
 //--------------------------------------------------------------------------------------------------
 
-void Can::read_thread(){
-
+void Can::read_thread()
+{
+    bool last_order_down = false;
     struct can_frame frame;
 
-    memset( &frame, 0, sizeof( frame ) );while ( !stop_ )
-
-        while ( !stop_ )
+    memset( &frame, 0, sizeof( frame ) );
+    while ( !stop_ )
+    {
+        if (connected_)
         {
-            if (connected_)
+            socket_access_.lock();
+            ssize_t size = read( socket_desc_, &frame, sizeof( frame ));;
+            socket_access_.unlock();
+
+            if ( size > 0 )
             {
-                socket_access_.lock();
-                ssize_t size = read( socket_desc_, &frame, sizeof( frame ));;
-                socket_access_.unlock();
-
-                if ( size > 0 )
+                if( ( ( frame.can_id ) >> 7 ) == CAN_ID_VER )
                 {
-                    if( ( ( frame.can_id ) >> 7 ) == CAN_ID_VER )
+                    if (((frame.can_id) % 16) == CAN_VER_CONS)
                     {
-                        if( ( ( frame.can_id ) % 16 ) == CAN_VER_CONS )
-                        {
-//                            actuator_order_ = frame_.data[ 0 ] ;
-                        }
-                        else if( ( ( frame.can_id ) % 16 ) == CAN_VER_POS )
-                        {
-                            uint8_t data[1];
+                        float actuator_order = frame.data[0];
 
-                            tool_position_access_.lock();
-                            data[ 0 ] = tool_position_;
-                            tool_position_access_.unlock();
+                        geometry_msgs::Vector3 command;
 
-                            send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1 );
+                        tool_position_access_.lock();
+                        if (actuator_order == 1)
+                        {
+                            command.x = tool_position_ + 0.005;
+                            last_order_down = false;
                         }
+                        else if (actuator_order == 2)
+                        {
+                            command.x = tool_position_ - 0.005;
+                            last_order_down = true;
+                        }
+                        else
+                        {
+                            if (last_order_down)
+                            {
+                                command.x = tool_position_ - 0.0001;
+                            }
+                            else
+                            {
+                                command.x = tool_position_ + 0.0001;
+                            }
+                        }
+                        tool_position_access_.unlock();
+
+                        ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
+
+                        actuator_pub_.publish(command);
+
                     }
+                }
+                else if ( frame.can_id >> 7 == CAN_ID_VER | ( CAN_RTR_FLAG >> 7 ) )
+                {
+                    if( frame.can_id  % 16 == CAN_VER_POS )
+                    {
+                        uint8_t data[1];
+
+                        tool_position_access_.lock();
+                        data[ 0 ] = tool_position_oz_;
+                        tool_position_access_.unlock();
+
+                        send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1 );
+                    }
+                }
 //                else if( ( ( frame.can_id ) >> 7 ) == CAN_ID_TELECO )
 //                {
 //                    if( ( ( frame.can_id ) % 16 ) == CAN_TELECO_NUM_VERSION )
@@ -218,21 +252,20 @@ void Can::read_thread(){
 //
 //                    }
 //                }
-                }
-                else
-                {
-                    if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
-                        disconnect();
-                    }
-                }
-                std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
             }
             else
             {
-                std::this_thread::sleep_for(100ms);
+                if( errno == 32 or errno == 104 or ( size == 0 and errno == 11 )){
+                    disconnect();
+                }
             }
+            std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
         }
-
+        else
+        {
+            std::this_thread::sleep_for(100ms);
+        }
+    }
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -335,11 +368,16 @@ void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& j
 {
     if( connected_ )
     {
-        uint8_t position_percent = (uint8_t) (std::round(joint_states_msg->position[0] * (-100.0 / 0.15)));
 
         tool_position_access_.lock();
-        tool_position_ = position_percent;
+        tool_position_ = joint_states_msg->position[0];
         tool_position_access_.unlock();
+
+        uint8_t position_percent = (uint8_t) ( std::round( tool_position_ * (-100.0 / 0.15) ) );
+
+        tool_position_oz_access_.lock();
+        tool_position_oz_ = position_percent;
+        tool_position_oz_access_.unlock();
 
         ROS_INFO( "Actuator position packet enqueued" );
     }

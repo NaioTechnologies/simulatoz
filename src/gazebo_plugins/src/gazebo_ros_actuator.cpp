@@ -110,10 +110,10 @@ namespace gazebo {
 
     void GazeboRosActuator::OnUpdate()
     {
-        if (connection_==1)
+        if ( connection_ )
         {
             joints->SetPosition( 0, position_ );
-            connection_ = 0;
+            connection_ = false;
         }
 
 //        joints->SetPosition( 0, position_ );
@@ -122,8 +122,7 @@ namespace gazebo {
 
     void GazeboRosActuator::cmdCallback( const geometry_msgs::Vector3::ConstPtr& cmd_msg)
     {
-
-        connection_ = 1;
+        connection_ = true;
         position_ = cmd_msg->x;
 
         std::this_thread::sleep_for( std::chrono::milliseconds(5) );

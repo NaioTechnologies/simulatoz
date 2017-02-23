@@ -299,6 +299,12 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
         </joint>
 
+        <!--<joint name="actuator_base_link_to_actuator_part1_joint" type="fixed">-->
+            <!--<parent link="actuator_base_link"/>-->
+            <!--<child link="actuator_part1_link"/>-->
+            <!--<origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2-0.15}" rpy="0 0 0"/>-->
+        <!--</joint>-->
+
         <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
             <parent link="actuator_base_link"/>
             <child link="actuator_part1_link"/>
