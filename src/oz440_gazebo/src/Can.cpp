@@ -150,12 +150,12 @@ void Can::connect(){
 
             if( bind( socket_desc_, ( struct sockaddr * ) &addr, sizeof( addr ) ) < 0 )
             {
-                perror( "Error in can socket bind" );
+                ROS_ERROR( "Error in can socket bind" );
                 return;
             }
 
             connected_ = true;
-            printf( "Can Connected\n" );
+            ROS_ERROR( "Can Connected" );
         }
         else{
             std::this_thread::sleep_for(500ms);
@@ -181,6 +181,8 @@ void Can::read_thread()
 
             if ( size > 0 )
             {
+                ROS_ERROR( "Can packet received" );
+
                 if( ( ( frame.can_id ) >> 7 ) == CAN_ID_VER )
                 {
                     if (((frame.can_id) % 16) == CAN_VER_CONS)
@@ -268,7 +270,11 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
             socket_access_.unlock();
 
             if (nbytes <= 0) {
-                std::cout << "Can write error." << std::endl;
+                ROS_ERROR( "Can write error.");
+            }
+            else {
+                ROS_ERROR( "Can packet sent ");
+
             }
         }
     }
@@ -279,8 +285,8 @@ void Can::send_packet( CanMessageId id, CanMessageType id_msg, uint8_t data[], u
 
 //--------------------------------------------------------------------------------------------------
 
-void Can::disconnect(){
-
+void Can::disconnect()
+{
     close( socket_desc_ );
     connected_ = false;
 
@@ -316,8 +322,6 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
 
         send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_GYRO, data, 6);
 
-        ROS_INFO( "Gyro packet enqueued" );
-
         std::array<int16_t, 3> accelero_packet;
 
         accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
@@ -337,8 +341,6 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
         data[5] = (uint8_t) ((accelero_packet.at(2) >> 0) & 0xFF);
 
         send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
-
-        ROS_INFO( "Accelero packet enqueued" );
     }
 }
 
@@ -358,8 +360,6 @@ void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& j
         tool_position_oz_access_.lock();
         tool_position_oz_ = position_percent;
         tool_position_oz_access_.unlock();
-
-        ROS_INFO( "Actuator position packet enqueued" );
     }
 }
 
@@ -380,8 +380,6 @@ void Can::callback_gps( const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg,
             if (!frame.empty()) {
                 send_gps_frame(frame);
             }
-
-            ROS_INFO("Gps packets sent");
         }
     }
 }
