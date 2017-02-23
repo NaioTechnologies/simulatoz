@@ -203,7 +203,7 @@ void Can::read_thread()
 
                         ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
 
-                        actuator_pub_.publish(command);
+//                        actuator_pub_.publish(command);
 
                     }
                 }
@@ -220,38 +220,6 @@ void Can::read_thread()
                         send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1 );
                     }
                 }
-//                else if( ( ( frame.can_id ) >> 7 ) == CAN_ID_TELECO )
-//                {
-//                    if( ( ( frame.can_id ) % 16 ) == CAN_TELECO_NUM_VERSION )
-//                    {
-//                        uint8_t remote_data[ 8 ];
-//
-//                        std::cout << "setting teleco act : " << static_cast<int>( frame.data[ 6 ] ) << " self_id : " << static_cast<int>(  frame.data[ 7 ] ) << std::endl;
-//
-//                        com_ozcore_remote_status_.teleco_self_id_6 = frame.data[ 7 ];
-//
-//                        remote_data[ 0 ] = 0x10;
-//                        remote_data[ 1 ] = 0x08;
-//                        remote_data[ 2 ] = 0x00;
-//                        remote_data[ 3 ] = 0x00;
-//                        remote_data[ 4 ] = 0x00;
-//                        remote_data[ 5 ] = 0x00;
-//                        remote_data[ 6 ] = com_ozcore_remote_status_.teleco_self_id_6;
-//                        remote_data[ 7 ] = com_ozcore_remote_status_.teleco_act_7;
-//
-//                        if( com_ozcore_remote_status_.teleco_act_7 < 10 )
-//                        {
-//                            remote_data[ 2 ] = ( 4 + 128 );
-//                        }
-//                        else if( com_ozcore_remote_status_.teleco_act_7 > 10 )
-//                        {
-//                            remote_data[ 2 ] = ( 16 + 32 );
-//                        }
-//
-//                        send_packet( CanMessageId::CAN_ID_TELECO, CanMessageType::CAN_TELECO_NUM_VERSION, remote_data, 8 );
-//
-//                    }
-//                }
             }
             else
             {
