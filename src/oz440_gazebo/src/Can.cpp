@@ -130,20 +130,32 @@ bool Can::connected(){
 
 void Can::connect(){
 
-    server_socket_desc_ = DriverSocket::openSocketServer( (uint16_t)server_port_ );
-
     while( !stop_ )
     {
-        if( !connected_ and server_socket_desc_ > 0 )
+        if( !connected_ )
         {
-            socket_desc_ = DriverSocket::waitConnectTimer( server_socket_desc_, stop_ );
+            struct sockaddr_can addr;
+            struct ifreq ifr;
 
-            if ( socket_desc_ > 0 )
+            const char *ifname = "can0";
+
+            // Create the CAN socket
+            socket_desc_ = socket( PF_CAN, SOCK_RAW, CAN_RAW );
+
+            strcpy( ifr.ifr_name, ifname );
+            ioctl( socket_desc_, SIOCGIFINDEX, &ifr );
+
+            addr.can_family  = AF_CAN;
+            addr.can_ifindex = ifr.ifr_ifindex;
+
+            if( bind( socket_desc_, ( struct sockaddr * ) &addr, sizeof( addr ) ) < 0 )
             {
-                connected_ = true;
-
-                ROS_ERROR( "OzCore Can Socket Connected" );
+                perror( "Error in can socket bind" );
+                return;
             }
+
+            connected_ = true;
+            printf( "Can Connected\n" );
         }
         else{
             std::this_thread::sleep_for(500ms);
