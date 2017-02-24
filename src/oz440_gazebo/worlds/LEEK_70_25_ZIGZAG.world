@@ -22,6 +22,11 @@
  	 	 <include> 
  	 	 	 <uri>model://sand_plane</uri> 
  	 	 </include>
+
+		 <include>
+			 <pose>5 0 10 0 1.57 1.57</pose>
+			 <uri>model://Camera</uri>
+		 </include>
  
 	 	 <population name="sticks"> 
  	 	 	 <model name="Red_stick">

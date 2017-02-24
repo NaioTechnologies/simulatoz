@@ -29,6 +29,7 @@ VideoLog::VideoLog( std::string video_log_folder )
         : top_camera_sub_ { }
         , video_log_folder_ { video_log_folder }
         , dated_folder_ { }
+        , fixed_top_camera_sub_ { }
 
 { }
 
@@ -43,6 +44,7 @@ VideoLog::~VideoLog()
 void VideoLog::subscribe( image_transport::ImageTransport& it )
 {
     top_camera_sub_ = it.subscribe( "/oz440/top_camera/image_raw", 1, &VideoLog::callback_top_camera, this );
+    fixed_top_camera_sub_ = it.subscribe( "/oz440/fixed_top_camera/image_raw", 1, &VideoLog::callback_fixed_top_camera, this );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -63,7 +65,8 @@ void VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
     {
         std::string codec = "MJPG";
         cv::Size size( image->width, image->height );
-        std::string filename = dated_folder_ + "/output.avi";
+        std::string filename = dated_folder_ + "/top_camera_output.avi";
+
 
         output_video_.open( filename, CV_FOURCC( codec.c_str()[0], codec.c_str()[1], codec.c_str()[2],
                                                  codec.c_str()[3] ), 5, size, true );
@@ -71,7 +74,7 @@ void VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
         if( !output_video_.isOpened() )
         {
             ROS_ERROR(
-                    "Could not create the output video! Check filename and/or support for codec." );
+                    "Could not create the fixed cam output video! Check filename and/or support for codec." );
             exit( -1 );
         }
     }
@@ -98,6 +101,55 @@ void VideoLog::callback_top_camera( const sensor_msgs::Image::ConstPtr& image )
     }
 
 }
+//--------------------------------------------------------------------------------------------------
+
+void VideoLog::callback_fixed_top_camera( const sensor_msgs::Image::ConstPtr& image )
+{
+    if (dated_folder_.empty()) {
+        bool success = setup_video_folder();
+
+        if (!success) {
+            ROS_ERROR("Error creating the video folder");
+        }
+    }
+
+    if (!output_fixed_video_.isOpened()) {
+        std::string codec = "MJPG";
+        cv::Size size(image->width, image->height);
+        std::string filename = dated_folder_ + "/fixed_camera_output.avi";
+
+        output_fixed_video_.open(filename, CV_FOURCC(codec.c_str()[0], codec.c_str()[1], codec.c_str()[2],
+                                               codec.c_str()[3]), 5, size, true);
+
+        if (!output_fixed_video_.isOpened()) {
+            ROS_ERROR(
+                    "Could not create the output video! Check filename and/or support for codec.");
+            exit(-1);
+        }
+    }
+
+    try {
+        cv_bridge::CvtColorForDisplayOptions options;
+        options.do_dynamic_scaling = false;
+        options.min_image_value = 0.0;
+        options.max_image_value = 0.0;
+        options.colormap = -1;
+
+        const cv::Mat cv_image = cv_bridge::cvtColorForDisplay(cv_bridge::toCvShare(image), std::string("bgr8"),
+                                                               options)->image;
+
+        if (!cv_image.empty()) {
+            output_fixed_video_ << cv_image;
+        } else {
+            ROS_WARN("Frame skipped, no data!");
+        }
+    } catch (cv_bridge::Exception) {
+        ROS_ERROR("Unable to convert %s image to -bgr8-", image->encoding.c_str());
+        return;
+    }
+
+}
+
 
 //--------------------------------------------------------------------------------------------------
 

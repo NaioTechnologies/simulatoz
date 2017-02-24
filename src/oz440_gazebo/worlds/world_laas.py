@@ -53,7 +53,11 @@ file.write("<sdf version='1.6'> \n \
 \t \t <scene> \n \
 \t \t \t <background>130 200 255 1 </background>\n \
 \t \t \t <ambient>130 140 140 1</ambient>\n \
-\t \t </scene>\n \n ")
+\t \t </scene>\n \n \
+\t \t <include>\n \
+\t \t \t <pose>5 0 10 0 1.57 1.57</pose>\n \
+\t \t \t <uri>model://Camera</uri>\n \
+\t \t</include>\n \n")
 
 #||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||*||
 

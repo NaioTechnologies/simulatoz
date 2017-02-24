@@ -50,6 +50,7 @@ public:
 
 private:
     void callback_top_camera(const sensor_msgs::Image::ConstPtr& image );
+    void callback_fixed_top_camera(const sensor_msgs::Image::ConstPtr& image );
 
     bool setup_video_folder();
 
@@ -62,6 +63,10 @@ private:
     std::string dated_folder_;
 
     cv::VideoWriter output_video_;
+
+    image_transport::Subscriber fixed_top_camera_sub_;
+
+    cv::VideoWriter output_fixed_video_;
 };
 #endif //PROJECT_VIDEOLOG_H
 
