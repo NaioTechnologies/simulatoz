@@ -97,6 +97,19 @@ Core::run()
 
     image_transport::ImageTransport it( node );
 
+    if( video_log_folder_ != "NO_VIDEO" )
+    {
+        video_log_ptr_ = std::make_shared< VideoLog >( video_log_folder_ );
+        video_log_ptr_->subscribe( it );
+    }
+
+    if( log_folder_ != "NO_LOG" )
+    {
+        log_ptr_ = std::make_shared<Log>(log_folder_);
+        metric_ptr_ = std::make_shared<Metric>(log_ptr_);
+        metric_ptr_->subscribe(node);
+    }
+
     if( use_lidar_ )
     {
         lidar_ptr_ = std::make_shared< Lidar >( lidar_port_ );
@@ -111,7 +124,7 @@ Core::run()
 
     if( use_can_ )
     {
-        can_ptr_ = std::make_shared< Can >( can_port_ );
+        can_ptr_ = std::make_shared< Can >( can_port_, log_ptr_ );
         can_ptr_->init();
         can_ptr_->subscribe( node );
 
@@ -121,19 +134,6 @@ Core::run()
 
     serial_ptr_ = std::make_shared< Serial >( serial_port_ );
     serial_ptr_->advertise( node );
-
-    if( video_log_folder_ != "NO_VIDEO" )
-    {
-        video_log_ptr_ = std::make_shared< VideoLog >( video_log_folder_ );
-        video_log_ptr_->subscribe( it );
-    }
-
-    if( log_folder_ != "NO_LOG" )
-    {
-        log_ptr_ = std::make_shared< Log >( log_folder_ );
-        metric_ptr_ = std::make_shared< Metric >( log_ptr_ );
-        metric_ptr_->subscribe( node );
-    }
 
     while( ros::master::check() )
     {

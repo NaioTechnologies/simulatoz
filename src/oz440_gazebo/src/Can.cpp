@@ -25,8 +25,9 @@ using namespace std::chrono_literals;
 
 //--------------------------------------------------------------------------------------------------
 
-Can::Can(int server_port)
+Can::Can(int server_port, std::shared_ptr<Log> log_ptr)
         : stop_{ false }
+        , log_ptr_ {log_ptr}
         , connect_thread_ { }
         , read_thread_ { }
         , server_port_ {server_port}
@@ -34,10 +35,6 @@ Can::Can(int server_port)
         , server_socket_desc_ { -1 }
         , socket_desc_ { -1 }
         , socket_access_ { }
-        , tool_position_access_ { }
-        , tool_position_ { 0 }
-        , tool_position_oz_access_ { }
-        , tool_position_oz_ { 0 }
         , sync_gps_ { gps_fix_sub_, gps_vel_sub_, 10 }
 { }
 
@@ -72,12 +69,6 @@ void Can::subscribe( ros::NodeHandle &node ) {
 
     // subscribe to imu topic
     imu_sub_ = node.subscribe( "/oz440/imu/data", 50, &Can::callback_imu, this );
-
-    // Create motors and actuator commands publishers
-    actuator_pub_ = node.advertise< geometry_msgs::Vector3 >( "/oz440/cmd_act", 10 );
-
-    // subscribe to actuator position
-    actuator_position_sub_ = node.subscribe( "/oz440/joint_states", 500, &Can::callback_actuator_position, this );
 }
 
 //--------------------------------------------------------------------------------------------------
@@ -155,7 +146,8 @@ void Can::connect(){
 
 void Can::read_thread()
 {
-    bool last_order_down = false;
+    uint8_t tool_position_oz = 0;
+
     struct can_frame frame;
 
     memset( &frame, 0, sizeof( frame ) );
@@ -175,49 +167,68 @@ void Can::read_thread()
                     {
                         float actuator_order = frame.data[0];
 
-                        geometry_msgs::Vector3 command;
+                        std::string to_log;
 
-                        tool_position_access_.lock();
-                        if (actuator_order == 1)
+                        std::time_t t = std::time( NULL );
+                        char buff[256];
+                        std::string format{ "%H:%M:%S" };
+
+                        size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+                        std::string date_str = std::string( buff, bytesRead );
+
+                        to_log.append( "[ " );
+                        to_log.append( date_str );
+                        to_log.append( " ]   " );
+                        to_log.append( "Tool_position : " );
+
+                        if (actuator_order == 1 and tool_position_oz > 4 )
                         {
-                            command.x = tool_position_ + 0.005;
-                            last_order_down = false;
+                            tool_position_oz = (uint8_t) ( tool_position_oz - 5 );
+
+                            to_log.append( std::to_string(tool_position_oz) );
+                            log_ptr_-> write( to_log );
                         }
-                        else if (actuator_order == 2)
+                        else if (actuator_order == 2 and tool_position_oz < 96 )
                         {
-                            command.x = tool_position_ - 0.005;
-                            last_order_down = true;
+                            tool_position_oz = (uint8_t) ( tool_position_oz + 5 );
+
+                            to_log.append( std::to_string(tool_position_oz) );
+                            log_ptr_-> write( to_log );
                         }
-                        else
-                        {
-                            if (last_order_down)
-                            {
-                                command.x = tool_position_ - 0.0001;
-                            }
-                            else
-                            {
-                                command.x = tool_position_ + 0.0001;
-                            }
-                        }
-                        tool_position_access_.unlock();
-
-                        ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
-
-//                        actuator_pub_.publish(command);
-
                     }
                 }
                 else if ( frame.can_id >> 7 == CAN_ID_VER | ( CAN_RTR_FLAG >> 7 ) )
                 {
-                    if( frame.can_id  % 16 == CAN_VER_POS )
+                    if( ( frame.can_id & 0x0F ) == CAN_VER_POS )
                     {
                         uint8_t data[1];
 
-                        tool_position_access_.lock();
-                        data[ 0 ] = tool_position_oz_;
-                        tool_position_access_.unlock();
+                        data[ 0 ] = tool_position_oz;
 
                         send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1 );
+                    }
+                }
+                else if ( frame.can_id >> 7 == CAN_ID_IHM )
+                {
+                    if( frame.can_id  % 16 == CAN_IHM_BUZ )
+                    {
+                        std::string to_log;
+
+                        std::time_t t = std::time( NULL );
+                        char buff[256];
+                        std::string format{ "%H:%M:%S" };
+
+                        size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+                        std::string date_str = std::string( buff, bytesRead );
+
+                        to_log.append( "[ " );
+                        to_log.append( date_str );
+                        to_log.append( " ]   " );
+                        to_log.append( "Bip" );
+
+                        log_ptr_-> write( to_log );
                     }
                 }
             }
@@ -327,27 +338,6 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
         send_packet(CanMessageId::CAN_ID_IMU, CanMessageType::CAN_IMU_ACC, data, 6);
 
         ROS_INFO( "Accelero packet enqueued" );
-    }
-}
-
-//--------------------------------------------------------------------------------------------------
-
-void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg )
-{
-    if( connected_ )
-    {
-
-        tool_position_access_.lock();
-        tool_position_ = joint_states_msg->position[0];
-        tool_position_access_.unlock();
-
-        uint8_t position_percent = (uint8_t) ( std::round( tool_position_ * (-100.0 / 0.15) ) );
-
-        tool_position_oz_access_.lock();
-        tool_position_oz_ = position_percent;
-        tool_position_oz_access_.unlock();
-
-        ROS_INFO( "Actuator position packet enqueued" );
     }
 }
 

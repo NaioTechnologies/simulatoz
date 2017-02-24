@@ -28,6 +28,7 @@
 #include <thread>
 
 #include "Gps.h"
+#include "Log.h"
 
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
@@ -73,6 +74,7 @@ public:
 
         CAN_IHM_LCD = 0x00,
         CAN_IHM_BUT = 0x01,
+        CAN_IHM_BUZ = 0x03,
 
         CAN_VER_CONS = 0x02,
         CAN_VER_POS = 0x01,
@@ -80,7 +82,7 @@ public:
 
 //-- Methods ---------------------------------------------------------------------------------------
 
-    Can(int server_port);
+    Can(int server_port, std::shared_ptr<Log> log_ptr );
     ~Can();
 
     void init();
@@ -100,7 +102,6 @@ private:
     void disconnect();
 
     // callback functions
-    void callback_actuator_position( const sensor_msgs::JointState::ConstPtr& joint_states_msg );
     void callback_imu(const sensor_msgs::Imu::ConstPtr& imu_msg);
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
 
@@ -110,7 +111,9 @@ private:
 
     std::atomic<bool> stop_;
 
-//  -- T H R E A D S  --
+    std::shared_ptr<Log> log_ptr_;
+
+    //  -- T H R E A D S  --
     std::thread connect_thread_;
     std::thread read_thread_;
 
@@ -121,12 +124,6 @@ private:
     int socket_desc_;
     std::mutex socket_access_;
 
-//  --  T O O L   P O S I T I O N  --
-    double tool_position_;
-    std::mutex tool_position_access_;
-    uint8_t tool_position_oz_;
-    std::mutex tool_position_oz_access_;
-
 //  --  G P S  --
     Gps gps_;
 
@@ -136,9 +133,6 @@ private:
     message_filters::TimeSynchronizer< sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped > sync_gps_;
 
     ros::Subscriber imu_sub_;
-    ros::Subscriber actuator_position_sub_;
-
-    ros::Publisher actuator_pub_;
 };
 
 #endif //SIMULATOZ_CAN_H
