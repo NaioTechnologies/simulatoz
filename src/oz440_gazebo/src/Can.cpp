@@ -25,8 +25,9 @@ using namespace std::chrono_literals;
 
 //--------------------------------------------------------------------------------------------------
 
-Can::Can(int server_port)
+Can::Can(int server_port, std::shared_ptr<Log> log_ptr)
         : stop_{ false }
+        , log_ptr_ {log_ptr}
         , connect_thread_ { }
         , read_thread_ { }
         , server_port_ {server_port}
@@ -177,16 +178,40 @@ void Can::read_thread()
 
                         geometry_msgs::Vector3 command;
 
+                        std::string to_log;
+
+                        std::time_t t = std::time( NULL );
+                        char buff[256];
+                        std::string format{ "%H:%M:%S" };
+
+                        size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+                        std::string date_str = std::string( buff, bytesRead );
+
+                        to_log.append( "[ " );
+                        to_log.append( date_str );
+                        to_log.append( " ]   " );
+                        to_log.append( "Tool_position : " );
+
+                        command.x = tool_position_;
+
                         tool_position_access_.lock();
-                        if (actuator_order == 1)
+
+                        if (actuator_order == 1 and tool_position_ < -0.009)
                         {
-                            command.x = tool_position_ + 0.005;
+                            command.x = tool_position_ + 0.01;
                             last_order_down = false;
+
+                            to_log.append( std::to_string(tool_position_oz_) );
+                            log_ptr_-> write( to_log );
                         }
-                        else if (actuator_order == 2)
+                        else if (actuator_order == 2 and tool_position_ > -0.141)
                         {
-                            command.x = tool_position_ - 0.005;
+                            command.x = tool_position_ - 0.01;
                             last_order_down = true;
+
+                            to_log.append( std::to_string(tool_position_oz_) );
+                            log_ptr_-> write( to_log );
                         }
                         else
                         {
@@ -199,25 +224,44 @@ void Can::read_thread()
                                 command.x = tool_position_ + 0.0001;
                             }
                         }
+
                         tool_position_access_.unlock();
-
-                        ROS_INFO("ApiMoveActuatorPacket received, position: %f ", command.x);
-
-//                        actuator_pub_.publish(command);
-
+                        actuator_pub_.publish(command);
                     }
                 }
                 else if ( frame.can_id >> 7 == CAN_ID_VER | ( CAN_RTR_FLAG >> 7 ) )
                 {
-                    if( frame.can_id  % 16 == CAN_VER_POS )
+                    if( ( frame.can_id & 0x0F ) == CAN_VER_POS )
                     {
                         uint8_t data[1];
 
-                        tool_position_access_.lock();
+                        tool_position_oz_access_.lock();
                         data[ 0 ] = tool_position_oz_;
-                        tool_position_access_.unlock();
+                        tool_position_oz_access_.unlock();
 
                         send_packet( CanMessageId::CAN_ID_VER, CanMessageType::CAN_VER_POS, data, 1 );
+                    }
+                }
+                else if ( frame.can_id >> 7 == CAN_ID_IHM )
+                {
+                    if( frame.can_id  % 16 == CAN_IHM_BUZ )
+                    {
+                        std::string to_log;
+
+                        std::time_t t = std::time( NULL );
+                        char buff[256];
+                        std::string format{ "%H:%M:%S" };
+
+                        size_t bytesRead = std::strftime( buff, 256, format.c_str(), std::localtime( &t ) );
+
+                        std::string date_str = std::string( buff, bytesRead );
+
+                        to_log.append( "[ " );
+                        to_log.append( date_str );
+                        to_log.append( " ]   " );
+                        to_log.append( "Bip" );
+
+                        log_ptr_-> write( to_log );
                     }
                 }
             }
@@ -341,10 +385,8 @@ void Can::callback_actuator_position( const sensor_msgs::JointState::ConstPtr& j
         tool_position_ = joint_states_msg->position[0];
         tool_position_access_.unlock();
 
-        uint8_t position_percent = (uint8_t) ( std::round( tool_position_ * (-100.0 / 0.15) ) );
-
         tool_position_oz_access_.lock();
-        tool_position_oz_ = position_percent;
+        tool_position_oz_ = (uint8_t) ( std::round( tool_position_ * (-100.0 / 0.15) ) );
         tool_position_oz_access_.unlock();
 
         ROS_INFO( "Actuator position packet enqueued" );

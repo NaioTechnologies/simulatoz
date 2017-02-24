@@ -299,31 +299,31 @@ Les proprietes sont modifiables dans le fichiers properties.xacro -->
             <origin xyz="${-chassis_bottom_length/2-actuator_base_Length/2-actuator_base_chassis_spacing} 0 ${chassis_bottom_height/2}" rpy="0 0 0"/>
         </joint>
 
-        <joint name="actuator_base_link_to_actuator_part1_joint" type="fixed">
-            <parent link="actuator_base_link"/>
-            <child link="actuator_part1_link"/>
-            <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2-0.05}" rpy="0 0 0"/>
-        </joint>
-
-        <!--<joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">-->
+        <!--<joint name="actuator_base_link_to_actuator_part1_joint" type="fixed">-->
             <!--<parent link="actuator_base_link"/>-->
             <!--<child link="actuator_part1_link"/>-->
-            <!--<origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>-->
-            <!--<axis rpy="0 0 0" xyz="0 0 1"/>-->
-            <!--<limit upper="0" lower="-0.15" effort="100" velocity="1"/>-->
-            <!--<dynamics damping="0.7" friction="0.98"/>-->
+            <!--<origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2-0.05}" rpy="0 0 0"/>-->
         <!--</joint>-->
 
-        <!--<transmission name="actuator_base_link_to_actuator_part1_trans">-->
-            <!--<type>transmission_interface/SimpleTransmission</type>-->
-            <!--<joint name="actuator_base_link_to_actuator_part1_joint">-->
-                <!--<hardwareInterface>EffortJointInterface</hardwareInterface>-->
-            <!--</joint>-->
-            <!--<actuator name="actuator_base_link_to_actuator_part1_motor">-->
-                <!--<hardwareInterface>EffortJointInterface</hardwareInterface>-->
-                <!--<mechanicalRedu.ction>46</mechanicalRedu.ction>-->
-            <!--</actuator>-->
-        <!--</transmission>-->
+        <joint name="actuator_base_link_to_actuator_part1_joint" type="prismatic">
+            <parent link="actuator_base_link"/>
+            <child link="actuator_part1_link"/>
+            <origin xyz="${-actuator_base_Length/2-actuator_part1_Length/2} 0 ${actuator_base_Height/2}" rpy="0 0 0"/>
+            <axis rpy="0 0 0" xyz="0 0 1"/>
+            <limit upper="0" lower="-0.15" effort="100" velocity="1"/>
+            <dynamics damping="0.7" friction="0.98"/>
+        </joint>
+
+        <transmission name="actuator_base_link_to_actuator_part1_trans">
+            <type>transmission_interface/SimpleTransmission</type>
+            <joint name="actuator_base_link_to_actuator_part1_joint">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+            </joint>
+            <actuator name="actuator_base_link_to_actuator_part1_motor">
+                <hardwareInterface>EffortJointInterface</hardwareInterface>
+                <mechanicalRedu.ction>46</mechanicalRedu.ction>
+            </actuator>
+        </transmission>
 
 
         <joint name="actuator_part1_to_actuator_part21_joint" type="fixed">

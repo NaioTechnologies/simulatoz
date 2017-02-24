@@ -28,6 +28,7 @@
 #include <thread>
 
 #include "Gps.h"
+#include "Log.h"
 
 #include "message_filters/subscriber.h"
 #include "message_filters/time_synchronizer.h"
@@ -73,6 +74,7 @@ public:
 
         CAN_IHM_LCD = 0x00,
         CAN_IHM_BUT = 0x01,
+        CAN_IHM_BUZ = 0x03,
 
         CAN_VER_CONS = 0x02,
         CAN_VER_POS = 0x01,
@@ -80,7 +82,7 @@ public:
 
 //-- Methods ---------------------------------------------------------------------------------------
 
-    Can(int server_port);
+    Can(int server_port, std::shared_ptr<Log> log_ptr );
     ~Can();
 
     void init();
@@ -110,7 +112,9 @@ private:
 
     std::atomic<bool> stop_;
 
-//  -- T H R E A D S  --
+    std::shared_ptr<Log> log_ptr_;
+
+    //  -- T H R E A D S  --
     std::thread connect_thread_;
     std::thread read_thread_;
 
