@@ -1,0 +1,14 @@
+{
+  "Nom": "CAB_70_20_NO_STICK",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Cabbage",
+  "Interplant" : 0.20,
+  "Nombre de rangees" : 2,
+  "Longueur rangee" : 6,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : false,
+  "Herbe": 0,
+  "Cailloux" : 0
+}
+

@@ -1,0 +1,38 @@
+{
+  "Hoeing": {
+
+    "ITK": {
+      "crop_spacing": 50,
+      "crop_width": 5
+    },
+
+    "first_track_outer" : false,
+    "final_track_outer" : false,
+
+    "tracks": [
+      {
+        "Distance": 65
+      },
+      {
+        "Distance": 65
+      },
+      {
+        "Distance": 65
+      }
+    ],
+
+    "uturns": [
+      {
+        "Distance": 70
+      },
+      {
+        "Distance": 70
+      }
+    ],
+
+    "two_pass": false,
+    "uturn_direction": 1
+  }
+}
+
+

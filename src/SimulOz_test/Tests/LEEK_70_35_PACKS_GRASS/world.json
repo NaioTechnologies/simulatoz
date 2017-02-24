@@ -1,0 +1,13 @@
+{
+  "Nom": "LEEK_70_35_PACKS_GRASS",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.35,
+  "Nombre de rangees" : 3,
+  "Longueur rangee" : 6,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : true,
+  "Herbe": 0,
+  "Cailloux" : 0
+}

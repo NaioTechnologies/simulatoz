@@ -1,0 +1,13 @@
+{
+  "Nom": "level1",
+  "Sol" : "dirt",
+  "Butte": true,
+  "Type culture" : "Leek",
+  "Interplant" : 20,
+  "Nombre de rangées" : 3,
+  "Longueur rangée" : 6,
+  "Largeur rangée" : 70,
+  "Quinconce" : 0,
+  "herbe": true,
+  "Cailloux" : false
+}

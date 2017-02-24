@@ -1,0 +1,13 @@
+{
+  "Nom": "LEEK_70_200",
+  "Longueur rangee" : 10,
+
+  "Sol" : "dirt",
+  "Type culture" : "Leek",
+  "Interplant" : 2.0,
+  "Largeur rangee" : 0.70,
+  "Herbe": 0,
+  "Cailloux" : 0,
+  "Ecart" : 0
+}
+

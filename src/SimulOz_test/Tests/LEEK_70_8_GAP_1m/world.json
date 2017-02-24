@@ -1,0 +1,15 @@
+{
+  "Nom": "LEEK_70_8_GAP_1m",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.08,
+  "Nombre de rangees" : 3,
+  "Longueur rangee" : 10,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : false,
+  "Herbe": 0,
+  "Cailloux" : 0
+}
+
+

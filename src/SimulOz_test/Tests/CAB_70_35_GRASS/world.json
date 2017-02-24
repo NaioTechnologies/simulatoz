@@ -1,0 +1,14 @@
+{
+  "Nom": "CAB_70_45_GRASS",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Cabbage",
+  "Interplant" : 0.45,
+  "Nombre de rangees" : 8,
+  "Longueur rangee" : 10,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : true,
+  "Herbe": 1,
+  "Cailloux" : 0
+}
+

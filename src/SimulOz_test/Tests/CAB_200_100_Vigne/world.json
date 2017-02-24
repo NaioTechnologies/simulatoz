@@ -1,0 +1,14 @@
+{
+  "Nom": "LEEK_200_100_VIGNE",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 1,
+  "Nombre de rangees" : 3,
+  "Longueur rangee" : 10,
+  "Largeur rangee" : 2,
+  "Quinconce" : false,
+  "Herbe": 1,
+  "Cailloux" : 0
+}
+

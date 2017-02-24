@@ -1,0 +1,22 @@
+{
+  "Hoeing": {
+
+    "ITK": {
+      "crop_spacing": 0.3,
+      "crop_width": 0.1
+    },
+
+    "first_track_outer" : false,
+    "final_track_outer" : false,
+
+    "tracks": [ { "d" : 0.65 } ],
+
+    "uturns": [],
+
+    "two_pass": false,
+    "crop_gap": 0.10,
+
+    "uturn_direction": 0,
+    "track_side" : 0
+  }
+}

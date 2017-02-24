@@ -1,0 +1,15 @@
+{
+  "Nom": "LEEK_70_70_SQUARE",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.70,
+  "Nombre de rangees" : 7,
+  "Longueur rangee" : 7,
+  "Largeur rangee" : 0.70,
+  "Quinconce" : false,
+  "Herbe": 0,
+  "Cailloux" : 0
+}
+
+

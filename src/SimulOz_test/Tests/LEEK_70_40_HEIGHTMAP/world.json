@@ -1,0 +1,15 @@
+{
+  "Nom": "LEEK_70_40_HEIGHTMAP",
+  "Sol" : "heightmap",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.4,
+  "Nombre de rangees" : 2,
+  "Longueur rangee" : 10,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : false,
+  "Herbe": 0,
+  "Cailloux" : 0
+}
+
+

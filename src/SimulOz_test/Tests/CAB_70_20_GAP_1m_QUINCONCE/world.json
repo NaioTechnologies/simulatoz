@@ -1,0 +1,15 @@
+{
+  "Nom": "CAB_70_20_GAP_1m_QUINCONCE",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Cabbage",
+  "Interplant" : 0.20,
+  "Nombre de rangees" : 3,
+  "Longueur rangee" : 10,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : false,
+  "Herbe": 0,
+  "Cailloux" : 0
+}
+
+

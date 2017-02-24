@@ -1,0 +1,14 @@
+{
+  "Nom": "LEEK_70_25_WIDER",
+  "Sol" : "sand",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.25,
+  "Nombre de rangees" : 4,
+  "Longueur rangee" : 8,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : true,
+  "Herbe": 0,
+  "Cailloux" : 1
+}
+

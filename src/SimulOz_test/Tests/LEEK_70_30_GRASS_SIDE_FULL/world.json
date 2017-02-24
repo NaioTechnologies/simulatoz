@@ -1,0 +1,14 @@
+{
+  "Nom": "LEEK_70_30_GRASS_SIDE_FULL",
+  "Sol" : "dirt",
+  "Butte": false,
+  "Type culture" : "Leek",
+  "Interplant" : 0.3,
+  "Nombre de rangees" : 2,
+  "Longueur rangee" : 8,
+  "Largeur rangee" : 0.7,
+  "Quinconce" : true,
+  "Herbe": 20,
+  "Cailloux" : 0
+}
+

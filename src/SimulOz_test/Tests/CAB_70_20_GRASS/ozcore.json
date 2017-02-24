@@ -1,0 +1,41 @@
+{
+  "Binage": {
+
+    "ITK": {
+      "Interplant": "30",
+      "Epaisseur": "10"
+    },
+
+    "Rang": [
+      {
+        "Numéro": "1",
+        "Bord": "false",
+        "Distance": "65"
+      },
+      {
+        "Numéro": "2",
+        "Distance": "65"
+      },
+      {
+        "Numéro": "3",
+        "Bord": "true",
+        "Distance": "65"
+      }
+    ],
+
+    "Demi-tour": [
+      {
+        "Numéro": "1",
+        "Distance": "70"
+      },
+      {
+        "Numéro": "2",
+        "Distance": "70"
+      }
+    ],
+
+    "Multipass": "1",
+    "Direction demi-tour": "right"
+  }
+}
+
