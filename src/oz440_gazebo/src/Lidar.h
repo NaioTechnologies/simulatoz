@@ -57,6 +57,7 @@ private:
     uint16_t nbTelegrammes_;
 
     ros::Subscriber lidar_sub_;
+    struct timespec timeInit;
 };
 
 #endif //SIMULATOZ_LIDAR_H

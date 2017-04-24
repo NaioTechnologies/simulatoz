@@ -33,6 +33,7 @@ Lidar::~Lidar()
 
 void Lidar::init()
 {
+    clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
     connect_thread_ = std::thread( &Lidar::connect, this );
     connect_thread_.detach();
 
@@ -147,9 +148,6 @@ void Lidar::callback_lidar( const sensor_msgs::LaserScan::ConstPtr& lidar_msg )
 
         int lidar[271];
         int albedo[271];
-
-        struct timespec timeInit;
-        clock_gettime(CLOCK_MONOTONIC_RAW, &timeInit);
 
         for (int i = 0; i < 271; ++i) {
 

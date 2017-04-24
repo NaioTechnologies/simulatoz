@@ -178,7 +178,7 @@
     <gazebo>
         <plugin name="imu_controller" filename="libhector_gazebo_ros_imu.so">
             <robotNamespace>/oz440/</robotNamespace>
-            <updateRate>80.0</updateRate>
+            <updateRate>100.0</updateRate>
             <bodyName>IMU_link</bodyName>
             <topicName>imu/data</topicName>
             <accelDrift>0.0005 0.0005 0.0005</accelDrift>

@@ -106,6 +106,8 @@ private:
     void callback_gps(const sensor_msgs::NavSatFix::ConstPtr& gps_fix_msg, const geometry_msgs::Vector3Stamped::ConstPtr& gps_vel_msg );
 
     void send_gps_frame( std::string trame );
+    long elapsedMicros(struct timespec dateDepart);
+
 
 //-- Data members ----------------------------------------------------------------------------------
 
@@ -133,6 +135,8 @@ private:
     message_filters::TimeSynchronizer< sensor_msgs::NavSatFix, geometry_msgs::Vector3Stamped > sync_gps_;
 
     ros::Subscriber imu_sub_;
+    struct timespec lastIMU[10];
+    int currentIMU = 0;
 };
 
 #endif //SIMULATOZ_CAN_H

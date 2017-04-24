@@ -51,6 +51,9 @@ Can::~Can()
 
 void Can::init()
 {
+    for (int i = 0; i<10;i++){
+		clock_gettime(CLOCK_MONOTONIC_RAW, &(lastIMU[i]));
+	}
     connect_thread_ = std::thread( &Can::connect, this );
     connect_thread_.detach();
 
@@ -293,15 +296,30 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
 {
     if( connected_ )
     {
+        long elapsedReal = elapsedMicros( lastIMU[currentIMU] );
+        clock_gettime(CLOCK_MONOTONIC_RAW, &(lastIMU[currentIMU]));
+        
+        currentIMU++;
+        if (currentIMU >= 10){
+			currentIMU = 0;
+		}
+        
+        double realTimeFactor = 100000. / elapsedReal;
+        
+        // ROS_ERROR("Elapsed %ld RTFactor %lf", elapsedReal, realTimeFactor);
+        if (realTimeFactor > 1){
+            realTimeFactor = 1;
+        }
+        
         uint8_t data[6];
 
         std::array<int16_t, 3> gyro_packet;
 
-        gyro_packet.at(0) = static_cast<int16_t>(imu_msg->angular_velocity.x * 1000.0 * 360.0 /
+        gyro_packet.at(0) = static_cast<int16_t>(imu_msg->angular_velocity.x * realTimeFactor * 1000.0 * 360.0 /
                                                  (2.0 * M_PI * -30.5));
-        gyro_packet.at(1) = static_cast<int16_t>(imu_msg->angular_velocity.y * 1000.0 * 360.0 /
+        gyro_packet.at(1) = static_cast<int16_t>(imu_msg->angular_velocity.y * realTimeFactor * 1000.0 * 360.0 /
                                                  (2.0 * M_PI * -30.5));
-        gyro_packet.at(2) = static_cast<int16_t>(imu_msg->angular_velocity.z * 1000.0 * 360.0 /
+        gyro_packet.at(2) = static_cast<int16_t>(imu_msg->angular_velocity.z * realTimeFactor * 1000.0 * 360.0 /
                                                  (2.0 * M_PI * -30.5));
 
         data[0] = (uint8_t) ((gyro_packet.at(0) >> 8) & 0xFF);
@@ -319,11 +337,11 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
 
         std::array<int16_t, 3> accelero_packet;
 
-        accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * 1000.0 /
+        accelero_packet.at(0) = static_cast<int16_t>(imu_msg->linear_acceleration.x * realTimeFactor * 1000.0 /
                                                      9.8);
-        accelero_packet.at(1) = static_cast<int16_t>(imu_msg->linear_acceleration.y * 1000.0 /
+        accelero_packet.at(1) = static_cast<int16_t>(imu_msg->linear_acceleration.y * realTimeFactor * 1000.0 /
                                                      9.8);
-        accelero_packet.at(2) = static_cast<int16_t>(imu_msg->linear_acceleration.z * -1000.0 /
+        accelero_packet.at(2) = static_cast<int16_t>(imu_msg->linear_acceleration.z * realTimeFactor * -1000.0 /
                                                      9.8);
 
         data[0] = (uint8_t) ((accelero_packet.at(0) >> 8) & 0xFF);
@@ -339,6 +357,16 @@ Can::callback_imu( const sensor_msgs::Imu::ConstPtr& imu_msg )
 
         ROS_INFO( "Accelero packet enqueued" );
     }
+}
+
+long Can::elapsedMicros(struct timespec dateDepart){
+    struct timespec NOW;
+    long ecart;
+
+    clock_gettime(CLOCK_MONOTONIC_RAW, &NOW);
+
+    ecart = (((long)(NOW.tv_sec) - (long)(dateDepart.tv_sec)) * 1000000L) + ((long)(NOW.tv_nsec) - (long)(dateDepart.tv_nsec))/1000L;
+    return ecart;
 }
 
 //--------------------------------------------------------------------------------------------------

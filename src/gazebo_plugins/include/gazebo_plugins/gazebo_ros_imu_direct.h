@@ -116,6 +116,7 @@ namespace gazebo
 #endif
 
         UpdateTimer updateTimer;
+        common::Time last_update_;
         event::ConnectionPtr updateConnection;
 
         boost::shared_ptr<dynamic_reconfigure::Server<SensorModelConfig> > dynamic_reconfigure_server_accel_, dynamic_reconfigure_server_rate_, dynamic_reconfigure_server_yaw_;
