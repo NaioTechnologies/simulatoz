@@ -7,8 +7,8 @@
       <collision name="collision">
         <geometry>
           <heightmap>
-            <uri>model://heightmap/materials/textures/heightmap4.jpg</uri>
-            <size>40 40 2</size>
+            <uri>model://heightmap/materials/textures/heightmap2.jpg</uri>
+            <size>40 40 2</size>G
             <pos>0 0 0</pos>
           </heightmap>
         </geometry>
@@ -45,7 +45,7 @@
               <fade_dist>0.5</fade_dist>
             </blend>
 
-            <uri>model://heightmap/materials/textures/heightmap4.jpg</uri>
+            <uri>model://heightmap/materials/textures/heightmap2.jpg</uri>
             <size>40 40 2</size>
             <pos>0 0 0</pos>
           </heightmap>
