@@ -20,7 +20,7 @@
  	 	 </scene>
  
  	 	 <include> 
- 	 	 	 <uri>model://dirt_plane</uri> 
+ 	 	 	 <uri>model://heightmap</uri> 
  	 	 </include>
  
 	 	 <population name="sticks"> 
